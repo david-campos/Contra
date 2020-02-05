@@ -25,8 +25,10 @@ private:
     bool m_facingRight;
     int m_idleAnim, m_upAnim, m_crawlAnim,
     m_runAnim, m_runUpAnim, m_runDownAnim,
-    m_jumpAnim, m_dieAnim,
-    m_splashAnim, m_swimAnim;
+    m_jumpAnim, m_dieAnim, m_runShootAnim,
+    m_splashAnim, m_swimAnim, m_diveAnim,
+    m_swimShootAnim, m_swimShootDiagonalAnim,
+    m_swimShootUpAnim;
 };
 
 #endif //CONTRA_PLAYER_H

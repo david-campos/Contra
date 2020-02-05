@@ -29,6 +29,21 @@ void Game::CreatePlayer() {
             20, 35, 10, 35,
             "Run", true
     };
+    AnimationRenderer::Animation animation_run_shoot {
+            0, 79, 0.1, 3,
+            25, 34, 12, 34,
+            "RunShoot", false
+    };
+    AnimationRenderer::Animation animation_run_up{
+            0, 149, 0.1, 3,
+            20, 35, 10, 35,
+            "RunUp", true
+    };
+    AnimationRenderer::Animation animation_run_down {
+            0, 221, 0.1, 3,
+            22, 35, 11, 35,
+            "RunDown", true
+    };
     AnimationRenderer::Animation animation_jump{
             122, 52, 0.16, 4,
             20, 20, 10, 26,
@@ -38,6 +53,9 @@ void Game::CreatePlayer() {
     renderer->AddAnimation(animation_up);
     renderer->AddAnimation(animation_crawl);
     renderer->AddAnimation(animation_run);
+    renderer->AddAnimation(animation_run_shoot);
+    renderer->AddAnimation(animation_run_up);
+    renderer->AddAnimation(animation_run_down);
     renderer->AddAnimation(animation_jump);
     player->AddComponent(renderer);
     auto *control = new PlayerControl();

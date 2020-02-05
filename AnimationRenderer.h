@@ -58,6 +58,9 @@ public:
     /** Indicates if the renderer is playing an animation */
     bool IsPlaying() { return playing; }
 
+    /** Indicates if the renderer is playing the given animation */
+    bool IsPlaying(int index) { return IsPlaying() && IsCurrent(index); }
+
     /** Indicates if the animation is the currently selected */
     bool IsCurrent(int animationIndex);
 
