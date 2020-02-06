@@ -13,7 +13,7 @@ find_package(SDL2_image REQUIRED)
 #find_package(GLEW REQUIRED)
 #find_package(OpenGL REQUIRED)
 
-add_executable(Contra main.cpp avancezlib.cpp component.cpp game_object.cpp object_pool.h vector2D.h AnimationRenderer.cpp AnimationRenderer.h game.cpp Player.cpp Player.h floor.h Gravity.cpp Gravity.h)
+add_executable(Contra main.cpp avancezlib.cpp component.cpp game_object.cpp object_pool.h vector2D.h AnimationRenderer.cpp AnimationRenderer.h game.cpp Player.cpp Player.h floor.h Gravity.cpp Gravity.h SimpleRenderer.h bullets.h)
 
 file(COPY data DESTINATION .)
 

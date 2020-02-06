@@ -8,11 +8,10 @@ void Game::CreatePlayer() {
     player->Create();
     player->position = Vector2D(100, 0);
     auto *renderer = new AnimationRenderer();
-    std::shared_ptr<Sprite> sprite_sheet(engine->createSprite("data/spritesheet.png"));
-    renderer->Create(engine, player, &game_objects, sprite_sheet, &camera_x);
+    renderer->Create(engine, player, &game_objects, spritesheet, &camera_x);
     AnimationRenderer::Animation animation_idle{
             0, 8, 0.1, 2,
-            24, 34, 8, 34,
+            24, 34, 8, 33,
             "Idle", AnimationRenderer::STOP_AND_FIRST
     };
     AnimationRenderer::Animation animation_up {
@@ -110,9 +109,9 @@ void Game::CreatePlayer() {
     auto *gravity = new Gravity();
     gravity->Create(engine, player, &game_objects, level_floor);
     player->AddComponent(gravity);
-    auto *control = new PlayerControl();
-    control->Create(engine, player, &game_objects, level_floor, &camera_x);
-    player->AddComponent(control);
+    playerControl = new PlayerControl();
+    playerControl->Create(engine, player, &game_objects, level_floor, &camera_x, bullets);
+    player->AddComponent(playerControl);
     player->AddReceiver(this);
     game_objects.insert(player);
 }

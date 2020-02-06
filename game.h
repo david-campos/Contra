@@ -4,6 +4,16 @@
 #include "consts.h"
 #include "floor.h"
 #include "Player.h"
+#include "SimpleRenderer.h"
+#include "bullets.h"
+
+#define LIFE_SPRITE_WIDTH 8
+#define LIFE_SPRITE_HEIGHT 16
+#define LIFE_SPRITE_MARGIN 2
+#define LIFE_SPRITE_X 193
+#define LIFE_SPRITE_Y 0
+
+#define MAX_BULLETS 20
 
 class Game : public GameObject {
 private:
@@ -14,7 +24,10 @@ private:
     Sprite *background;
     AvancezLib *engine;
     std::shared_ptr<Floor> level_floor;
+    std::shared_ptr<Sprite> spritesheet;
+    ObjectPool<Bullet>* bullets;
     Player *player;
+    PlayerControl *playerControl;
     float camera_x;
     bool game_over;
 public:
@@ -23,6 +36,19 @@ public:
         this->engine = avancezLib;
         background = engine->createSprite("data/level1/background.png");
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
+        spritesheet.reset(engine->createSprite("data/spritesheet.png"));
+        bullets = new ObjectPool<Bullet>();
+        bullets->Create(MAX_BULLETS);
+        for (auto* bullet: bullets->pool) {
+            bullet->Create();
+            auto* renderer = new SimpleRenderer();
+            renderer->Create(engine, bullet, &game_objects, spritesheet, &camera_x,
+                    82, 10, 3, 3, 1, 1);
+            bullet->AddComponent(renderer);
+            auto* behaviour = new BulletBehaviour();
+            behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            bullet->AddComponent(behaviour);
+        }
         CreatePlayer();
     }
 
@@ -67,6 +93,14 @@ public:
 //                }
 //            }
 //        }
+        for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
+            spritesheet->draw(
+                    ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
+                    9 * PIXELS_ZOOM,
+                    LIFE_SPRITE_WIDTH * PIXELS_ZOOM, LIFE_SPRITE_HEIGHT * PIXELS_ZOOM,
+                    LIFE_SPRITE_X, LIFE_SPRITE_Y, LIFE_SPRITE_WIDTH, LIFE_SPRITE_HEIGHT
+            );
+        }
 
         for (auto game_object : game_objects)
             game_object->Update(dt);
@@ -78,6 +112,9 @@ public:
     }
 
     virtual void Receive(Message m) {
+        if (m == GAME_OVER) {
+            game_over = true;
+        }
     }
 
 
@@ -89,6 +126,9 @@ public:
         SDL_Log("Game::Destroy");
         for (auto game_object : game_objects)
             game_object->Destroy();
+        bullets->Destroy();
+        delete bullets;
+        bullets = nullptr;
         delete player;
         player = nullptr;
         delete background;

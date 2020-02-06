@@ -8,7 +8,7 @@
 #include <utility>
 
 void AnimationRenderer::Update(float dt) {
-    if (!go->enabled || !sprite || !m_currentAnimation)
+    if (!go->enabled || !enabled || !sprite || !m_currentAnimation)
         return;
 
     if (playing) {
@@ -106,11 +106,22 @@ void AnimationRenderer::Stop() {
     m_currentTime = 0;
 }
 
-void AnimationRenderer::Play() {
+void AnimationRenderer::Play(int frame) {
+    GoToFrame(frame);
     playing = true;
 }
 
 void AnimationRenderer::Pause() {
     playing = false;
+}
+
+AnimationRenderer::Animation AnimationRenderer::GetCurrentAnimation() const {
+    return *m_currentAnimation;
+}
+
+void AnimationRenderer::GoToFrame(int frame) {
+    if (frame > 0) {
+        m_currentTime = (float) (frame % m_currentAnimation->frames) * m_currentAnimation->speed;
+    }
 }
 

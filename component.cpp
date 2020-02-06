@@ -23,14 +23,6 @@ void RenderComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameOb
     this->camera_x = camera_x;
 }
 
-void RenderComponent::Update(float dt) {
-    if (!go->enabled)
-        return;
-
-    if (sprite)
-        sprite->draw(int(round(go->position.x - *camera_x)), int(round(go->position.y)));
-}
-
 void RenderComponent::Destroy() {
     sprite.reset();
 }

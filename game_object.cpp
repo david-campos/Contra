@@ -2,61 +2,52 @@
 #include "component.h"
 #include "avancezlib.h"
 
-void GameObject::Create()
-{
-	SDL_Log("GameObject::Create");
+void GameObject::Create() {
+    SDL_Log("GameObject::Create");
 
-	enabled = false;
+    enabled = false;
 }
 
-void GameObject::AddComponent(Component * component)
-{
-	components.push_back(component);
+void GameObject::AddComponent(Component *component) {
+    components.push_back(component);
 }
 
 
-void GameObject::Init()
-{
-	SDL_Log("GameObject::Init");
+void GameObject::Init() {
+    SDL_Log("GameObject::Init");
 
-	for (auto it = components.begin(); it != components.end(); it++)
-		(*it)->Init();
+    for (auto it = components.begin(); it != components.end(); it++)
+        (*it)->Init();
 
-	enabled = true;
+    enabled = true;
 }
 
-void GameObject::Update(float dt)
-{
-	if (!enabled)
-		return;
+void GameObject::Update(float dt) {
+    if (!enabled)
+        return;
 
-	for (auto it = components.begin(); it != components.end(); it++)
-		(*it)->Update(dt);
+    for (auto it = components.begin(); it != components.end(); it++)
+        (*it)->Update(dt);
 }
 
-void GameObject::Destroy()
-{
-	for (auto it = components.begin(); it != components.end(); it++)
-		(*it)->Destroy();
+void GameObject::Destroy() {
+    for (auto it = components.begin(); it != components.end(); it++)
+        (*it)->Destroy();
 }
 
-GameObject::~GameObject()
-{
-	SDL_Log("GameObject::~GameObject");
+GameObject::~GameObject() {
+    SDL_Log("GameObject::~GameObject");
 }
 
-void GameObject::AddReceiver(GameObject * go)
-{
-	receivers.push_back(go);
+void GameObject::AddReceiver(GameObject *go) {
+    receivers.push_back(go);
 }
 
-void GameObject::Send(Message m)
-{
-	for (auto i = 0; i < receivers.size(); i++)
-	{
-		if (!receivers[i]->enabled)
-			continue;
+void GameObject::Send(Message m) {
+    for (auto i = 0; i < receivers.size(); i++) {
+        if (!receivers[i]->enabled)
+            continue;
 
-		receivers[i]->Receive(m);
-	}
+        receivers[i]->Receive(m);
+    }
 }

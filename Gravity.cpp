@@ -6,14 +6,14 @@
 #include "consts.h"
 
 void Gravity::Update(float dt) {
+    m_onFloor = false;
+    m_onWater = false;
+    m_canFall = false;
+
     auto floor = m_floor.lock();
     if (!floor) {
         return;
     }
-
-    m_onFloor = false;
-    m_onWater = false;
-    m_canFall = false;
 
     float y_increment = m_velocity * dt;
     if (m_velocity < 0) {

@@ -11,11 +11,24 @@ void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
     engine->getKeyStatus(keyStatus);
 
+    if (m_invincibleTime > 0) {
+        bool display = (int) round(m_invincibleTime * 10) % 2 == 0;
+        m_invincibleTime -= dt;
+        if (m_invincibleTime <= 0) display = true;
+        m_animator->enabled = display; // It appears and twinkles when invincible
+    }
+
     // If it is death, wait for death animation to end and then decide
     if (m_isDeath) {
-        if (!m_animator->IsPlaying()) {
-            // Respawn or end game
-            printf("TODO: Respawn or end game\n");
+        if (m_waitDead <= 0) {
+            m_remainingLives--;
+            if (m_remainingLives > 0) {
+                Respawn();
+            } else {
+                go->Send(GAME_OVER);
+            }
+        } else {
+            m_waitDead -= dt;
         }
         return;
     }
@@ -29,7 +42,7 @@ void PlayerControl::Update(float dt) {
     if (m_gravity->IsOnFloor()) {
         m_hasInertia = false;
         if (keyStatus.jump) {
-            if (keyStatus.down and not (keyStatus.left or keyStatus.right)) {
+            if (keyStatus.down and not(keyStatus.left or keyStatus.right)) {
                 if (m_gravity->CanFall())
                     m_gravity->LetFall();
             } else {
@@ -52,14 +65,15 @@ void PlayerControl::Update(float dt) {
         m_hasInertia = true;
         m_facingRight = false;
     }
-    // Shooting
+    // Shooting (we need facing to be calculated already)
     bool shooting = !m_hasShot && keyStatus.fire && m_shootDowntime <= 0;
     if (!keyStatus.fire) {
         m_hasShot = false;
     }
     if (shooting) {
+        Fire(keyStatus);
         m_hasShot = true;
-        m_shootDowntime = 0.3;
+        m_shootDowntime = 0.2;
     }
 
     // Animation
@@ -85,7 +99,7 @@ void PlayerControl::Update(float dt) {
                 m_animator->CurrentAndPause(m_idleAnim);
             }
             if (shooting) {
-                m_animator->Play(); // These animations make the shooting when played
+                m_animator->Play(1); // These animations make the shooting when played
             }
         }
     } else if (m_gravity->IsOnWater()) {
@@ -141,6 +155,8 @@ void PlayerControl::Init() {
     m_swimShootDiagonalAnim = m_animator->FindAnimation("SwimShootDiagonal");
     m_swimShootUpAnim = m_animator->FindAnimation("SwimShootUp");
     m_animator->PlayAnimation(m_jumpAnim); // Start jumping
+    m_remainingLives = 2;
+    m_hasInertia = false;
     m_facingRight = true;
     m_hasShot = false;
     m_shootDowntime = 0;
@@ -148,5 +164,59 @@ void PlayerControl::Init() {
 
 void PlayerControl::Kill() {
     m_isDeath = true;
+    m_waitDead = 2.f;
     m_animator->PlayAnimation(m_dieAnim);
+}
+
+void PlayerControl::Respawn() {
+    if (!m_isDeath) return;
+    go->position = Vector2D(*m_cameraX + 50 * PIXELS_ZOOM, 0);
+    m_facingRight = true;
+    m_hasInertia = false;
+    m_hasShot = false;
+    m_gravity->SetVelocity(0);
+    m_invincibleTime = 1.f;
+    m_shootDowntime = 0;
+    m_isDeath = false;
+}
+
+void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
+    Vector2D displacement(
+            m_facingRight ? 12 : -12,
+            m_gravity->IsOnWater() ? -3 : -21
+    );
+    Vector2D direction(m_facingRight ? 1 : -1, 0);
+    if (keyStatus.up && !keyStatus.down) {
+        direction.y = -1;
+        displacement.y = m_gravity->IsOnWater() ? -25 : -35;
+        if (!keyStatus.right && !keyStatus.left) {
+            direction.x = 0;
+            displacement.x = m_facingRight ? 3 : -3;
+        } else if (m_gravity->IsOnWater()) {
+            displacement.y = -20;
+        }
+        if (m_animator->IsCurrent(m_jumpAnim)) {
+            displacement.x = 0;
+        }
+    } else if (keyStatus.down && !keyStatus.up) {
+        if (m_gravity->IsOnWater())
+            return; // Can't shoot down in water, since it is diving
+        displacement.y = -9;
+        if (keyStatus.right or keyStatus.left or m_animator->IsCurrent(m_jumpAnim)) {
+            direction.y = 1; // When jumping or moving you can indeed shoot down
+            if (!keyStatus.left && !keyStatus.right) {
+                displacement = Vector2D(0, 0);
+                direction.x = 0;
+            }
+        }
+    } else if (m_animator->IsCurrent(m_jumpAnim)) {
+        displacement.y = -16;
+    }
+
+    // Grab the bullet from the pool
+    auto *bullet = m_bulletPool->FirstAvailable();
+    if (bullet != nullptr) {
+        bullet->Init(go->position + displacement * PIXELS_ZOOM, direction.normalise());
+        game_objects->insert(bullet);
+    }
 }

@@ -5,7 +5,7 @@
 #include <set>
 #include "vector2D.h"
 
-enum Message { HIT, NO_MSG };
+enum Message { GAME_OVER, HIT, NO_MSG };
 
 class Component;
 

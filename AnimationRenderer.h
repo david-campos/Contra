@@ -15,6 +15,7 @@
  */
 class AnimationRenderer : public RenderComponent {
 public:
+    bool enabled = true; // is the rendering enabled?
     enum AnimationStop {
         DONT_STOP, // Loop animation
         STOP_AND_FIRST, // Stop and stay at first frame
@@ -50,12 +51,14 @@ public:
      */
     void CurrentAndPause(int index);
 
-    /** Plays the animation if it was stopped */
-    void Play();
+    /** Plays the animation if it was stopped, optionally you can choose a frame to start from */
+    void Play(int frame=-1);
     /** Pauses the animation */
     void Pause();
     /** Stops the animation if it was playing */
     void Stop();
+
+    [[nodiscard]] Animation GetCurrentAnimation() const;
 
     /** Find an animation by name, -1 indicates the animation was not found */
     int FindAnimation(std::string name);
@@ -68,6 +71,9 @@ public:
 
     /** Indicates if the animation is the currently selected */
     bool IsCurrent(int animationIndex);
+
+    /** Moves the current time to the start of the specified frame */
+    void GoToFrame(int frame);
 
     void Update(float dt) override;
 private:
