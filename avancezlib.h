@@ -47,12 +47,11 @@ public:
 	// Create a sprite given a string.
 	// All sprites are 32*32 pixels.
 	Sprite* createSprite(const char* name);
-	// Creates a new sprite horizontally mirroring the given one
-	Sprite* mirrorSprite(Sprite* sprite);
 
 	// Draws the given text.
 	void drawText(int x, int y, const char* msg);
-
+    // Fills a square
+    void fillSquare(int x, int y, int side, SDL_Color color);
 	// Return the total time spent in the game, in seconds.
 	float getElapsedTime();
 

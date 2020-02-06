@@ -10,15 +10,17 @@ void Component::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *
 }
 
 void RenderComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                             const char *sprite_name) {
+                             const char *sprite_name, float* camera_x) {
     Component::Create(engine, go, game_objects);
     sprite.reset(engine->createSprite(sprite_name));
+    this->camera_x = camera_x;
 }
 
 void RenderComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                             std::shared_ptr<Sprite> sprite) {
+                             std::shared_ptr<Sprite> sprite, float* camera_x) {
     Component::Create(engine, go, game_objects);
     this->sprite = std::move(sprite);
+    this->camera_x = camera_x;
 }
 
 void RenderComponent::Update(float dt) {
@@ -26,7 +28,7 @@ void RenderComponent::Update(float dt) {
         return;
 
     if (sprite)
-        sprite->draw(int(round(go->position.x)), int(round(go->position.y)));
+        sprite->draw(int(round(go->position.x - *camera_x)), int(round(go->position.y)));
 }
 
 void RenderComponent::Destroy() {

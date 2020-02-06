@@ -15,6 +15,11 @@
  */
 class AnimationRenderer : public RenderComponent {
 public:
+    enum AnimationStop {
+        DONT_STOP, // Loop animation
+        STOP_AND_FIRST, // Stop and stay at first frame
+        STOP_AND_LAST // Stop and stay at last frame
+    };
     /** Set to true to horizontally mirror the sprite, it will only work if a mirror sprite was created */
     bool mirrorHorizontal;
     struct Animation {
@@ -31,7 +36,7 @@ public:
         /** Name to obtain the animation */
         std::string name;
         /** Whether the animation loops or stops at frame 0 each time is played */
-        bool loop;
+        AnimationStop stop;
     };
 
     // Adds an animation to the renderer and returns the index

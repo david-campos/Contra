@@ -34,10 +34,12 @@ class RenderComponent : public Component
 {
 protected:
     std::shared_ptr<Sprite> sprite;
+    float* camera_x;
 public:
-    virtual void Create(AvancezLib* engine, GameObject * go, std::set<GameObject*> * game_objects, const char * sprite_name);
+    virtual void Create(AvancezLib* engine, GameObject * go, std::set<GameObject*> * game_objects, const char * sprite_name,
+            float* camera_x);
     virtual void Create(AvancezLib* engine, GameObject * go, std::set<GameObject*>* game_objects,
-            std::shared_ptr<Sprite> sprite);
+            std::shared_ptr<Sprite> sprite, float* camera_x);
     virtual void Update(float dt);
     virtual void Destroy();
 

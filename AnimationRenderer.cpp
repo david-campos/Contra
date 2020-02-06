@@ -18,18 +18,27 @@ void AnimationRenderer::Update(float dt) {
     int frame = floor(m_currentTime / m_currentAnimation->speed);
     // Check to loop the animation
     while (frame >= m_currentAnimation->frames) {
-        if (m_currentAnimation->loop) {
+        if (m_currentAnimation->stop == DONT_STOP) {
             m_currentTime -= (float) frame * m_currentAnimation->speed;
             frame = floor(m_currentTime / m_currentAnimation->speed);
         } else {
             Pause();
-            m_currentTime = 0;
-            frame = 0;
+            if (m_currentAnimation->stop == STOP_AND_FIRST) {
+                m_currentTime = 0;
+                frame = 0;
+            } else {
+                frame = m_currentAnimation->frames - 1;
+                m_currentTime = (float) frame * m_currentAnimation->speed;
+            }
         }
     }
-    // Drawing
+    // Flip the anchor shift in x if we are mirroring horizontally (so the shift is correct)
+    int x_shift = (mirrorHorizontal
+                   ? m_currentAnimation->frame_w - m_currentAnimation->anchor_x
+                   : m_currentAnimation->anchor_x
+                  ) * PIXELS_ZOOM;
     sprite->draw(
-            int(round(go->position.x)) - m_currentAnimation->anchor_x * PIXELS_ZOOM,
+            int(round(go->position.x - *camera_x)) - x_shift,
             int(round(go->position.y)) - m_currentAnimation->anchor_y * PIXELS_ZOOM,
             m_currentAnimation->frame_w * PIXELS_ZOOM, m_currentAnimation->frame_h * PIXELS_ZOOM,
             m_currentAnimation->start_x + frame * m_currentAnimation->frame_w,
@@ -69,7 +78,7 @@ void AnimationRenderer::CurrentAndPause(int index) {
 void AnimationRenderer::PlayAnimation(int index) {
     if (index < 0 || index >= m_animations.size()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
+                     "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
         return;
     }
     if (m_currentAnimation != &m_animations[index]) {
