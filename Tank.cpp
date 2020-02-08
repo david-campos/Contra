@@ -108,7 +108,7 @@ void TankBehaviour::Fire() {
     auto *bullet = m_bulletPool->FirstAvailable();
     if (bullet != nullptr) {
         float rad = -0.5236f * (float) m_dir;
-        bullet->Init(go->position, Vector2D(cosf(rad), -sinf(rad))); // Notice our system has y inverted
+        bullet->Init(go->position, Vector2D(cosf(rad), -sinf(rad)), 160); // Notice our system has y inverted
         game_objects->insert(bullet);
     }
 }

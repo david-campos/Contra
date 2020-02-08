@@ -14,7 +14,8 @@
 #define LIFE_SPRITE_X 193
 #define LIFE_SPRITE_Y 0
 
-#define MAX_BULLETS 20
+#define MAX_PLAYER_BULLETS 20
+#define MAX_NPC_BULLETS 40
 
 class Game : public GameObject {
 private:
@@ -25,7 +26,7 @@ private:
     std::shared_ptr<Floor> level_floor;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
-    ObjectPool<Bullet>* bullets;
+    ObjectPool<Bullet>* bullets, *enemy_bullets;
     Player *player;
     PlayerControl *playerControl;
     float camera_x;
@@ -39,9 +40,9 @@ public:
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
 
-        // Create bullet pool
+        // Create bullet pool for the player
         bullets = new ObjectPool<Bullet>();
-        bullets->Create(MAX_BULLETS);
+        bullets->Create(MAX_PLAYER_BULLETS);
         for (auto* bullet: bullets->pool) {
             bullet->Create();
             auto* renderer = new SimpleRenderer();
@@ -53,12 +54,26 @@ public:
             bullet->AddComponent(behaviour);
         }
 
+        // Create bullet pool for the npcs
+        enemy_bullets = new ObjectPool<Bullet>();
+        enemy_bullets->Create(MAX_NPC_BULLETS);
+        for (auto* bullet: enemy_bullets->pool) {
+            bullet->Create();
+            auto* renderer = new SimpleRenderer();
+            renderer->Create(engine, bullet, &game_objects, enemies_spritesheet, &camera_x,
+                    199, 72, 3, 3, 1, 1);
+            bullet->AddComponent(renderer);
+            auto* behaviour = new BulletBehaviour();
+            behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            bullet->AddComponent(behaviour);
+        }
+
         player = new Player();
         auto* tank = new Tank();
 
         // Tank
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(1264, 152) * PIXELS_ZOOM, player, bullets);
+                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets);
         tank->AddReceiver(this);
         game_objects.insert(tank);
 
@@ -146,6 +161,9 @@ public:
         bullets->Destroy();
         delete bullets;
         bullets = nullptr;
+        enemy_bullets->Destroy();
+        delete enemy_bullets;
+        enemy_bullets = nullptr;
         delete player;
         player = nullptr;
         delete background;
