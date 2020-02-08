@@ -32,8 +32,8 @@ public:
         go->position = go->position + m_direction * m_speed * dt;
         if ((go->position.x < *m_cameraX or go->position.x > *m_cameraX + WINDOW_WIDTH)
             or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
-            go->enabled = false;
             game_objects->erase(go);
+            go->Disable();
         }
     }
 };

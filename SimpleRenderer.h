@@ -15,7 +15,7 @@ private:
     int m_srcX, m_srcY, m_width, m_height, m_anchorX, m_anchorY;
 public:
     void Update(float dt) override {
-        if (!go->enabled)
+        if (!go->IsEnabled())
             return;
 
         sprite->draw((int) round(go->position.x - *camera_x) - m_anchorX * PIXELS_ZOOM,

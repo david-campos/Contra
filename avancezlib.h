@@ -52,6 +52,7 @@ public:
 	void drawText(int x, int y, const char* msg);
     // Fills a square
     void fillSquare(int x, int y, int side, SDL_Color color);
+	void strokeSquare(int tl_x, int tl_y, int br_x, int br_y, SDL_Color color);
 	// Return the total time spent in the game, in seconds.
 	float getElapsedTime();
 

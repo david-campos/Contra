@@ -17,6 +17,9 @@
 #define MAX_PLAYER_BULLETS 20
 #define MAX_NPC_BULLETS 40
 
+#define PLAYER_COLLISION_LAYER 0
+#define NPCS_COLLISION_LAYER 1
+
 class Game : public GameObject {
 private:
     std::set<GameObject *> game_objects;    // http://www.cplusplus.com/reference/set/set/
@@ -26,9 +29,10 @@ private:
     std::shared_ptr<Floor> level_floor;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
-    ObjectPool<Bullet>* bullets, *enemy_bullets;
+    ObjectPool<Bullet> *bullets, *enemy_bullets;
     Player *player;
     PlayerControl *playerControl;
+    Grid grid;
     float camera_x;
     bool game_over;
 public:
@@ -39,37 +43,48 @@ public:
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
+        grid.Create(34 * PIXELS_ZOOM, 3327 * PIXELS_ZOOM, WINDOW_HEIGHT);
 
         // Create bullet pool for the player
         bullets = new ObjectPool<Bullet>();
         bullets->Create(MAX_PLAYER_BULLETS);
-        for (auto* bullet: bullets->pool) {
+        for (auto *bullet: bullets->pool) {
             bullet->Create();
-            auto* renderer = new SimpleRenderer();
+            auto *renderer = new SimpleRenderer();
             renderer->Create(engine, bullet, &game_objects, spritesheet, &camera_x,
                     82, 10, 3, 3, 1, 1);
-            bullet->AddComponent(renderer);
-            auto* behaviour = new BulletBehaviour();
+            auto *behaviour = new BulletBehaviour();
             behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            auto *box_collider = new BoxCollider();
+            box_collider->Create(engine, bullet, &game_objects, &grid,
+                    -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
+                    3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
+            bullet->AddComponent(renderer);
+            bullet->AddComponent(box_collider);
         }
 
         // Create bullet pool for the npcs
         enemy_bullets = new ObjectPool<Bullet>();
         enemy_bullets->Create(MAX_NPC_BULLETS);
-        for (auto* bullet: enemy_bullets->pool) {
+        for (auto *bullet: enemy_bullets->pool) {
             bullet->Create();
-            auto* renderer = new SimpleRenderer();
+            auto *renderer = new SimpleRenderer();
             renderer->Create(engine, bullet, &game_objects, enemies_spritesheet, &camera_x,
                     199, 72, 3, 3, 1, 1);
-            bullet->AddComponent(renderer);
-            auto* behaviour = new BulletBehaviour();
+            auto *behaviour = new BulletBehaviour();
             behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            auto *box_collider = new BoxCollider();
+            box_collider->Create(engine, bullet, &game_objects, &grid,
+                    -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
+                    3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
+            bullet->AddComponent(renderer);
+            bullet->AddComponent(box_collider);
         }
 
         player = new Player();
-        auto* tank = new Tank();
+        auto *tank = new Tank();
 
         // Tank
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
@@ -78,8 +93,9 @@ public:
         game_objects.insert(tank);
 
         // Player
-        player->Create(engine, &game_objects, spritesheet, level_floor, &camera_x, bullets);
-        playerControl = player->GetComponent<PlayerControl*>();
+        player->Create(engine, &game_objects, spritesheet, level_floor, &camera_x, bullets, &grid,
+                PLAYER_COLLISION_LAYER);
+        playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
         game_objects.insert(player);
     }
@@ -88,7 +104,7 @@ public:
         for (auto *go: game_objects) {
             go->Init();
         }
-        enabled = true;
+        Enable();
         camera_x = 0;
         game_over = false;
     }
@@ -110,10 +126,10 @@ public:
 
         // Draw background
         background->draw(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                         (int) round(camera_x) / PIXELS_ZOOM, 0, WINDOW_WIDTH / PIXELS_ZOOM,
-                         WINDOW_HEIGHT / PIXELS_ZOOM);
+                (int) round(camera_x) / PIXELS_ZOOM, 0, WINDOW_WIDTH / PIXELS_ZOOM,
+                WINDOW_HEIGHT / PIXELS_ZOOM);
 
-        // Debug floor printing
+          // Debug floor printing
 //        SDL_Color floor{0, 255, 0};
 //        SDL_Color water{0, 0, 255};
 //        for (int y = 0; y < level_floor->getHeight(); y++) {
@@ -125,6 +141,24 @@ public:
 //                }
 //            }
 //        }
+//        // Debug grid
+//        int cells = WINDOW_WIDTH / grid.getCellSize() + 1;
+//        int start = floor(camera_x / grid.getCellSize());
+//        for (int i = 0; i < grid.getColSize(); i++) {
+//            for (int j = start; j < start + cells; j++) {
+//                if (!grid.GetCell(j, i)->GetLayer(PLAYER_COLLISION_LAYER)->empty()) {
+//                    engine->fillSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(), grid.getCellSize(),
+//                            {0, 0, 0});
+//                } else {
+//                    engine->fillSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(), grid.getCellSize(),
+//                            {255, 255, 255});
+//                }
+//                engine->strokeSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(),
+//                        j * grid.getCellSize() - camera_x + grid.getCellSize(), (i+1)*grid.getCellSize(),
+//                        {155, 155, 155});
+//            }
+//        }
+
         for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
             spritesheet->draw(
                     ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
@@ -134,6 +168,7 @@ public:
             );
         }
 
+        grid.ClearCollisionCache(); // Clear collision cache
         for (auto game_object : game_objects)
             game_object->Update(dt);
     }

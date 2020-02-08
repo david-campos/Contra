@@ -21,14 +21,17 @@ void PlayerControl::Update(float dt) {
     // If it is death, wait for death animation to end and then decide
     if (m_isDeath) {
         if (m_waitDead <= 0) {
-            m_remainingLives--;
             if (m_remainingLives > 0) {
+                m_remainingLives--;
                 Respawn();
             } else {
                 go->Send(GAME_OVER);
             }
         } else {
             m_waitDead -= dt;
+            if (m_animator->IsPlaying(m_dieAnim)) {
+                go->position = go->position + Vector2D(PLAYER_SPEED * dt * (m_facingRight ? -1.f : 1.f), 0);
+            }
         }
         return;
     }
@@ -175,7 +178,7 @@ void PlayerControl::Respawn() {
     m_hasInertia = false;
     m_hasShot = false;
     m_gravity->SetVelocity(0);
-    m_invincibleTime = 1.f;
+    m_invincibleTime = 2.f;
     m_shootDowntime = 0;
     m_isDeath = false;
 }
@@ -221,10 +224,20 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     }
 }
 
+void PlayerControl::OnCollision(const CollideComponent &collider) {
+    if (m_invincibleTime <= 0 && !m_isDeath) {
+        // Only npc bullets collide with the player by now
+        Kill();
+        m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+        collider.GetGameObject()->Disable();
+        game_objects->erase(collider.GetGameObject());
+    }
+}
+
 void
 Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor>& floor, float *camera_x,
-               ObjectPool<Bullet> *bullet_pool) {
+               ObjectPool<Bullet> *bullet_pool, Grid* grid, int player_collision_layer) {
     position = Vector2D(100, 0);
     auto *renderer = new AnimationRenderer();
     renderer->Create(engine, this, game_objects, spritesheet, camera_x);
@@ -308,12 +321,18 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
             32, 23, 16, 23,
             "Die", AnimationRenderer::STOP_AND_LAST
     });
-    AddComponent(renderer);
 
     auto *gravity = new Gravity();
     gravity->Create(engine, this, game_objects, floor);
-    AddComponent(gravity);
-    auto playerControl = new PlayerControl();
+    auto *playerControl = new PlayerControl();
     playerControl->Create(engine, this, game_objects, floor, camera_x, bullet_pool);
+    auto *collider = new BoxCollider();
+    collider->Create(engine, this, game_objects, grid,
+            -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
+            6 * PIXELS_ZOOM,34 * PIXELS_ZOOM, -1, player_collision_layer);
+    collider->SetListener(playerControl);
+    AddComponent(gravity);
     AddComponent(playerControl);
+    AddComponent(renderer);
+    AddComponent(collider);
 }

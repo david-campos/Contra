@@ -5,47 +5,75 @@
 #include <set>
 #include "vector2D.h"
 
-enum Message { GAME_OVER, HIT, NO_MSG };
+enum Message {
+    GAME_OVER, HIT, NO_MSG
+};
 
 class Component;
 
-class GameObject
-{
+class GameObject {
+private:
+    bool enabled;
 protected:
-	std::vector<GameObject*> receivers;
-	std::vector<Component*> components;
+    std::vector<GameObject *> receivers;
+    std::vector<Component *> components;
 
-	std::string id;
-
+    int id;
 public:
-	Vector2D position;
-	bool enabled;
+    static int s_nextId;
+    Vector2D position;
 
-	virtual ~GameObject();
+    GameObject() {
+        id = s_nextId++;
+    }
 
-	virtual void Create();
-	virtual void AddComponent(Component * component);
+    virtual ~GameObject();
 
-	virtual void Init();
-	virtual void Update(float dt);
-	virtual void Destroy();
-	virtual void AddReceiver(GameObject *go);
-	virtual void Receive(Message m) {}
-	void Send(Message m);
+    virtual void Create();
 
-	template<typename T>
-	T GetComponent() {
-		for (Component * c : components) {
-			T t = dynamic_cast<T>(c);  //ugly but it works...
-			if (t != nullptr) {
-				return t;
-			}
-		}
+    virtual void AddComponent(Component *component);
 
-		return nullptr;
-	}
+    virtual void Init();
 
-	std::string getID() {
-		return id;
-	}
+    virtual void Update(float dt);
+
+    virtual void Destroy();
+
+    virtual void AddReceiver(GameObject *go);
+
+    virtual void Receive(Message m) {}
+
+    void OnEnabled();
+    void OnDisabled();
+
+    void Send(Message m);
+
+    void Disable() {
+        enabled = false;
+        OnDisabled();
+    }
+
+    void Enable() {
+        enabled = true;
+        OnEnabled();
+    }
+
+    [[nodiscard]] bool IsEnabled() const { return enabled; }
+
+    template<typename T>
+    T GetComponent() {
+        for (Component *c : components) {
+            T t = dynamic_cast<T>(c);  //ugly but it works...
+            if (t != nullptr) {
+                return t;
+            }
+        }
+
+        return nullptr;
+    }
+
+    int getID() {
+        return id;
+    }
 };
+

@@ -7,21 +7,33 @@
 
 #include <vector>
 #include <algorithm>
-#include "game_object.h"
+#include <unordered_map>
 #include "avancezlib.h"
+#include "game_object.h"
+
+class CollideComponent;
+
+#define GRID_CELL_LAYERS 2
 
 class GridCell {
+    std::set<CollideComponent *> game_objects[GRID_CELL_LAYERS];
 public:
-    std::vector<GameObject *> game_objects;
-
-    void Add(GameObject *game_object) {
-        game_objects.push_back(game_object);
+    std::set<CollideComponent *> *GetLayer(int layer) {
+        if (layer < GRID_CELL_LAYERS && layer >= 0) {
+            return &game_objects[layer];
+        }
+        return nullptr;
     }
 
-    void Remove(GameObject *game_object) {
-        auto position = std::find(game_objects.begin(), game_objects.end(), game_object);
-        if (position != game_objects.end()) {
-            game_objects.erase(position);
+    void Add(CollideComponent *collider, int layer) {
+        if (layer < GRID_CELL_LAYERS && layer >= 0) {
+            game_objects[layer].insert(collider);
+        }
+    }
+
+    void Remove(CollideComponent *collider, int layer) {
+        if (layer < GRID_CELL_LAYERS && layer >= 0) {
+            game_objects[layer].erase(collider);
         }
     }
 };
@@ -29,6 +41,7 @@ public:
 class Grid {
 private:
     std::vector<GridCell> cells;
+    std::unordered_map<CollideComponent *, std::unordered_map<CollideComponent *, bool>> collision_cache;
     int cell_size;
     int row_size;
     int col_size;
@@ -42,11 +55,36 @@ public:
         return &cells[y * row_size + x];
     }
 
-    void GetOccupiedCells(CellsSquare &output, const Vector2D &position) {
-        output.min_cell_x = std::min(std::max((int) floor(position.x / cell_size), 0), row_size - 1);
-        output.max_cell_x = std::min(std::max((int) floor((position.x + 32) / cell_size), 0), row_size - 1);
-        output.min_cell_y = std::min(std::max((int) floor(position.y / cell_size), 0), col_size - 1);
-        output.max_cell_y = std::min(std::max((int) floor((position.y + 32) / cell_size), 0), col_size - 1);
+    /**
+     * Clears the collision cache, should be made before starting each frame
+     */
+    void ClearCollisionCache() {
+        collision_cache.clear();
+    }
+
+    /**
+     * Returns 1 if the collision of a to b was cached as true, 0 if it was false,
+     * or -1 if it was not cached.
+     * @param a
+     * @param b
+     * @return
+     */
+    short GetCollisionCached(CollideComponent *a, CollideComponent *b) const {
+        if (collision_cache.count(a) > 0) {
+            auto a_cache = collision_cache.at(a);
+            if (a_cache.count(b) > 0) {
+                return a_cache.at(b) ? 1 : 0;
+            }
+        }
+        return -1;
+    }
+
+    void NotifyCacheCollision(CollideComponent *a, CollideComponent *b, bool colliding) {
+        if (collision_cache.count(a) == 0) {
+            std::pair<CollideComponent*, std::unordered_map<CollideComponent*, bool>> new_cache(a, {});
+            collision_cache.insert(new_cache);
+        }
+        collision_cache.at(a)[b] = colliding;
     }
 
     void Create(int cell_size, int width, int height) {
@@ -62,20 +100,19 @@ public:
         }
     }
 
-    void Update(GameObject *go, std::set<GridCell *> &occupiedCells) {
-        CellsSquare occupied_now{};
-        GetOccupiedCells(occupied_now, go->position);
-        for (auto cell: occupiedCells) {
-            cell->Remove(go);
-        }
-        occupiedCells.clear();
-        for (int y = occupied_now.min_cell_y; y <= occupied_now.max_cell_y; y++) {
-            for (int x = occupied_now.min_cell_x; x <= occupied_now.max_cell_x; x++) {
-                GridCell *cell = GetCell(x, y);
-                cell->Add(go);
-                occupiedCells.insert(cell);
-            }
-        }
+    void Update(CollideComponent *collider);
+    void Remove(CollideComponent *collider);
+
+    [[nodiscard]] int getCellSize() const {
+        return cell_size;
+    }
+
+    [[nodiscard]] int getRowSize() const {
+        return row_size;
+    }
+
+    [[nodiscard]] int getColSize() const {
+        return col_size;
     }
 };
 

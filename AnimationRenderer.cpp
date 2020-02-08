@@ -8,7 +8,7 @@
 #include <utility>
 
 void AnimationRenderer::Update(float dt) {
-    if (!go->enabled || !enabled || !sprite || !m_currentAnimation)
+    if (!go->IsEnabled() || !enabled || !sprite || !m_currentAnimation)
         return;
 
     if (playing) {

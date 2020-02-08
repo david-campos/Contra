@@ -202,6 +202,19 @@ void AvancezLib::fillSquare(int x, int y, int side, SDL_Color color) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 255);
 }
 
+void AvancezLib::strokeSquare(int tl_x, int tl_y, int br_x, int br_y, SDL_Color color) {
+	SDL_Rect rect;
+	rect.x = tl_x;
+	rect.y = tl_y;
+	rect.w = br_x - tl_x;
+	rect.h = br_y - tl_y;
+
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+	SDL_RenderDrawRect(renderer, &rect);
+
+	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 255);
+}
+
 float AvancezLib::getElapsedTime() {
 	return SDL_GetTicks() / 1000.f;
 }

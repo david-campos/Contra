@@ -10,14 +10,14 @@ void Component::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *
 }
 
 void RenderComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                             const char *sprite_name, float* camera_x) {
+                             const char *sprite_name, float *camera_x) {
     Component::Create(engine, go, game_objects);
     sprite.reset(engine->createSprite(sprite_name));
     this->camera_x = camera_x;
 }
 
 void RenderComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                             std::shared_ptr<Sprite> sprite, float* camera_x) {
+                             std::shared_ptr<Sprite> sprite, float *camera_x) {
     Component::Create(engine, go, game_objects);
     this->sprite = std::move(sprite);
     this->camera_x = camera_x;
@@ -28,95 +28,75 @@ void RenderComponent::Destroy() {
 }
 
 
-void CollideComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid) {
+void CollideComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
+                              int layer, int checkLayer) {
     Component::Create(engine, go, game_objects);
     this->grid = grid;
+    this->m_layer = layer;
+    this->m_checkLayer = checkLayer;
 }
-
 
 void CollideComponent::Update(float dt) {
-//    for (auto i = 0; i < coll_objects->pool.size(); i++) {
-//        GameObject *go0 = coll_objects->pool[i];
-//        if (go0->enabled) {
-//            if ((go0->position.x > go->position.x - 10) &&
-//                (go0->position.x < go->position.x + 10) &&
-//                (go0->position.y > go->position.y - 10) &&
-//                (go0->position.y < go->position.y + 10)) {
-//                go->Receive(HIT);
-//                go0->Receive(HIT);
-//            }
-//        }
-//    }
-}
-
-void CircleCollideComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                                    Grid *grid, double radius) {
-    CollideComponent::Create(engine, go, game_objects, grid);
-    this->radius = radius;
-}
-
-
-void CircleCollideComponent::Update(float dt) {
-
-    //If we are using a uniform grid, instead query the grid. The grid should then return a number of potential
-    // ball objects that we then check for collisions with.
-    Grid::CellsSquare square{};
-    grid->GetOccupiedCells(square, go->position);
-
-    for (int y = square.min_cell_y; y <= square.max_cell_y; y++) {
-        for (int x = square.min_cell_x; x <= square.max_cell_x; x++) {
-            auto coll_objects = &grid->GetCell(x, y)->game_objects;
-            for (auto i = 0; i < coll_objects->size(); i++) {
-                GameObject *go0 = (*coll_objects)[i];
-
-                if (go0 != go && go0->enabled) {
-                    CircleCollideComponent *otherCollider = go0->GetComponent<CircleCollideComponent *>();
-                    //if the other GameObject doesn't have a CircleColliderComponent we shouldn't go in here...
-                    if (otherCollider != nullptr) {
-                        // We don't need to shift the centers as shifting both will cancel when substracting
-                        // one from the other (although the centers should be shifted 16 pixels in each axis
-                        // to obtain the real centers).
-                        auto goTogo0 = go0->position - go->position;
-                        float distanceBetweenCircleCenters = goTogo0.magnitude();
-                        bool intersection = distanceBetweenCircleCenters <= radius + otherCollider->radius;
-
-                        if (intersection) {
-                            RigidBodyComponent *rigidBodyComponent = go->GetComponent<RigidBodyComponent *>();
-                            RigidBodyComponent *rigidBodyComponent0 = go0->GetComponent<RigidBodyComponent *>();
-
-                            Vector2D goTogo0Normalized = goTogo0 / distanceBetweenCircleCenters;
-
-                            double dotProduct = rigidBodyComponent->velocity.dotProduct(goTogo0Normalized);
-                            double dotProduct0 = rigidBodyComponent0->velocity.dotProduct(goTogo0Normalized);
-
-                            rigidBodyComponent->velocity = goTogo0Normalized * dotProduct0;
-                            rigidBodyComponent0->velocity =
-                                    rigidBodyComponent0->velocity - goTogo0Normalized * dotProduct;
+    if (m_checkLayer >= 0) {
+        Grid::CellsSquare square{};
+        GetOccupiedCells(square);
+        // Check collisions with our layer
+        for (int y = square.min_cell_y; y <= square.max_cell_y; y++) {
+            for (int x = square.min_cell_x; x <= square.max_cell_x; x++) {
+                auto *layer = grid->GetCell(x, y)->GetLayer(m_checkLayer);
+                for (auto *collider: *layer) {
+                    if (collider == this) continue;
+                    // Check if the other collider had already registered a collision with me
+                    short collision = grid->GetCollisionCached(collider, this);
+                    if (collision == 1) {
+                        SendCollision(*collider); // It had already been checked
+                    } else if (collision == -1) {
+                        if (grid->GetCollisionCached(this, collider) != -1) {
+                            continue; // Skip if we found it in a previous cell
                         }
+                        bool colliding = IsColliding(*collider);
+                        grid->NotifyCacheCollision(this, collider, colliding); // Notify my result
+                        if (colliding) SendCollision(*collider); // Notify my listener that I am colliding with collider
                     }
                 }
             }
         }
     }
+    // Update our layer information
+    if (m_layer >= 0) grid->Update(this);
 }
 
-double CircleCollideComponent::getRadius() const {
-    return radius;
+void CollideComponent::Destroy() {
+    if (m_layer >= 0) grid->Remove(this);
+    Component::Destroy();
 }
 
-
-void RigidBodyComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid) {
-    Component::Create(engine, go, game_objects);
-    this->grid = grid;
+void CollideComponent::OnGameObjectDisabled() {
+    if (m_layer >= 0) grid->Remove(this);
 }
 
-void RigidBodyComponent::Update(float dt) {
-    //Forward Euler method:
-    go->position = go->position + velocity * dt;
-    grid->Update(go, occupiedCells);
+void BoxCollider::GetOccupiedCells(Grid::CellsSquare &square) {
+    int cell_size = grid->getCellSize();
+    int row_size = grid->getRowSize();
+    int col_size = grid->getColSize();
+    square.min_cell_x = std::min(std::max((int) floor((go->position.x + local_tl_x) / cell_size), 0), row_size - 1);
+    square.max_cell_x = std::min(std::max((int) floor((go->position.x + local_br_x) / cell_size), 0), row_size - 1);
+    square.min_cell_y = std::min(std::max((int) floor((go->position.y + local_tl_y) / cell_size), 0), col_size - 1);
+    square.max_cell_y = std::min(std::max((int) floor((go->position.y + local_br_y) / cell_size), 0), col_size - 1);
 }
 
-void RigidBodyComponent::Init() {
-    Component::Init();
-    SDL_Log("RigidBody::Init");
+bool BoxCollider::IsColliding(const CollideComponent &other) {
+    auto *other_box = dynamic_cast< const BoxCollider * >( &other );
+    if (other_box) {
+        float a_x_min = AbsoluteTopLeftX(),
+                a_x_max = AbsoluteBottomRighX(),
+                a_y_min = AbsoluteTopLeftY(),
+                a_y_max = AbsoluteBottomRightY(),
+                b_x_min = other_box->AbsoluteTopLeftX(),
+                b_x_max = other_box->AbsoluteBottomRighX(),
+                b_y_min = other_box->AbsoluteTopLeftY(),
+                b_y_max = other_box->AbsoluteBottomRightY();
+        return a_x_max >= b_x_min && b_x_max >= a_x_min
+               && a_y_max >= b_y_min && b_y_max >= a_y_min;
+    }
 }

@@ -41,7 +41,7 @@ public:
 	T* FirstAvailable()
 	{
 		for (auto it = pool.begin(); it != pool.end(); it++)
-			if (!(**it).enabled)
+			if (!(**it).IsEnabled())
 				return (*it);
 
 		// if it reaches this point, there is no available object in the pool

@@ -2,6 +2,8 @@
 #include "component.h"
 #include "avancezlib.h"
 
+int GameObject::s_nextId = 0;
+
 void GameObject::Create() {
     SDL_Log("GameObject::Create");
 
@@ -23,11 +25,11 @@ void GameObject::Init() {
 }
 
 void GameObject::Update(float dt) {
-    if (!enabled)
-        return;
-
-    for (auto it = components.begin(); it != components.end(); it++)
+    for (auto it = components.begin(); it != components.end(); it++) {
+        if (!enabled)
+            return;
         (*it)->Update(dt);
+    }
 }
 
 void GameObject::Destroy() {
@@ -50,4 +52,14 @@ void GameObject::Send(Message m) {
 
         receivers[i]->Receive(m);
     }
+}
+
+void GameObject::OnEnabled() {
+    for (auto it = components.begin(); it != components.end(); it++)
+        (*it)->OnGameObjectEnabled();
+}
+
+void GameObject::OnDisabled() {
+    for (auto it = components.begin(); it != components.end(); it++)
+        (*it)->OnGameObjectDisabled();
 }

@@ -24,6 +24,8 @@ public:
     virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects);
 
     virtual void Init() {}
+    virtual void OnGameObjectEnabled() {}
+    virtual void OnGameObjectDisabled() {}
 
     virtual void Update(float dt) = 0;
 
@@ -44,43 +46,104 @@ public:
 
     virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
                         std::shared_ptr<Sprite> sprite, float *camera_x);
+
     void Destroy() override;
+
     std::weak_ptr<Sprite> GetSprite() { return sprite; }
 };
 
+class CollideComponentListener {
+public:
+    virtual void OnCollision(const CollideComponent& collider) = 0;
+};
 
 class CollideComponent : public Component {
 protected:
     Grid *grid;
+    Grid::CellsSquare is_occupying;
+    int m_layer, m_checkLayer;
+    CollideComponentListener* listener = nullptr;
 public:
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid);
+    /**
+     * Creates the collide component
+     * @param engine
+     * @param go
+     * @param game_objects
+     * @param grid
+     * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
+     * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
+     */
+    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
+                int layer, int checkLayer);
+    /**
+     * Changes the listener for the collisions of the collider, be aware if there was a previous
+     * one assigned that one will be discarded
+     * @param collideComponentListener
+     */
+    void SetListener(CollideComponentListener* collideComponentListener) {this->listener = collideComponentListener;}
+    void Destroy() override;
 
-    virtual void Update(float dt);
+    void OnGameObjectDisabled() override;
+
+    [[nodiscard]] GameObject *GetGameObject() const { return go; }
+    [[nodiscard]] int GetLayer() const { return m_layer; }
+    void GetPreviouslyOccupiedCells(Grid::CellsSquare &square) {
+        square = is_occupying;
+        GetOccupiedCells(is_occupying); // Update for next time
+    }
+
+    /**
+     * Colliders must implement this function to get the cells the collider occupies
+     * @param square
+     */
+    virtual void GetOccupiedCells(Grid::CellsSquare &square) = 0;
+    /**
+     * Colliders must implement this function to check if they are colliding with
+     * the given collider.
+     * @param other
+     */
+    virtual bool IsColliding(const CollideComponent &other) = 0;
+    void Update(float dt) override;
+    void SendCollision(const CollideComponent& other) {
+        if (listener) listener->OnCollision(other);
+    }
 };
 
-class CircleCollideComponent : public CollideComponent {
-    double radius;
-
+class BoxCollider : public CollideComponent {
+protected:
+    int local_tl_x, local_tl_y, local_br_x, local_br_y;
+    void GetOccupiedCells(Grid::CellsSquare &square) override;
+    bool IsColliding(const CollideComponent &other) override;
 public:
-    virtual void
-    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, double radius);
+    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
+                        int local_top_left_x, int local_top_left_y, int width, int height, int layer,  int checkLayer) {
+        CollideComponent::Create(engine, go, game_objects, grid, layer, checkLayer);
+        local_tl_x = local_top_left_x;
+        local_tl_y = local_top_left_y;
+        local_br_x = local_top_left_x + width;
+        local_br_y = local_top_left_y + height;
+    }
+//    void Update(float dt) override {
+//        CollideComponent::Update(dt);
+//        engine->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
+//                AbsoluteTopLeftY(), AbsoluteBottomRighX() - *m_camera_x, AbsoluteBottomRightY(),
+//                {0, 0, 255});
+//    }
 
-    virtual void Update(float dt);
+    [[nodiscard]] float AbsoluteTopLeftX() const {
+        return float(go->position.x) + float(local_tl_x);
+    }
 
-    double getRadius() const;
+    [[nodiscard]] float AbsoluteTopLeftY() const {
+        return float(go->position.y) + float(local_tl_y);
+    }
+
+    [[nodiscard]] float AbsoluteBottomRighX() const {
+        return float(go->position.x) + float(local_br_x);
+    }
+
+    [[nodiscard]] float AbsoluteBottomRightY() const {
+        return float(go->position.y) + float(local_br_y);
+    }
 };
 
-
-class RigidBodyComponent : public Component {
-private:
-    Grid *grid;
-    std::set<GridCell *> occupiedCells;
-public:
-    Vector2D velocity, acceleration;
-
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid);
-
-    void Init() override;
-
-    virtual void Update(float dt);
-};

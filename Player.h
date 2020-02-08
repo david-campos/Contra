@@ -22,10 +22,10 @@ class Player : public GameObject {
 public:
     void Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                 const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
-                ObjectPool<Bullet> *bullet_pool);
+                ObjectPool<Bullet> *bullet_pool, Grid* grid, int player_layer);
 };
 
-class PlayerControl : public Component {
+class PlayerControl : public Component, public CollideComponentListener {
 public:
     void Init() override;
 
@@ -42,6 +42,8 @@ public:
     void Kill();
 
     void Respawn();
+
+    void OnCollision(const CollideComponent &collider) override;
 
     [[nodiscard]] short getRemainingLives() const { return m_remainingLives; }
 
