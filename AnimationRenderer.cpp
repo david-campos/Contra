@@ -12,25 +12,36 @@ void AnimationRenderer::Update(float dt) {
         return;
 
     if (playing) {
-        m_currentTime += dt;
+        m_currentTime += m_goingForward ? dt : -dt;
     }
 
     int frame = floor(m_currentTime / m_currentAnimation->speed);
-    // Check to loop the animation
-    while (frame >= m_currentAnimation->frames) {
+
+    // Check if it is over the top or bellow zero to loop the animation
+    float animation_duration = (float) m_currentAnimation->frames * m_currentAnimation->speed;
+    while (frame >= m_currentAnimation->frames || frame < 0) {
         if (m_currentAnimation->stop == DONT_STOP) {
-            m_currentTime -= (float) frame * m_currentAnimation->speed;
-            frame = floor(m_currentTime / m_currentAnimation->speed);
-        } else {
+            float modulo = abs(fmod(m_currentTime, animation_duration));
+            if (m_goingForward) {
+                m_currentTime = modulo;
+            } else {
+                m_currentTime = animation_duration - modulo;
+            }
+        } else if (m_currentAnimation->stop == BOUNCE) {
+            float modulo = fmod(m_currentTime, animation_duration);
+            m_currentTime = m_currentTime < 0
+                            ? -modulo + m_currentAnimation->speed // We add speed to avoid repeating frame 0
+                            : animation_duration - modulo - m_currentAnimation->speed; // We subtract speed to avoid repeating last frame
+            m_goingForward = !m_goingForward;
+        } else { // Stop and last or stop and first
             Pause();
             if (m_currentAnimation->stop == STOP_AND_FIRST) {
                 m_currentTime = 0;
-                frame = 0;
             } else {
-                frame = m_currentAnimation->frames - 1;
-                m_currentTime = (float) frame * m_currentAnimation->speed;
+                m_currentTime = (float) (m_currentAnimation->frames - 1) * m_currentAnimation->speed;
             }
         }
+        frame = floor(m_currentTime / m_currentAnimation->speed);
     }
     // Flip the anchor shift in x if we are mirroring horizontally (so the shift is correct)
     int x_shift = (mirrorHorizontal
@@ -46,6 +57,7 @@ void AnimationRenderer::Update(float dt) {
             m_currentAnimation->frame_w, m_currentAnimation->frame_h,
             mirrorHorizontal
     );
+    engine->fillSquare(round(go->position.x) - 2 - *camera_x, round(go->position.y) - 2, 4, {255, 0, 0});
 }
 
 int AnimationRenderer::AddAnimation(AnimationRenderer::Animation animation) {
@@ -62,30 +74,31 @@ int AnimationRenderer::AddAnimation(AnimationRenderer::Animation animation) {
     return (int) m_animations.size() - 1;
 }
 
-void AnimationRenderer::CurrentAndPause(int index) {
+void AnimationRenderer::CurrentAndPause(int index, bool forward) {
     if (index < 0 || index >= m_animations.size()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                     "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
+                "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
         return;
     }
     if (m_currentAnimation != &m_animations[index]) {
         m_currentAnimation = &m_animations[index];
         m_currentTime = 0.f;
+        m_goingForward = forward;
         Pause();
     }
 }
 
-void AnimationRenderer::PlayAnimation(int index) {
+void AnimationRenderer::PlayAnimation(int index, bool forward) {
     if (index < 0 || index >= m_animations.size()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                     "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
+                "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
         return;
     }
     if (m_currentAnimation != &m_animations[index]) {
         m_currentAnimation = &m_animations[index];
         m_currentTime = 0.f;
+        Play(-1, forward);
     }
-    Play();
 }
 
 bool AnimationRenderer::IsCurrent(int animationIndex) {
@@ -106,8 +119,9 @@ void AnimationRenderer::Stop() {
     m_currentTime = 0;
 }
 
-void AnimationRenderer::Play(int frame) {
+void AnimationRenderer::Play(int frame, bool forward) {
     GoToFrame(frame);
+    m_goingForward = forward;
     playing = true;
 }
 

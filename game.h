@@ -6,6 +6,7 @@
 #include "Player.h"
 #include "SimpleRenderer.h"
 #include "bullets.h"
+#include "Tank.h"
 
 #define LIFE_SPRITE_WIDTH 8
 #define LIFE_SPRITE_HEIGHT 16
@@ -17,14 +18,13 @@
 
 class Game : public GameObject {
 private:
-    void CreatePlayer();
-
     std::set<GameObject *> game_objects;    // http://www.cplusplus.com/reference/set/set/
 
     Sprite *background;
     AvancezLib *engine;
     std::shared_ptr<Floor> level_floor;
     std::shared_ptr<Sprite> spritesheet;
+    std::shared_ptr<Sprite> enemies_spritesheet;
     ObjectPool<Bullet>* bullets;
     Player *player;
     PlayerControl *playerControl;
@@ -37,6 +37,9 @@ public:
         background = engine->createSprite("data/level1/background.png");
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
+        enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
+
+        // Create bullet pool
         bullets = new ObjectPool<Bullet>();
         bullets->Create(MAX_BULLETS);
         for (auto* bullet: bullets->pool) {
@@ -49,10 +52,24 @@ public:
             behaviour->Create(engine, bullet, &game_objects, &camera_x);
             bullet->AddComponent(behaviour);
         }
-        CreatePlayer();
+
+        player = new Player();
+        auto* tank = new Tank();
+
+        // Tank
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(1264, 152) * PIXELS_ZOOM, player, bullets);
+        tank->AddReceiver(this);
+        game_objects.insert(tank);
+
+        // Player
+        player->Create(engine, &game_objects, spritesheet, level_floor, &camera_x, bullets);
+        playerControl = player->GetComponent<PlayerControl*>();
+        player->AddReceiver(this);
+        game_objects.insert(player);
     }
 
-    virtual void Init() {
+    void Init() override {
         for (auto *go: game_objects) {
             go->Init();
         }
@@ -61,11 +78,11 @@ public:
         game_over = false;
     }
 
-    virtual void Update(float dt) {
+    void Update(float dt) override {
         AvancezLib::KeyStatus keys{};
         engine->getKeyStatus(keys);
         if (keys.esc) {
-            destroy();
+            Destroy();
             engine->quit();
         }
 
@@ -111,7 +128,7 @@ public:
         engine->clearWindow();
     }
 
-    virtual void Receive(Message m) {
+    void Receive(Message m) override {
         if (m == GAME_OVER) {
             game_over = true;
         }
@@ -122,7 +139,7 @@ public:
         return game_over;
     }
 
-    virtual void destroy() {
+    void Destroy() override {
         SDL_Log("Game::Destroy");
         for (auto game_object : game_objects)
             game_object->Destroy();

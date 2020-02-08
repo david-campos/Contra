@@ -220,3 +220,100 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
         game_objects->insert(bullet);
     }
 }
+
+void
+Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+               const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor>& floor, float *camera_x,
+               ObjectPool<Bullet> *bullet_pool) {
+    position = Vector2D(100, 0);
+    auto *renderer = new AnimationRenderer();
+    renderer->Create(engine, this, game_objects, spritesheet, camera_x);
+    renderer->AddAnimation({
+            0, 8, 0.1, 2,
+            24, 34, 8, 33,
+            "Idle", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            49, 0, 0.1, 2,
+            15, 42, 7, 42,
+            "Up", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            79, 25, 0.1, 2,
+            33, 17, 16, 17,
+            "Crawl", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            0, 43, 0.1, 6,
+            20, 35, 10, 35,
+            "Run", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            80, 43, 1, 1,
+            20, 35, 10, 35,
+            "Fall", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            0, 79, 0.1, 3,
+            25, 34, 12, 34,
+            "RunShoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            0, 149, 0.1, 3,
+            20, 35, 10, 35,
+            "RunUp", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            0, 221, 0.1, 3,
+            22, 35, 11, 35,
+            "RunDown", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            122, 52, 0.1, 4,
+            20, 20, 10, 26,
+            "Jump", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            0, 307, 0.2, 1,
+            18, 16, 9, 13,
+            "Splash", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            18, 303, 0.2, 2,
+            17, 16, 8, 12,
+            "Dive", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            52, 303, 0.2, 2,
+            17, 16, 8, 12,
+            "Swim", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            60, 328, 0.2, 2,
+            26, 18, 13, 14,
+            "SwimShoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            90, 299, 0.2, 2,
+            20, 20, 10, 16,
+            "SwimShootDiagonal", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            130, 290, 0.2, 2,
+            18, 29, 9, 25,
+            "SwimShootUp", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            61, 161, 0.1, 5,
+            32, 23, 16, 23,
+            "Die", AnimationRenderer::STOP_AND_LAST
+    });
+    AddComponent(renderer);
+
+    auto *gravity = new Gravity();
+    gravity->Create(engine, this, game_objects, floor);
+    AddComponent(gravity);
+    auto playerControl = new PlayerControl();
+    playerControl->Create(engine, this, game_objects, floor, camera_x, bullet_pool);
+    AddComponent(playerControl);
+}

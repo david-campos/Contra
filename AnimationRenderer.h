@@ -18,6 +18,7 @@ public:
     bool enabled = true; // is the rendering enabled?
     enum AnimationStop {
         DONT_STOP, // Loop animation
+        BOUNCE, // Go back and forth between the frames
         STOP_AND_FIRST, // Stop and stay at first frame
         STOP_AND_LAST // Stop and stay at last frame
     };
@@ -44,17 +45,20 @@ public:
     int AddAnimation(Animation animation);
 
     /** Plays the indicated animation */
-    void PlayAnimation(int index);
+    void PlayAnimation(int index, bool forward = true);
+
     /**
      * If the animation is not being played right now, it changes
      * the current animation to it but pausing it in the first frame.
      */
-    void CurrentAndPause(int index);
+    void CurrentAndPause(int index, bool forward = true);
 
     /** Plays the animation if it was stopped, optionally you can choose a frame to start from */
-    void Play(int frame=-1);
+    void Play(int frame = -1, bool forward = true);
+
     /** Pauses the animation */
     void Pause();
+
     /** Stops the animation if it was playing */
     void Stop();
 
@@ -76,11 +80,14 @@ public:
     void GoToFrame(int frame);
 
     void Update(float dt) override;
+
 private:
     std::vector<AnimationRenderer::Animation> m_animations;
     Animation *m_currentAnimation = nullptr;
     float m_currentTime;
     bool playing;
+    /** Determines the direction of the animation, if it is false time goes backwards */
+    bool m_goingForward = true;
 };
 
 

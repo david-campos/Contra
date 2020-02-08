@@ -155,7 +155,6 @@ Sprite *AvancezLib::createSprite(const char *path) {
 					 SDL_GetError());
 		return NULL;
 	}
-	SDL_SetColorKey(surf, SDL_TRUE, SDL_MapRGB(surf->format, 0xFF, 0xFF, 0xFF));
 
 	//Create texture from surface pixels
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surf);
@@ -171,8 +170,8 @@ Sprite *AvancezLib::createSprite(const char *path) {
 }
 
 void AvancezLib::drawText(int x, int y, const char *msg) {
-	SDL_Color black = {0, 0,
-					   0};  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
+	SDL_Color black = {255, 255,
+					   255};  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
 
 	SDL_Surface *surf = TTF_RenderText_Solid(font, msg,
 											 black); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first

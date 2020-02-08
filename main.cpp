@@ -20,6 +20,10 @@ int main() {
     game.Init();
 
     float lastTime = engine.getElapsedTime();
+    char fps[100];
+    float smoothedDt = 0.004;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true) {
         float newTime = engine.getElapsedTime();
         float dt = newTime - lastTime;
@@ -30,6 +34,7 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(4 - dtMillis));
             newTime = engine.getElapsedTime();
             dt = newTime - lastTime;
+            smoothedDt = smoothedDt * 0.99f + dt * 0.01f;
         }
 
         dt = dt * game_speed;
@@ -37,11 +42,14 @@ int main() {
 
         engine.processInput();
         game.Update(dt);
+        sprintf(fps, "FPS: %d", (int) round(1 / smoothedDt));
+        engine.drawText(0, 0, fps);
         game.Draw();
     }
+#pragma clang diagnostic pop
 
     // clean up
-    game.destroy();
+    game.Destroy();
     engine.destroy();
 
     return 0;
