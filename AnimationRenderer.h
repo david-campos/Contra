@@ -19,6 +19,7 @@ public:
     enum AnimationStop {
         DONT_STOP, // Loop animation
         BOUNCE, // Go back and forth between the frames
+        BOUNCE_AND_STOP, // Go forward, come back and stop
         STOP_AND_FIRST, // Stop and stay at first frame
         STOP_AND_LAST // Stop and stay at last frame
     };

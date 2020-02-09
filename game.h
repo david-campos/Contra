@@ -58,7 +58,7 @@ public:
             auto *behaviour = new BulletBehaviour();
             behaviour->Create(engine, bullet, &game_objects, &camera_x);
             auto *box_collider = new BoxCollider();
-            box_collider->Create(engine, bullet, &game_objects, &grid,
+            box_collider->Create(engine, bullet, &game_objects, &grid, &camera_x,
                     -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                     3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
@@ -77,7 +77,7 @@ public:
             auto *behaviour = new BulletBehaviour();
             behaviour->Create(engine, bullet, &game_objects, &camera_x);
             auto *box_collider = new BoxCollider();
-            box_collider->Create(engine, bullet, &game_objects, &grid,
+            box_collider->Create(engine, bullet, &game_objects, &grid, &camera_x,
                     -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                     3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
@@ -93,27 +93,27 @@ public:
 
         auto *tank = new Tank();
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets);
+                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects.insert(tank);
         tank = new Tank();
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets);
+                Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects.insert(tank);
         tank = new Tank();
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets);
+                Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects.insert(tank);
         tank = new Tank();
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets);
+                Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects.insert(tank);
         tank = new Tank();
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets);
+                Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects.insert(tank);
 

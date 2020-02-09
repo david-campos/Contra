@@ -17,15 +17,17 @@ private:
     Vector2D m_direction;
     float *m_cameraX;
     int m_speed;
+    int m_damage;
 public:
     void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, float *camera_x) {
         Component::Create(engine, go, game_objects);
         m_cameraX = camera_x;
     }
 
-    void Init(const Vector2D &direction, int speed = BULLET_SPEED) {
+    void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1) {
         m_direction = direction;
         m_speed = speed;
+        m_damage = damage;
     }
 
     void Update(float dt) override {
@@ -36,6 +38,13 @@ public:
             go->Disable();
         }
     }
+
+    void Kill() {
+        game_objects->erase(go);
+        go->Disable();
+    }
+
+    [[nodiscard]] int GetDamage() const { return m_damage; }
 };
 
 class Bullet : public GameObject {

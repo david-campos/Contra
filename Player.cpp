@@ -226,11 +226,12 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
     if (m_invincibleTime <= 0 && !m_isDeath) {
-        // Only npc bullets collide with the player by now
-        Kill();
-        m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
-        collider.GetGameObject()->Disable();
-        game_objects->erase(collider.GetGameObject());
+        auto* bullet = collider.GetGameObject()->GetComponent<BulletBehaviour*>();
+        if (bullet) {
+            Kill();
+            m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+            bullet->Kill();
+        }
     }
 }
 
@@ -327,7 +328,7 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     auto *playerControl = new PlayerControl();
     playerControl->Create(engine, this, game_objects, floor, camera_x, bullet_pool);
     auto *collider = new BoxCollider();
-    collider->Create(engine, this, game_objects, grid,
+    collider->Create(engine, this, game_objects, grid, camera_x,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
             6 * PIXELS_ZOOM,34 * PIXELS_ZOOM, -1, player_collision_layer);
     collider->SetListener(playerControl);

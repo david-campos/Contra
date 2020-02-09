@@ -27,12 +27,18 @@ void AnimationRenderer::Update(float dt) {
             } else {
                 m_currentTime = animation_duration - modulo;
             }
-        } else if (m_currentAnimation->stop == BOUNCE) {
-            float modulo = fmod(m_currentTime, animation_duration);
-            m_currentTime = m_currentTime < 0
-                            ? -modulo + m_currentAnimation->speed // We add speed to avoid repeating frame 0
-                            : animation_duration - modulo - m_currentAnimation->speed; // We subtract speed to avoid repeating last frame
-            m_goingForward = !m_goingForward;
+        } else if (m_currentAnimation->stop == BOUNCE || m_currentAnimation->stop == BOUNCE_AND_STOP) {
+            if (!m_goingForward && m_currentAnimation->stop == BOUNCE_AND_STOP) {
+                Pause();
+                m_currentTime = 0;
+            } else {
+                float modulo = fmod(m_currentTime, animation_duration);
+                m_currentTime = m_currentTime < 0
+                                ? -modulo + m_currentAnimation->speed // We add speed to avoid repeating frame 0
+                                : animation_duration - modulo -
+                                  m_currentAnimation->speed; // We subtract speed to avoid repeating last frame
+                m_goingForward = !m_goingForward;
+            }
         } else { // Stop and last or stop and first
             Pause();
             if (m_currentAnimation->stop == STOP_AND_FIRST) {

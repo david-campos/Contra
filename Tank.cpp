@@ -7,7 +7,8 @@
 
 void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                   const std::shared_ptr<Sprite> &enemies_spritesheet,
-                  float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool) {
+                  float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
+                  Grid* grid, int layer) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -34,15 +35,34 @@ void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
             1 + anim_len * frame_side, 110, anim_speed, anim_len,
             frame_side, frame_side, frame_side / 2, frame_side / 2,
             "Opening", AnimationRenderer::STOP_AND_FIRST});
+    renderer->AddAnimation({
+            92, 611, anim_speed, anim_len,
+            30, 30, 15, 15,
+            "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new TankBehaviour();
     behaviour->Create(engine, this, game_objects, player, bullet_pool);
+    auto *collider = new BoxCollider();
+    collider->Create(engine, this, game_objects, grid, camera_x,
+            -13 * PIXELS_ZOOM, -13 * PIXELS_ZOOM,
+            26 * PIXELS_ZOOM, 26 * PIXELS_ZOOM, -1, layer);
+    collider->SetListener(behaviour);
 
     AddComponent(behaviour);
     AddComponent(renderer);
+    AddComponent(collider);
 }
 
 void TankBehaviour::Update(float dt) {
+    if (m_life == 0) {
+        if (!m_animator->IsCurrent(animDie)) {
+            m_animator->PlayAnimation(animDie);
+        } else if (!m_animator->IsPlaying()) {
+            go->Destroy();
+            game_objects->erase(go);
+        }
+        return;
+    }
     Vector2D player_dir = m_player->GetGameObject()->position - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     switch (m_state) {
         case HIDDEN:
@@ -110,5 +130,15 @@ void TankBehaviour::Fire() {
         float rad = -0.5236f * (float) m_dir;
         bullet->Init(go->position, Vector2D(cosf(rad), -sinf(rad)), 160); // Notice our system has y inverted
         game_objects->insert(bullet);
+    }
+}
+
+void TankBehaviour::OnCollision(const CollideComponent &collider) {
+    if (m_life > 0 && m_state == SHOWN) {
+        auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
+        if (bullet) {
+            m_life -= bullet->GetDamage();
+            bullet->Kill();
+        }
     }
 }

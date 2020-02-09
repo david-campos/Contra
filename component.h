@@ -114,21 +114,23 @@ protected:
     int local_tl_x, local_tl_y, local_br_x, local_br_y;
     void GetOccupiedCells(Grid::CellsSquare &square) override;
     bool IsColliding(const CollideComponent &other) override;
+    float* m_camera_x;
 public:
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
+    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float* camera_x,
                         int local_top_left_x, int local_top_left_y, int width, int height, int layer,  int checkLayer) {
         CollideComponent::Create(engine, go, game_objects, grid, layer, checkLayer);
         local_tl_x = local_top_left_x;
         local_tl_y = local_top_left_y;
         local_br_x = local_top_left_x + width;
         local_br_y = local_top_left_y + height;
+        m_camera_x = camera_x;
     }
-//    void Update(float dt) override {
-//        CollideComponent::Update(dt);
-//        engine->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
-//                AbsoluteTopLeftY(), AbsoluteBottomRighX() - *m_camera_x, AbsoluteBottomRightY(),
-//                {0, 0, 255});
-//    }
+    void Update(float dt) override {
+        CollideComponent::Update(dt);
+        engine->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
+                AbsoluteTopLeftY(), AbsoluteBottomRighX() - *m_camera_x, AbsoluteBottomRightY(),
+                {0, 0, 255});
+    }
 
     [[nodiscard]] float AbsoluteTopLeftX() const {
         return float(go->position.x) + float(local_tl_x);
