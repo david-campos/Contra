@@ -22,7 +22,7 @@
 
 class Game : public GameObject {
 private:
-    std::set<GameObject *> game_objects;    // http://www.cplusplus.com/reference/set/set/
+    std::set<GameObject *> game_objects[RENDERING_LAYERS];
 
     Sprite *background;
     AvancezLib *engine;
@@ -53,12 +53,12 @@ public:
         for (auto *bullet: bullets->pool) {
             bullet->Create();
             auto *renderer = new SimpleRenderer();
-            renderer->Create(engine, bullet, &game_objects, spritesheet, &camera_x,
+            renderer->Create(engine, bullet, &game_objects[0], spritesheet, &camera_x,
                     82, 10, 3, 3, 1, 1);
             auto *behaviour = new BulletBehaviour();
-            behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            behaviour->Create(engine, bullet, &game_objects[0], &camera_x);
             auto *box_collider = new BoxCollider();
-            box_collider->Create(engine, bullet, &game_objects, &grid, &camera_x,
+            box_collider->Create(engine, bullet, &game_objects[0], &grid, &camera_x,
                     -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                     3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
@@ -72,12 +72,12 @@ public:
         for (auto *bullet: enemy_bullets->pool) {
             bullet->Create();
             auto *renderer = new SimpleRenderer();
-            renderer->Create(engine, bullet, &game_objects, enemies_spritesheet, &camera_x,
+            renderer->Create(engine, bullet, &game_objects[0], enemies_spritesheet, &camera_x,
                     199, 72, 3, 3, 1, 1);
             auto *behaviour = new BulletBehaviour();
-            behaviour->Create(engine, bullet, &game_objects, &camera_x);
+            behaviour->Create(engine, bullet, &game_objects[0], &camera_x);
             auto *box_collider = new BoxCollider();
-            box_collider->Create(engine, bullet, &game_objects, &grid, &camera_x,
+            box_collider->Create(engine, bullet, &game_objects[0], &grid, &camera_x,
                     -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                     3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
             bullet->AddComponent(behaviour);
@@ -86,43 +86,45 @@ public:
         }
 
         player = new Player();
-        player->Create(engine, &game_objects, spritesheet, level_floor, &camera_x, bullets, &grid,
+        player->Create(engine, &game_objects[0], spritesheet, level_floor, &camera_x, bullets, &grid,
                 PLAYER_COLLISION_LAYER);
         playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
 
         auto *tank = new Tank();
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+        tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
-        game_objects.insert(tank);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new Tank();
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+        tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
-        game_objects.insert(tank);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new Tank();
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+        tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
-        game_objects.insert(tank);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new Tank();
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+        tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
-        game_objects.insert(tank);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new Tank();
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+        tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
-        game_objects.insert(tank);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
 
-        game_objects.insert(player);
+        game_objects[RENDERING_LAYER_PLAYER].insert(player);
     }
 
     void Init() override {
-        for (auto *go: game_objects) {
-            go->Init();
+        for (const auto& layer: game_objects) {
+            for (auto *go: layer) {
+                go->Init();
+            }
         }
         Enable();
         camera_x = 0;
@@ -193,8 +195,10 @@ public:
         }
 
         grid.ClearCollisionCache(); // Clear collision cache
-        for (auto game_object : game_objects)
-            game_object->Update(dt);
+        for (const auto& layer: game_objects) {
+            for (auto game_object : layer)
+                game_object->Update(dt);
+        }
     }
 
     virtual void Draw() {
@@ -215,8 +219,10 @@ public:
 
     void Destroy() override {
         SDL_Log("Game::Destroy");
-        for (auto game_object : game_objects)
-            game_object->Destroy();
+        for (const auto& layer: game_objects) {
+            for (auto game_object : layer)
+                game_object->Destroy();
+        }
         bullets->Destroy();
         delete bullets;
         bullets = nullptr;

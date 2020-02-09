@@ -246,8 +246,8 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     // Grab the bullet from the pool
     auto *bullet = m_bulletPool->FirstAvailable();
     if (bullet != nullptr) {
-        bullet->Init(go->position + displacement * PIXELS_ZOOM, direction.normalise());
-        game_objects->insert(bullet);
+        bullet->Init(go->position + displacement * PIXELS_ZOOM, BulletBehaviour::PLAYER_BULLET_DEFAULT, direction.normalise());
+        game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
     }
 }
 

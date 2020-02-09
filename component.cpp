@@ -37,6 +37,7 @@ void CollideComponent::Create(AvancezLib *engine, GameObject *go, std::set<GameO
 }
 
 void CollideComponent::Update(float dt) {
+    if (m_disabled) return;
     if (m_checkLayer >= 0) {
         Grid::CellsSquare square{};
         GetOccupiedCells(square);
@@ -73,6 +74,15 @@ void CollideComponent::Destroy() {
 
 void CollideComponent::OnGameObjectDisabled() {
     if (m_layer >= 0) grid->Remove(this);
+}
+
+void CollideComponent::Disable() {
+    if (m_layer >= 0) grid->Remove(this);
+    m_disabled = true;
+}
+
+void CollideComponent::Enable() {
+    m_disabled = false;
 }
 
 void BoxCollider::GetOccupiedCells(Grid::CellsSquare &square) {

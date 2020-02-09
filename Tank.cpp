@@ -8,7 +8,7 @@
 void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                   const std::shared_ptr<Sprite> &enemies_spritesheet,
                   float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                  Grid* grid, int layer) {
+                  Grid *grid, int layer) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -44,8 +44,8 @@ void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     behaviour->Create(engine, this, game_objects, player, bullet_pool);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
-            -13 * PIXELS_ZOOM, -13 * PIXELS_ZOOM,
-            26 * PIXELS_ZOOM, 26 * PIXELS_ZOOM, -1, layer);
+            -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+            20 * PIXELS_ZOOM, 20 * PIXELS_ZOOM, -1, layer);
     collider->SetListener(behaviour);
 
     AddComponent(behaviour);
@@ -59,11 +59,12 @@ void TankBehaviour::Update(float dt) {
             m_animator->PlayAnimation(animDie);
         } else if (!m_animator->IsPlaying()) {
             go->Destroy();
-            game_objects->erase(go);
+            game_objects[RENDERING_LAYER_BULLETS].erase(go);
         }
         return;
     }
-    Vector2D player_dir = m_player->GetGameObject()->position - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
+    Vector2D player_dir =
+            m_player->GetGameObject()->position - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     switch (m_state) {
         case HIDDEN:
             m_animator->PlayAnimation(animHidden);
@@ -110,17 +111,18 @@ void TankBehaviour::Update(float dt) {
 }
 
 void TankBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Player *player,
-        ObjectPool<Bullet>* bullet_pool) {
+                           ObjectPool<Bullet> *bullet_pool) {
     Component::Create(engine, go, game_objects);
-    m_player = player->GetComponent<PlayerControl*>();
+    m_player = player->GetComponent<PlayerControl *>();
     m_bulletPool = bullet_pool;
 }
 
 int TankBehaviour::DirToInt(const Vector2D &dir) const {
     return (12 - // Counter-clockwise, preserving 0
-           int(fmod( // Between 0 and 3.1416
-                   atan2(-dir.y, dir.x) + 6.2832 /*+ 0.2618*/, // we used to add 15º to correct, but the original game does not do it! XD
-                   6.2832) / 0.5236)) % 12;  //0.5236rad = 30deg
+            int(fmod( // Between 0 and 3.1416
+                    atan2(-dir.y, dir.x) +
+                    6.2832 /*+ 0.2618*/, // we used to add 15º to correct, but the original game does not do it! XD
+                    6.2832) / 0.5236)) % 12;  //0.5236rad = 30deg
 }
 
 void TankBehaviour::Fire() {
@@ -128,8 +130,9 @@ void TankBehaviour::Fire() {
     auto *bullet = m_bulletPool->FirstAvailable();
     if (bullet != nullptr) {
         float rad = -0.5236f * (float) m_dir;
-        bullet->Init(go->position, Vector2D(cosf(rad), -sinf(rad)), 160); // Notice our system has y inverted
-        game_objects->insert(bullet);
+        bullet->Init(go->position, BulletBehaviour::ENEMY_BULLET_DEFAULT,
+                Vector2D(cosf(rad), -sinf(rad)), 160); // Notice our system has y inverted
+        game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
     }
 }
 

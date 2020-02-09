@@ -35,6 +35,15 @@ public:
         m_anchorX = anchorX;
         m_anchorY = anchorY;
     }
+
+    void ChangeCoords(int srcX, int srcY, int width, int height, int anchorX, int anchorY) {
+        m_srcX = srcX;
+        m_srcY = srcY;
+        m_width = width;
+        m_height = height;
+        m_anchorX = anchorX;
+        m_anchorY = anchorY;
+    }
 };
 
 #endif //CONTRA_SIMPLERENDERER_H

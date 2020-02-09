@@ -17,7 +17,7 @@ class Component {
 protected:
     AvancezLib *engine;    // used to access the engine
     GameObject *go;        // the game object this component is part of
-    std::set<GameObject *> *game_objects;    // the global container of game objects
+    std::set<GameObject *> *game_objects;    // the global container of game objects (pointer to the first layer)
 public:
     virtual ~Component() {}
 
@@ -67,6 +67,7 @@ protected:
     Grid::CellsSquare is_occupying;
     int m_layer, m_checkLayer;
     CollideComponentListener *listener = nullptr;
+    bool m_disabled;
 public:
     /**
      * Creates the collide component
@@ -90,6 +91,8 @@ public:
     void Destroy() override;
 
     void OnGameObjectDisabled() override;
+    void Disable();
+    void Enable();
 
     [[nodiscard]] int GetLayer() const { return m_layer; }
 
