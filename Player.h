@@ -17,6 +17,7 @@
 #include "floor.h"
 #include "Gravity.h"
 #include "bullets.h"
+#include "weapons.h"
 
 class Player : public GameObject {
 public:
@@ -71,6 +72,7 @@ private:
             m_swimShootUpAnim, m_fallAnim;
     Box m_standingBox, m_crawlingBox, m_swimmingBox, m_jumpBox;
     bool m_diving;
+    std::unique_ptr<Weapon> m_currentWeapon;
 
     void Fire(const AvancezLib::KeyStatus &keyStatus);
 };

@@ -3,11 +3,11 @@
 //
 
 #include "Player.h"
+
+#include <memory>
 #include "consts.h"
 
 void PlayerControl::Update(float dt) {
-    m_shootDowntime -= dt;
-
     AvancezLib::KeyStatus keyStatus{};
     engine->getKeyStatus(keyStatus);
 
@@ -69,15 +69,8 @@ void PlayerControl::Update(float dt) {
         m_facingRight = false;
     }
     // Shooting (we need facing to be calculated already)
-    bool shooting = !m_hasShot && keyStatus.fire && m_shootDowntime <= 0;
-    if (!keyStatus.fire) {
-        m_hasShot = false;
-    }
-    if (shooting) {
-        Fire(keyStatus);
-        m_hasShot = true;
-        m_shootDowntime = 0.2;
-    }
+    bool shooting = m_currentWeapon->ShouldFire(keyStatus.fire, dt);
+    if (shooting) Fire(keyStatus);
 
     Box* box = &m_standingBox;
     m_diving = false;
@@ -182,6 +175,7 @@ void PlayerControl::Init() {
             -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
+    m_currentWeapon = std::make_unique<DefaultWeapon>(m_bulletPool, game_objects);
     m_remainingLives = 2;
     m_hasInertia = false;
     m_facingRight = true;
@@ -242,13 +236,7 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     } else if (m_animator->IsCurrent(m_jumpAnim)) {
         displacement.y = -16;
     }
-
-    // Grab the bullet from the pool
-    auto *bullet = m_bulletPool->FirstAvailable();
-    if (bullet != nullptr) {
-        bullet->Init(go->position + displacement * PIXELS_ZOOM, BulletBehaviour::PLAYER_BULLET_DEFAULT, direction.normalise());
-        game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
-    }
+    m_currentWeapon->Fire(go->position + displacement * PIXELS_ZOOM, direction);
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {

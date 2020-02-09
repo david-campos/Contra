@@ -31,11 +31,11 @@ public:
         return x * rhs.x + y * rhs.y;
     }
 
-    double magnitude() {
+    [[nodiscard]] double magnitude() const {
         return sqrt(x * x + y * y);
     }
 
-    Vector2D normalise() {
+    [[nodiscard]] Vector2D normalise() const {
         auto len = magnitude();
         return Vector2D(x / len, y / len);
     }
