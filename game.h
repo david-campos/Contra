@@ -14,7 +14,11 @@
 #define LIFE_SPRITE_X 193
 #define LIFE_SPRITE_Y 0
 
-#define MAX_PLAYER_BULLETS 20
+#define MAX_DEFAULT_BULLETS 4
+#define MAX_FIRE_BULLETS 4
+#define MAX_MACHINE_GUN_BULLETS 6
+#define MAX_SPREAD_BULLETS 5
+#define MAX_LASER_BULLETS 5
 #define MAX_NPC_BULLETS 40
 
 #define PLAYER_COLLISION_LAYER 0
@@ -29,7 +33,8 @@ private:
     std::shared_ptr<Floor> level_floor;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
-    ObjectPool<Bullet> *bullets, *enemy_bullets;
+    ObjectPool<Bullet> *default_bullets, *fire_bullets,
+            *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     Player *player;
     PlayerControl *playerControl;
     Grid grid;
@@ -47,10 +52,10 @@ public:
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
         grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
-        // Create bullet pool for the player
-        bullets = new ObjectPool<Bullet>();
-        bullets->Create(MAX_PLAYER_BULLETS);
-        for (auto *bullet: bullets->pool) {
+        // Create bullet pools for the player
+        default_bullets = new ObjectPool<Bullet>();
+        default_bullets->Create(MAX_DEFAULT_BULLETS);
+        for (auto *bullet: default_bullets->pool) {
             bullet->Create();
             auto *renderer = new SimpleRenderer();
             renderer->Create(engine, bullet, &game_objects[0], spritesheet, &camera_x,
@@ -86,7 +91,7 @@ public:
         }
 
         player = new Player();
-        player->Create(engine, &game_objects[0], spritesheet, level_floor, &camera_x, bullets, &grid,
+        player->Create(engine, &game_objects[0], spritesheet, level_floor, &camera_x, default_bullets, &grid,
                 PLAYER_COLLISION_LAYER);
         playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
@@ -121,7 +126,7 @@ public:
     }
 
     void Init() override {
-        for (const auto& layer: game_objects) {
+        for (const auto &layer: game_objects) {
             for (auto *go: layer) {
                 go->Init();
             }
@@ -146,13 +151,15 @@ public:
             if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
                 camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
         } else if (camera_x < level_width - WINDOW_WIDTH)
-            camera_x += PLAYER_SPEED * 2 * dt;
+            camera_x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
         else
             camera_x = level_width - WINDOW_WIDTH;
 
-        // Draw background
-        background->draw(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                (int) round(camera_x) / PIXELS_ZOOM, 0, WINDOW_WIDTH / PIXELS_ZOOM,
+        // Draw background (smoothing the zoom)
+        int camera_without_zoom = int(floor(camera_x / PIXELS_ZOOM));
+        int reminder = int(round(camera_x - camera_without_zoom * PIXELS_ZOOM));
+        background->draw(-reminder, 0, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT,
+                camera_without_zoom, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1,
                 WINDOW_HEIGHT / PIXELS_ZOOM);
 
         // Debug floor printing
@@ -195,7 +202,7 @@ public:
         }
 
         grid.ClearCollisionCache(); // Clear collision cache
-        for (const auto& layer: game_objects) {
+        for (const auto &layer: game_objects) {
             for (auto game_object : layer)
                 game_object->Update(dt);
         }
@@ -219,13 +226,13 @@ public:
 
     void Destroy() override {
         SDL_Log("Game::Destroy");
-        for (const auto& layer: game_objects) {
+        for (const auto &layer: game_objects) {
             for (auto game_object : layer)
                 game_object->Destroy();
         }
-        bullets->Destroy();
-        delete bullets;
-        bullets = nullptr;
+        default_bullets->Destroy();
+        delete default_bullets;
+        default_bullets = nullptr;
         enemy_bullets->Destroy();
         delete enemy_bullets;
         enemy_bullets = nullptr;

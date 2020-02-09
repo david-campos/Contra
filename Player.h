@@ -5,9 +5,8 @@
 #ifndef CONTRA_PLAYER_H
 #define CONTRA_PLAYER_H
 
-#define PLAYER_SPEED 110
-#define PLAYER_JUMP 400
-#define FALL_MAX_Y 200
+#define PLAYER_SPEED 55
+#define PLAYER_JUMP 200
 
 #include <utility>
 
@@ -74,7 +73,7 @@ private:
     bool m_diving;
     std::unique_ptr<Weapon> m_currentWeapon;
 
-    void Fire(const AvancezLib::KeyStatus &keyStatus);
+    bool Fire(const AvancezLib::KeyStatus &keyStatus);
 };
 
 #endif //CONTRA_PLAYER_H

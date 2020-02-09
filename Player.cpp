@@ -30,7 +30,7 @@ void PlayerControl::Update(float dt) {
         } else {
             m_waitDead -= dt;
             if (m_animator->IsPlaying(m_dieAnim)) {
-                go->position = go->position + Vector2D(PLAYER_SPEED * dt * (m_facingRight ? -1.f : 1.f), 0);
+                go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt * (m_facingRight ? -1.f : 1.f), 0);
             }
         }
         return;
@@ -38,7 +38,7 @@ void PlayerControl::Update(float dt) {
 
     if (go->position.y > WINDOW_HEIGHT) {
         Kill();
-        m_gravity->SetVelocity(-PLAYER_JUMP * .75);
+        m_gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM * .75);
         return;
     }
 
@@ -49,18 +49,18 @@ void PlayerControl::Update(float dt) {
                 if (m_gravity->CanFall())
                     m_gravity->LetFall();
             } else {
-                m_gravity->AddVelocity(-PLAYER_JUMP);
+                m_gravity->AddVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
                 m_animator->PlayAnimation(m_jumpAnim);
             }
         }
     }
     if (keyStatus.right || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
-        go->position = go->position + Vector2D(PLAYER_SPEED * dt, 0);
+        go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         m_hasInertia = true;
         m_facingRight = true;
     }
     if (keyStatus.left || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
-        go->position = go->position - Vector2D(PLAYER_SPEED * dt, 0);
+        go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         // The player can't go back in Contra
         if (go->position.x - 12 < *m_cameraX) {
             go->position.x = *m_cameraX + 12;
@@ -69,8 +69,9 @@ void PlayerControl::Update(float dt) {
         m_facingRight = false;
     }
     // Shooting (we need facing to be calculated already)
-    bool shooting = m_currentWeapon->ShouldFire(keyStatus.fire, dt);
-    if (shooting) Fire(keyStatus);
+    bool shooting = false;
+    if (m_currentWeapon->ShouldFire(keyStatus.fire, dt))
+        shooting = Fire(keyStatus);
 
     Box* box = &m_standingBox;
     m_diving = false;
@@ -135,7 +136,16 @@ void PlayerControl::Update(float dt) {
     }
     m_wasInWater = m_gravity->IsOnWater();
     m_animator->mirrorHorizontal = !m_facingRight;
-    m_collider->ChangeBox(*box);
+    if (m_facingRight) {
+        m_collider->ChangeBox(*box);
+    } else {
+        Box flipped;
+        flipped.top_left_x = -box->bottom_right_x;
+        flipped.bottom_right_x = -box->top_left_x;
+        flipped.top_left_y = box->top_left_y;
+        flipped.bottom_right_y = box->bottom_right_y;
+        m_collider->ChangeBox(flipped);
+    }
 }
 
 void PlayerControl::Init() {
@@ -165,7 +175,7 @@ void PlayerControl::Init() {
     };
     m_standingBox = {
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
-            3 * PIXELS_ZOOM, 1 * PIXELS_ZOOM
+            3 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
     };
     m_crawlingBox = {
             -12 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
@@ -204,7 +214,7 @@ void PlayerControl::Respawn() {
     m_isDeath = false;
 }
 
-void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
+bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D displacement(
             m_facingRight ? 12 : -12,
             m_gravity->IsOnWater() ? -3 : -21
@@ -224,7 +234,7 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
         }
     } else if (keyStatus.down && !keyStatus.up) {
         if (m_gravity->IsOnWater())
-            return; // Can't shoot down in water, since it is diving
+            return false; // Can't shoot down in water, since it is diving
         displacement.y = -9;
         if (keyStatus.right or keyStatus.left or m_animator->IsCurrent(m_jumpAnim)) {
             direction.y = 1; // When jumping or moving you can indeed shoot down
@@ -236,7 +246,7 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     } else if (m_animator->IsCurrent(m_jumpAnim)) {
         displacement.y = -16;
     }
-    m_currentWeapon->Fire(go->position + displacement * PIXELS_ZOOM, direction);
+    return m_currentWeapon->Fire(go->position + displacement * PIXELS_ZOOM, direction);
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
@@ -254,7 +264,7 @@ void
 Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
                ObjectPool<Bullet> *bullet_pool, Grid *grid, int player_collision_layer) {
-    position = Vector2D(100, 0);
+    position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
     renderer->Create(engine, this, game_objects, spritesheet, camera_x);
     renderer->AddAnimation({

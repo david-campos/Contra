@@ -11,7 +11,7 @@
 #include "consts.h"
 #include "SimpleRenderer.h"
 
-#define BULLET_SPEED 320
+#define BULLET_SPEED 160
 
 class BulletBehaviour : public Component {
 public:
@@ -100,7 +100,8 @@ private:
 
 class Bullet : public GameObject {
 public:
-    void Init(const Vector2D &pos, BulletBehaviour::BulletType type, const Vector2D &direction, const int speed = BULLET_SPEED) {
+    void Init(const Vector2D &pos, BulletBehaviour::BulletType type, const Vector2D &direction,
+            const int speed = BULLET_SPEED * PIXELS_ZOOM) {
         GameObject::Init();
         position = pos;
         auto *behaviour = GetComponent<BulletBehaviour *>();

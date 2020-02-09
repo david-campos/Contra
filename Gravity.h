@@ -8,11 +8,12 @@
 
 #include "component.h"
 #include "floor.h"
+#include "consts.h"
 
 class Gravity: public Component {
 private:
     float m_velocity;
-    float m_acceleration = 700;
+    float m_acceleration = 350 * PIXELS_ZOOM;
     std::weak_ptr<Floor> m_floor;
     bool m_onFloor, m_onWater, m_canFall;
     bool m_lettingFall;

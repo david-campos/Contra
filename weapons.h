@@ -26,8 +26,9 @@ public:
 
     /**
      * Fires the gun
+     * @return True if the fire was successful, false if not
      */
-    virtual void Fire(const Vector2D &position, const Vector2D &direction) = 0;
+    virtual bool Fire(const Vector2D &position, const Vector2D &direction) = 0;
 };
 
 class DefaultWeapon : public Weapon {
@@ -46,15 +47,17 @@ public:
         return !m_hasShot && fireKey && m_shootDowntime <= 0;
     }
 
-    void Fire(const Vector2D &position, const Vector2D &direction) override {
+    bool Fire(const Vector2D &position, const Vector2D &direction) override {
         // Grab the bullet from the pool
         auto *bullet = m_bulletPool->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, BulletBehaviour::PLAYER_BULLET_DEFAULT, direction.normalise());
             m_gameObjects[RENDERING_LAYER_BULLETS].insert(bullet);
+            m_hasShot = true;
+            m_shootDowntime = 0.2;
+            return true;
         }
-        m_hasShot = true;
-        m_shootDowntime = 0.2;
+        return false;
     }
 };
 

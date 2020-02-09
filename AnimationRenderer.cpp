@@ -63,7 +63,8 @@ void AnimationRenderer::Update(float dt) {
             m_currentAnimation->frame_w, m_currentAnimation->frame_h,
             mirrorHorizontal
     );
-    engine->fillSquare(round(go->position.x) - 2 - *camera_x, round(go->position.y) - 2, 4, {255, 0, 0});
+    engine->fillSquare(round(go->position.x - 2 - *camera_x),
+            round(go->position.y) - 2, 4, {255, 0, 0});
 }
 
 int AnimationRenderer::AddAnimation(AnimationRenderer::Animation animation) {
