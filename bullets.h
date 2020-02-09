@@ -75,7 +75,7 @@ public:
                 break;
             default:
                 m_renderer->ChangeCoords(104, 0, 7, 7, 3, 3);
-                m_destroyIn = 0.2f;
+                m_destroyIn = 0.1f;
                 break;
         }
     }

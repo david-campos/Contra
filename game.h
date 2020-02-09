@@ -6,7 +6,7 @@
 #include "Player.h"
 #include "SimpleRenderer.h"
 #include "bullets.h"
-#include "Tank.h"
+#include "canons.h"
 
 #define LIFE_SPRITE_WIDTH 8
 #define LIFE_SPRITE_HEIGHT 16
@@ -96,31 +96,38 @@ public:
         playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
 
-        auto *tank = new Tank();
+        auto *tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
-        tank = new Tank();
+        tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
-        tank = new Tank();
+        tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
-        tank = new Tank();
+        tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
-        tank = new Tank();
+        tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                 Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
+
+        auto* gulcan = new Gulcan();
+        gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
+                Vector2D(WINDOW_WIDTH / PIXELS_ZOOM, 100) * PIXELS_ZOOM, player,
+                enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+        gulcan->AddReceiver(this);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);
 
         game_objects[RENDERING_LAYER_PLAYER].insert(player);
     }
