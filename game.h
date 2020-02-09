@@ -40,7 +40,7 @@ public:
     virtual void Create(AvancezLib *avancezLib) {
         SDL_Log("Game::Create");
         this->engine = avancezLib;
-        background = engine->createSprite("data/level1/background.png");
+        background = engine->createSprite("data/level1/background_no_labels.png");
         level_width = background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));

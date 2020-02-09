@@ -26,11 +26,11 @@ void Gravity::Update(float dt) {
     int next_y = (int) std::floor((go->position.y + y_increment) / PIXELS_ZOOM);
     int x = (int) std::floor(go->position.x / PIXELS_ZOOM);
     int y;
-    for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor; y++) {
+    for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor && !m_onWater; y++) {
         m_onFloor = m_onFloor || floor->IsFloor(x, y);
         m_onWater = m_onWater || floor->IsWater(x, y);
     }
-    y -= 1; // Correct y as the loop will over-increase 1
+    y--; // Correct y as the loop will over-increase 1
 
     if (!m_onFloor) {
         m_lettingFall = false;

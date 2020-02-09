@@ -43,7 +43,7 @@ void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
 }
 
 void TankBehaviour::Update(float dt) {
-    Vector2D player_dir = m_player->GetGameObject()->position - Vector2D(0, 12) - go->position; // Add 12 bc position is the feet
+    Vector2D player_dir = m_player->GetGameObject()->position - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     switch (m_state) {
         case HIDDEN:
             m_animator->PlayAnimation(animHidden);
@@ -99,7 +99,7 @@ void TankBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObje
 int TankBehaviour::DirToInt(const Vector2D &dir) const {
     return (12 - // Counter-clockwise, preserving 0
            int(fmod( // Between 0 and 3.1416
-                   atan2(-dir.y, dir.x) + 6.2832 + 0.2618, // ensure positive and add 15º
+                   atan2(-dir.y, dir.x) + 6.2832 /*+ 0.2618*/, // we used to add 15º to correct, but the original game does not do it! XD
                    6.2832) / 0.5236)) % 12;  //0.5236rad = 30deg
 }
 
