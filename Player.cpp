@@ -79,6 +79,8 @@ void PlayerControl::Update(float dt) {
         m_shootDowntime = 0.2;
     }
 
+    Box* box = &m_standingBox;
+    m_diving = false;
     // Animation
     if (m_gravity->IsOnFloor()) {
         if (keyStatus.right || keyStatus.left) {
@@ -98,6 +100,7 @@ void PlayerControl::Update(float dt) {
                 m_animator->CurrentAndPause(m_upAnim);
             } else if (keyStatus.down && !keyStatus.up) {
                 m_animator->CurrentAndPause(m_crawlAnim);
+                box = &m_crawlingBox;
             } else {
                 m_animator->CurrentAndPause(m_idleAnim);
             }
@@ -106,12 +109,14 @@ void PlayerControl::Update(float dt) {
             }
         }
     } else if (m_gravity->IsOnWater()) {
+        box = &m_swimmingBox;
         if (!m_wasInWater) {
             m_animator->PlayAnimation(m_splashAnim);
         } else if (not(m_animator->IsCurrent(m_splashAnim)
                        and m_animator->IsPlaying())) {
             if (keyStatus.down) {
                 m_animator->PlayAnimation(m_diveAnim);
+                m_diving = true;
             } else if (shooting) {
                 if (keyStatus.up) {
                     if (keyStatus.right || keyStatus.left) {
@@ -130,16 +135,19 @@ void PlayerControl::Update(float dt) {
             }
         }
     } else {
+        box = &m_jumpBox;
         if (!m_animator->IsCurrent(m_jumpAnim)) {
             m_animator->PlayAnimation(m_fallAnim);
         }
     }
     m_wasInWater = m_gravity->IsOnWater();
     m_animator->mirrorHorizontal = !m_facingRight;
+    m_collider->ChangeBox(*box);
 }
 
 void PlayerControl::Init() {
     m_animator = go->GetComponent<AnimationRenderer *>();
+    m_collider = go->GetComponent<BoxCollider *>();
     m_gravity = go->GetComponent<Gravity *>();
     m_idleAnim = m_animator->FindAnimation("Idle");
     m_jumpAnim = m_animator->FindAnimation("Jump");
@@ -158,10 +166,27 @@ void PlayerControl::Init() {
     m_swimShootDiagonalAnim = m_animator->FindAnimation("SwimShootDiagonal");
     m_swimShootUpAnim = m_animator->FindAnimation("SwimShootUp");
     m_animator->PlayAnimation(m_jumpAnim); // Start jumping
+    m_jumpBox = {
+            -6 * PIXELS_ZOOM, -22 * PIXELS_ZOOM,
+            6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM
+    };
+    m_standingBox = {
+            -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
+            3 * PIXELS_ZOOM, 1 * PIXELS_ZOOM
+    };
+    m_crawlingBox = {
+            -12 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+            15 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
+    };
+    m_swimmingBox = {
+            -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+            7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
+    };
     m_remainingLives = 2;
     m_hasInertia = false;
     m_facingRight = true;
     m_hasShot = false;
+    m_diving = false;
     m_shootDowntime = 0;
 }
 
@@ -169,11 +194,13 @@ void PlayerControl::Kill() {
     m_isDeath = true;
     m_waitDead = 2.f;
     m_animator->PlayAnimation(m_dieAnim);
+    m_gravity->SetFallThoughWater(true);
 }
 
 void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     go->position = Vector2D(*m_cameraX + 50 * PIXELS_ZOOM, 0);
+    m_gravity->SetFallThoughWater(false);
     m_facingRight = true;
     m_hasInertia = false;
     m_hasShot = false;
@@ -225,8 +252,8 @@ void PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
-    if (m_invincibleTime <= 0 && !m_isDeath) {
-        auto* bullet = collider.GetGameObject()->GetComponent<BulletBehaviour*>();
+    if (m_invincibleTime <= 0 && !m_isDeath && !m_diving) {
+        auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
         if (bullet) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
@@ -237,8 +264,8 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 
 void
 Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
-               const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor>& floor, float *camera_x,
-               ObjectPool<Bullet> *bullet_pool, Grid* grid, int player_collision_layer) {
+               const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
+               ObjectPool<Bullet> *bullet_pool, Grid *grid, int player_collision_layer) {
     position = Vector2D(100, 0);
     auto *renderer = new AnimationRenderer();
     renderer->Create(engine, this, game_objects, spritesheet, camera_x);
@@ -304,12 +331,12 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     });
     renderer->AddAnimation({
             60, 328, 0.2, 2,
-            26, 18, 13, 14,
+            26, 18, 8, 14,
             "SwimShoot", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
             90, 299, 0.2, 2,
-            20, 20, 10, 16,
+            20, 20, 10, 15,
             "SwimShootDiagonal", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
@@ -330,7 +357,7 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
-            6 * PIXELS_ZOOM,34 * PIXELS_ZOOM, -1, player_collision_layer);
+            6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM, -1, player_collision_layer);
     collider->SetListener(playerControl);
     AddComponent(gravity);
     AddComponent(playerControl);

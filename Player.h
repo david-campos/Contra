@@ -50,6 +50,7 @@ public:
 
 private:
     AnimationRenderer *m_animator;
+    BoxCollider *m_collider;
     ObjectPool<Bullet> *m_bulletPool;
     Gravity *m_gravity;
     float *m_cameraX;
@@ -68,6 +69,8 @@ private:
             m_splashAnim, m_swimAnim, m_diveAnim,
             m_swimShootAnim, m_swimShootDiagonalAnim,
             m_swimShootUpAnim, m_fallAnim;
+    Box m_standingBox, m_crawlingBox, m_swimmingBox, m_jumpBox;
+    bool m_diving;
 
     void Fire(const AvancezLib::KeyStatus &keyStatus);
 };

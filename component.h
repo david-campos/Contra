@@ -24,10 +24,13 @@ public:
     virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects);
 
     virtual void Init() {}
+
     virtual void OnGameObjectEnabled() {}
+
     virtual void OnGameObjectDisabled() {}
 
     [[nodiscard]] GameObject *GetGameObject() const { return go; }
+
     virtual void Update(float dt) = 0;
 
     virtual void Receive(int message) {}
@@ -55,7 +58,7 @@ public:
 
 class CollideComponentListener {
 public:
-    virtual void OnCollision(const CollideComponent& collider) = 0;
+    virtual void OnCollision(const CollideComponent &collider) = 0;
 };
 
 class CollideComponent : public Component {
@@ -63,7 +66,7 @@ protected:
     Grid *grid;
     Grid::CellsSquare is_occupying;
     int m_layer, m_checkLayer;
-    CollideComponentListener* listener = nullptr;
+    CollideComponentListener *listener = nullptr;
 public:
     /**
      * Creates the collide component
@@ -76,17 +79,20 @@ public:
      */
     void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
                 int layer, int checkLayer);
+
     /**
      * Changes the listener for the collisions of the collider, be aware if there was a previous
      * one assigned that one will be discarded
      * @param collideComponentListener
      */
-    void SetListener(CollideComponentListener* collideComponentListener) {this->listener = collideComponentListener;}
+    void SetListener(CollideComponentListener *collideComponentListener) { this->listener = collideComponentListener; }
+
     void Destroy() override;
 
     void OnGameObjectDisabled() override;
 
     [[nodiscard]] int GetLayer() const { return m_layer; }
+
     void GetPreviouslyOccupiedCells(Grid::CellsSquare &square) {
         square = is_occupying;
         GetOccupiedCells(is_occupying); // Update for next time
@@ -97,55 +103,82 @@ public:
      * @param square
      */
     virtual void GetOccupiedCells(Grid::CellsSquare &square) = 0;
+
     /**
      * Colliders must implement this function to check if they are colliding with
      * the given collider.
      * @param other
      */
     virtual bool IsColliding(const CollideComponent &other) = 0;
+
     void Update(float dt) override;
-    void SendCollision(const CollideComponent& other) {
+
+    void SendCollision(const CollideComponent &other) {
         if (listener) listener->OnCollision(other);
     }
 };
 
+struct Box {
+    int top_left_x;
+    int top_left_y;
+    int bottom_right_x;
+    int bottom_right_y;
+};
+
 class BoxCollider : public CollideComponent {
 protected:
-    int local_tl_x, local_tl_y, local_br_x, local_br_y;
+    Box m_box;
+
     void GetOccupiedCells(Grid::CellsSquare &square) override;
+
     bool IsColliding(const CollideComponent &other) override;
-    float* m_camera_x;
+
+    float *m_camera_x;
 public:
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float* camera_x,
-                        int local_top_left_x, int local_top_left_y, int width, int height, int layer,  int checkLayer) {
+    virtual void
+    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float *camera_x,
+           int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
+        Create(engine, go, game_objects, grid, camera_x, {
+                local_top_left_x,
+                local_top_left_y,
+                local_top_left_x + width,
+                local_top_left_y + height
+        }, layer, checkLayer);
+    }
+
+    virtual void
+    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float *camera_x,
+           Box box, int layer, int checkLayer) {
         CollideComponent::Create(engine, go, game_objects, grid, layer, checkLayer);
-        local_tl_x = local_top_left_x;
-        local_tl_y = local_top_left_y;
-        local_br_x = local_top_left_x + width;
-        local_br_y = local_top_left_y + height;
+        m_box = box;
         m_camera_x = camera_x;
     }
+
     void Update(float dt) override {
         CollideComponent::Update(dt);
         engine->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
-                AbsoluteTopLeftY(), AbsoluteBottomRighX() - *m_camera_x, AbsoluteBottomRightY(),
+                AbsoluteTopLeftY(), AbsoluteBottomRightX() - *m_camera_x, AbsoluteBottomRightY(),
                 {0, 0, 255});
     }
 
+    void ChangeBox(const Box& box) {
+        m_box = box;
+    }
+
     [[nodiscard]] float AbsoluteTopLeftX() const {
-        return float(go->position.x) + float(local_tl_x);
+        return float(go->position.x) + float(m_box.top_left_x);
     }
 
     [[nodiscard]] float AbsoluteTopLeftY() const {
-        return float(go->position.y) + float(local_tl_y);
+        return float(go->position.y) + float(m_box.top_left_y);
     }
 
-    [[nodiscard]] float AbsoluteBottomRighX() const {
-        return float(go->position.x) + float(local_br_x);
+    [[nodiscard]] float AbsoluteBottomRightX() const {
+        return float(go->position.x) + float(m_box.bottom_right_x);
     }
 
     [[nodiscard]] float AbsoluteBottomRightY() const {
-        return float(go->position.y) + float(local_br_y);
+        return float(go->position.y) + float(m_box.bottom_right_y);
     }
 };
 

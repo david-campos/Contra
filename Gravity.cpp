@@ -26,7 +26,8 @@ void Gravity::Update(float dt) {
     int next_y = (int) std::floor((go->position.y + y_increment) / PIXELS_ZOOM);
     int x = (int) std::floor(go->position.x / PIXELS_ZOOM);
     int y;
-    for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor && !m_onWater; y++) {
+    for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor &&
+                                                             (!m_onWater || m_fallThroughWater); y++) {
         m_onFloor = m_onFloor || floor->IsFloor(x, y);
         m_onWater = m_onWater || floor->IsWater(x, y);
     }
@@ -36,7 +37,7 @@ void Gravity::Update(float dt) {
         m_lettingFall = false;
     }
 
-    if (!(m_onFloor or m_onWater) || m_lettingFall) {
+    if (!(m_onFloor or m_onWater) or m_lettingFall or (!m_onFloor && m_fallThroughWater)) {
         go->position = go->position + Vector2D(0, y_increment); // Falls free
         m_velocity += m_acceleration * dt;
     } else if (!m_lettingFall) {

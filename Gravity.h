@@ -16,6 +16,7 @@ private:
     std::weak_ptr<Floor> m_floor;
     bool m_onFloor, m_onWater, m_canFall;
     bool m_lettingFall;
+    bool m_fallThroughWater; // Used after death
 public:
     void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
                 std::weak_ptr<Floor> floor) {
@@ -29,6 +30,7 @@ public:
     void SetVelocity(float velocity) {
         m_velocity = velocity;
     }
+    void SetFallThoughWater(const bool value) { m_fallThroughWater = value; }
     // Let's the game object fall until it leaves the current floor
     void LetFall();
     [[nodiscard]] bool CanFall() const;
