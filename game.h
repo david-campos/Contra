@@ -95,8 +95,28 @@ public:
         tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
                 Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets);
         tank->AddReceiver(this);
-
         game_objects.insert(tank);
+        tank = new Tank();
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets);
+        tank->AddReceiver(this);
+        game_objects.insert(tank);
+        tank = new Tank();
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets);
+        tank->AddReceiver(this);
+        game_objects.insert(tank);
+        tank = new Tank();
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets);
+        tank->AddReceiver(this);
+        game_objects.insert(tank);
+        tank = new Tank();
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets);
+        tank->AddReceiver(this);
+        game_objects.insert(tank);
+
         game_objects.insert(player);
     }
 
