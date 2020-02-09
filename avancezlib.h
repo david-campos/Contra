@@ -14,6 +14,8 @@ public:
 	// Destroys the sprite instance
 	~Sprite();
 
+	[[nodiscard]] int getWidth() const;
+
 	// Draw the sprite at the given position.
 	void draw(int x, int y);
 	// Draw a part of the sprite at the given position,

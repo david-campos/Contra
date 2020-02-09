@@ -29,7 +29,7 @@ private:
     TankState m_state;
     int m_dir;
     float m_currentDirTime;
-    Player* m_player;
+    PlayerControl* m_player;
     AnimationRenderer* m_animator;
     int animHidden, animShowing, animDirsFirst;
     ObjectPool<Bullet>* m_bulletPool;

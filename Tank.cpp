@@ -43,7 +43,7 @@ void Tank::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
 }
 
 void TankBehaviour::Update(float dt) {
-    Vector2D player_dir = m_player->position - Vector2D(0, 12) - go->position; // Add 12 bc position is the feet
+    Vector2D player_dir = m_player->GetGameObject()->position - Vector2D(0, 12) - go->position; // Add 12 bc position is the feet
     switch (m_state) {
         case HIDDEN:
             m_animator->PlayAnimation(animHidden);
@@ -81,7 +81,7 @@ void TankBehaviour::Update(float dt) {
                     else if (m_dir >= 12) m_dir -= 12;
                     m_animator->PlayAnimation(animDirsFirst + m_dir);
                 }
-                if (m_dir == target_dir) {
+                if (m_dir == target_dir && m_player->IsAlive()) {
                     Fire();
                 }
             }
@@ -92,7 +92,7 @@ void TankBehaviour::Update(float dt) {
 void TankBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Player *player,
         ObjectPool<Bullet>* bullet_pool) {
     Component::Create(engine, go, game_objects);
-    m_player = player;
+    m_player = player->GetComponent<PlayerControl*>();
     m_bulletPool = bullet_pool;
 }
 

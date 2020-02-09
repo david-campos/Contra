@@ -27,6 +27,7 @@ public:
     virtual void OnGameObjectEnabled() {}
     virtual void OnGameObjectDisabled() {}
 
+    [[nodiscard]] GameObject *GetGameObject() const { return go; }
     virtual void Update(float dt) = 0;
 
     virtual void Receive(int message) {}
@@ -85,7 +86,6 @@ public:
 
     void OnGameObjectDisabled() override;
 
-    [[nodiscard]] GameObject *GetGameObject() const { return go; }
     [[nodiscard]] int GetLayer() const { return m_layer; }
     void GetPreviouslyOccupiedCells(Grid::CellsSquare &square) {
         square = is_occupying;

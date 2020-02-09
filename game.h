@@ -34,16 +34,18 @@ private:
     PlayerControl *playerControl;
     Grid grid;
     float camera_x;
+    int level_width;
     bool game_over;
 public:
     virtual void Create(AvancezLib *avancezLib) {
         SDL_Log("Game::Create");
         this->engine = avancezLib;
         background = engine->createSprite("data/level1/background.png");
+        level_width = background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
-        grid.Create(34 * PIXELS_ZOOM, 3327 * PIXELS_ZOOM, WINDOW_HEIGHT);
+        grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
         // Create bullet pool for the player
         bullets = new ObjectPool<Bullet>();
@@ -84,19 +86,17 @@ public:
         }
 
         player = new Player();
-        auto *tank = new Tank();
-
-        // Tank
-        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
-                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets);
-        tank->AddReceiver(this);
-        game_objects.insert(tank);
-
-        // Player
         player->Create(engine, &game_objects, spritesheet, level_floor, &camera_x, bullets, &grid,
                 PLAYER_COLLISION_LAYER);
         playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
+
+        auto *tank = new Tank();
+        tank->Create(engine, &game_objects, enemies_spritesheet, &camera_x,
+                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets);
+        tank->AddReceiver(this);
+
+        game_objects.insert(tank);
         game_objects.insert(player);
     }
 
@@ -120,16 +120,20 @@ public:
         if (IsGameOver())
             dt = 0.f;
 
-        if (player->position.x > camera_x + WINDOW_WIDTH / 2.) {
-            camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
-        }
+        if (player->position.x < level_width - WINDOW_WIDTH) {
+            if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
+                camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
+        } else if (camera_x < level_width - WINDOW_WIDTH)
+            camera_x += PLAYER_SPEED * 2 * dt;
+        else
+            camera_x = level_width - WINDOW_WIDTH;
 
         // Draw background
         background->draw(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                 (int) round(camera_x) / PIXELS_ZOOM, 0, WINDOW_WIDTH / PIXELS_ZOOM,
                 WINDOW_HEIGHT / PIXELS_ZOOM);
 
-          // Debug floor printing
+        // Debug floor printing
 //        SDL_Color floor{0, 255, 0};
 //        SDL_Color water{0, 0, 255};
 //        for (int y = 0; y < level_floor->getHeight(); y++) {

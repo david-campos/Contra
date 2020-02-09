@@ -46,6 +46,7 @@ public:
     void OnCollision(const CollideComponent &collider) override;
 
     [[nodiscard]] short getRemainingLives() const { return m_remainingLives; }
+    [[nodiscard]] short IsAlive() const { return !m_isDeath; }
 
 private:
     AnimationRenderer *m_animator;

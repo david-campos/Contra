@@ -266,3 +266,9 @@ Sprite::~Sprite() {
 	SDL_DestroyTexture(texture);
 }
 
+int Sprite::getWidth() const {
+	int w;
+	SDL_QueryTexture(texture, nullptr, nullptr, &w, nullptr);
+	return w;
+}
+
