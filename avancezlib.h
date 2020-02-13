@@ -67,6 +67,7 @@ public:
 		bool up; // up arrow
 		bool down; // down arrow
 		bool esc; // escape button
+		bool debug; // godmode
 	};
 
 	// Returns the keyboard status. If a flag is set, the corresponding key is being held down.

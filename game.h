@@ -124,7 +124,21 @@ public:
 
         auto* gulcan = new Gulcan();
         gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(WINDOW_WIDTH / PIXELS_ZOOM, 100) * PIXELS_ZOOM, player,
+                Vector2D(2063, 152) * PIXELS_ZOOM, player,
+                enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+        gulcan->AddReceiver(this);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);
+
+        gulcan = new Gulcan();
+        gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
+                Vector2D(2191, 56) * PIXELS_ZOOM, player,
+                enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+        gulcan->AddReceiver(this);
+        game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);
+
+        gulcan = new Gulcan();
+        gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
+                Vector2D(2767, 120) * PIXELS_ZOOM, player,
                 enemy_bullets, &grid, NPCS_COLLISION_LAYER);
         gulcan->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);

@@ -105,6 +105,9 @@ void AvancezLib::processInput() {
 			    case SDLK_UP:
 			        key.up = true;
 			        break;
+				case SDLK_g:
+					key.debug = true;
+					break;
 			}
 		}
 
@@ -128,6 +131,9 @@ void AvancezLib::processInput() {
                 case SDLK_UP:
                     key.up = false;
                     break;
+				case SDLK_g:
+					key.debug = false;
+					break;
 			}
 		}
 
@@ -227,6 +233,7 @@ void AvancezLib::getKeyStatus(KeyStatus &keys) {
 	keys.up = key.up;
 	keys.down = key.down;
 	keys.esc = key.esc;
+	keys.debug = key.debug;
 }
 
 

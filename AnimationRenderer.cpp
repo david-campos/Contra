@@ -103,7 +103,7 @@ void AnimationRenderer::PlayAnimation(int index, bool forward) {
     }
     if (m_currentAnimation != &m_animations[index]) {
         m_currentAnimation = &m_animations[index];
-        m_currentTime = 0.f;
+        m_currentTime = forward ? 0.f : (float) m_currentAnimation->frames * m_currentAnimation->speed;
         Play(-1, forward);
     }
 }

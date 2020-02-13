@@ -11,7 +11,11 @@ void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
     engine->getKeyStatus(keyStatus);
 
-    if (m_invincibleTime > 0) {
+    if (keyStatus.debug) {
+        m_godMode = true;
+    }
+
+    if (m_invincibleTime > 0 || m_godMode) {
         bool display = (int) round(m_invincibleTime * 10) % 2 == 0;
         m_invincibleTime -= dt;
         if (m_invincibleTime <= 0) display = true;
@@ -189,9 +193,7 @@ void PlayerControl::Init() {
     m_remainingLives = 2;
     m_hasInertia = false;
     m_facingRight = true;
-    m_hasShot = false;
     m_diving = false;
-    m_shootDowntime = 0;
 }
 
 void PlayerControl::Kill() {
@@ -207,10 +209,8 @@ void PlayerControl::Respawn() {
     m_gravity->SetFallThoughWater(false);
     m_facingRight = true;
     m_hasInertia = false;
-    m_hasShot = false;
     m_gravity->SetVelocity(0);
     m_invincibleTime = 2.f;
-    m_shootDowntime = 0;
     m_isDeath = false;
 }
 
@@ -250,7 +250,7 @@ bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
-    if (m_invincibleTime <= 0 && !m_isDeath && !m_diving) {
+    if (m_invincibleTime <= 0 && !m_isDeath && !m_diving && !m_godMode) {
         auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
         if (bullet) {
             Kill();
@@ -351,7 +351,7 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     auto *gravity = new Gravity();
     gravity->Create(engine, this, game_objects, floor);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(engine, this, game_objects, floor, camera_x, bullet_pool);
+    playerControl->Create(engine, this, game_objects, camera_x, bullet_pool);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,

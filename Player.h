@@ -32,9 +32,8 @@ public:
     void Update(float dt) override;
 
     void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
-                std::weak_ptr<Floor> floor, float *camera_x, ObjectPool<Bullet> *bullet_pool) {
+                float *camera_x, ObjectPool<Bullet> *bullet_pool) {
         Component::Create(engine, go, game_objects);
-        m_floor = std::move(floor);
         m_cameraX = camera_x;
         m_bulletPool = bullet_pool;
     }
@@ -54,12 +53,10 @@ private:
     ObjectPool<Bullet> *m_bulletPool;
     Gravity *m_gravity;
     float *m_cameraX;
-    std::weak_ptr<Floor> m_floor;
     bool m_hasInertia;
-    bool m_hasShot;
+    bool m_godMode;
     float m_waitDead, m_invincibleTime;
     bool m_isDeath;
-    float m_shootDowntime;
     bool m_facingRight;
     bool m_wasInWater;
     short m_remainingLives;

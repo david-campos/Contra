@@ -24,7 +24,6 @@ void CanonBehaviour::Fire() {
                 Vector2D(cosf(rad), -sinf(rad)), 80 * PIXELS_ZOOM); // Notice our system has y inverted
         game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
     }
-    m_fireCooldown = 0.5f;
 }
 
 void CanonBehaviour::Update(float dt) {
@@ -39,13 +38,22 @@ void CanonBehaviour::Update(float dt) {
     }
     Vector2D player_dir = GetPlayerDir();
     switch (m_state) {
-        case HIDDEN: UpdateHidden(player_dir, dt); break;
-        case SHOWING: UpdateShowing(player_dir, dt); break;
-        case SHOWN: UpdateShown(player_dir, dt); break;
+        case HIDDEN:
+            UpdateHidden(player_dir, dt);
+            break;
+        case SHOWING:
+            UpdateShowing(player_dir, dt);
+            break;
+        case SHOWN:
+            UpdateShown(player_dir, dt);
+            break;
+        case HIDING:
+            UpdateHiding(player_dir, dt);
+            break;
     }
 }
 
-void CanonBehaviour::UpdateHidden(const Vector2D& player_dir, float dt) {
+void CanonBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
     m_animator->PlayAnimation(animHidden);
     if (player_dir.x > -WINDOW_WIDTH / 2 + 16 * PIXELS_ZOOM && player_dir.x < 0) {
         m_animator->PlayAnimation(animShowing);
@@ -53,7 +61,7 @@ void CanonBehaviour::UpdateHidden(const Vector2D& player_dir, float dt) {
     }
 }
 
-void CanonBehaviour::UpdateShowing(const Vector2D& player_dir, float dt) {
+void CanonBehaviour::UpdateShowing(const Vector2D &player_dir, float dt) {
     if (!m_animator->IsPlaying()) {
         m_dir = std::max(std::min(DirToInt(player_dir), m_maxDir), m_minDir);
         m_animator->PlayAnimation(animDirsFirst + m_dir - m_minDir);
@@ -64,43 +72,67 @@ void CanonBehaviour::UpdateShowing(const Vector2D& player_dir, float dt) {
 
 void CanonBehaviour::UpdateShown(const Vector2D &player_dir, float dt) {
     if (player_dir.x > WINDOW_WIDTH / 2 - 17 * PIXELS_ZOOM) {
-        m_animator->PlayAnimation(animShowing);
-        m_state = HIDDEN;
+        m_animator->PlayAnimation(animShowing, false);
+        m_state = HIDING;
         return;
     }
 
     m_currentDirTime += dt;
     int target_dir = DirToInt(player_dir);
-    if (target_dir <= m_maxDir && target_dir >= m_minDir) {
-        if (m_currentDirTime > 1.0f) { // Update each second
-            m_currentDirTime -= 1.0f;
-            int diff = target_dir - m_dir;
-            // Turn
-            if (diff != 0) {
-                int clockwise_add;
-                if (diff > 6 or (diff <= 0 && diff > -6)) clockwise_add = -1;
-                else clockwise_add = 1;
-                m_dir = m_dir + clockwise_add;
-                if (m_dir < 0) m_dir += 12;
-                else if (m_dir >= 12) m_dir -= 12;
-                m_animator->PlayAnimation(animDirsFirst + m_dir - m_minDir);
+    bool is_default = target_dir > m_maxDir || target_dir < m_minDir;
+    if (is_default) {
+        target_dir = m_defaultDir;
+    }
+    if (m_currentDirTime > m_rotationInterval) {
+        m_currentDirTime -= m_rotationInterval;
+        int diff = target_dir - m_dir;
+        // Turn
+        if (diff != 0) {
+            int clockwise_add;
+            if (diff > 6 or (diff <= 0 && diff > -6)) clockwise_add = -1;
+            else clockwise_add = 1;
+            m_dir = m_dir + clockwise_add;
+            if (m_dir < 0) m_dir += 12;
+            else if (m_dir >= 12) m_dir -= 12;
+            m_animator->PlayAnimation(animDirsFirst + m_dir - m_minDir);
+        }
+    }
+
+    if (m_burstRemainingCooldown > 0) {
+        m_burstRemainingCooldown -= dt;
+    } else {
+        if (m_fireRemainingCooldown > 0) {
+            m_fireRemainingCooldown -= dt;
+        } else if (m_dir == target_dir && m_player->IsAlive() && !is_default) {
+            Fire();
+            m_fireRemainingCooldown = m_fireCooldown;
+            m_shotBulletsInBurst++;
+            if (m_shotBulletsInBurst >= m_burstLength) {
+                m_burstRemainingCooldown = m_burstCooldown;
+                m_fireRemainingCooldown = 0;
+                m_shotBulletsInBurst = 0;
             }
         }
     }
-    if (m_fireCooldown > 0) {
-        m_fireCooldown -= dt;
-    } else if (m_dir == target_dir && m_player->IsAlive()) {
-        Fire();
-    }
+}
+
+void CanonBehaviour::UpdateHiding(const Vector2D &player_dir, float dt) {
+    if (!m_animator->IsPlaying()) m_state = HIDDEN;
 }
 
 void CanonBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Player *player,
-                            ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir) {
+                            ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int default_dir,
+                            float rotation_interval, int burst_length, float burst_cooldown, float shoot_cooldown) {
     Component::Create(engine, go, game_objects);
     m_player = player->GetComponent<PlayerControl *>();
     m_bulletPool = bullet_pool;
+    m_rotationInterval = rotation_interval;
     m_minDir = min_dir;
     m_maxDir = max_dir;
+    m_defaultDir = default_dir;
+    m_fireCooldown = shoot_cooldown;
+    m_burstCooldown = burst_cooldown;
+    m_burstLength = burst_length;
 }
 
 void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
@@ -148,7 +180,8 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new CanonBehaviour();
-    behaviour->Create(engine, this, game_objects, player, bullet_pool, 0, 11);
+    behaviour->Create(engine, this, game_objects, player, bullet_pool, 0, 11, 6, 1.f,
+            1, 2, 0);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
@@ -161,9 +194,9 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
 }
 
 void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
-                           const std::shared_ptr<Sprite> &enemies_spritesheet,
-                           float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                           Grid *grid, int layer) {
+                    const std::shared_ptr<Sprite> &enemies_spritesheet,
+                    float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
+                    Grid *grid, int layer) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -196,11 +229,12 @@ void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new GulcanBehaviour();
-    behaviour->Create(engine, this, game_objects, player, bullet_pool, 6, 8);
+    behaviour->Create(engine, this, game_objects, player, bullet_pool, 6, 8, 6, 1.f,
+            3, 1.5, 0.25);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
-            -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
-            20 * PIXELS_ZOOM, 20 * PIXELS_ZOOM, -1, layer);
+            -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
+            22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, layer);
     collider->SetListener(behaviour);
 
     AddComponent(behaviour);
