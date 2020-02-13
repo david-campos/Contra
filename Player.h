@@ -51,6 +51,7 @@ private:
     AnimationRenderer *m_animator;
     BoxCollider *m_collider;
     ObjectPool<Bullet> *m_bulletPool;
+    AvancezLib::KeyStatus m_previousKeyStatus;
     Gravity *m_gravity;
     float *m_cameraX;
     bool m_hasInertia;

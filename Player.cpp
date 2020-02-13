@@ -11,11 +11,12 @@ void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
     engine->getKeyStatus(keyStatus);
 
-    if (keyStatus.debug) {
-        m_godMode = true;
+    if (keyStatus.debug && !m_previousKeyStatus.debug) {
+        m_godMode = !m_godMode;
+        SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "God mode: %s", m_godMode ? "ON" : "OFF");
     }
 
-    if (m_invincibleTime > 0 || m_godMode) {
+    if (m_invincibleTime > 0) {
         bool display = (int) round(m_invincibleTime * 10) % 2 == 0;
         m_invincibleTime -= dt;
         if (m_invincibleTime <= 0) display = true;
@@ -48,7 +49,7 @@ void PlayerControl::Update(float dt) {
 
     if (m_gravity->IsOnFloor()) {
         m_hasInertia = false;
-        if (keyStatus.jump) {
+        if (keyStatus.jump && !m_previousKeyStatus.jump) {
             if (keyStatus.down and not(keyStatus.left or keyStatus.right)) {
                 if (m_gravity->CanFall())
                     m_gravity->LetFall();
@@ -150,6 +151,8 @@ void PlayerControl::Update(float dt) {
         flipped.bottom_right_y = box->bottom_right_y;
         m_collider->ChangeBox(flipped);
     }
+
+    m_previousKeyStatus = keyStatus;
 }
 
 void PlayerControl::Init() {
@@ -190,6 +193,8 @@ void PlayerControl::Init() {
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
     m_currentWeapon = std::make_unique<DefaultWeapon>(m_bulletPool, game_objects);
+    m_previousKeyStatus = {false, false, false, false, false, false, false,
+                           false};
     m_remainingLives = 2;
     m_hasInertia = false;
     m_facingRight = true;
