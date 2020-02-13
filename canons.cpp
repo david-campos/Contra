@@ -224,7 +224,7 @@ void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
             frame_side, frame_side, frame_side / 2, frame_side / 2,
             "Opening", AnimationRenderer::STOP_AND_FIRST});
     renderer->AddAnimation({
-            92, 611, anim_speed, anim_len,
+            92, 611, 0.15, 3,
             30, 30, 15, 15,
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();

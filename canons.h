@@ -80,6 +80,7 @@ public:
                 ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int m_defaultDir, float rotation_interval,
                 int burst_length, float burst_cooldown, float shoot_cooldown);
     void Init() {
+        Component::Init();
         m_animator = go->GetComponent<AnimationRenderer *>();
         animHidden = m_animator->FindAnimation("Closed");
         animShowing = m_animator->FindAnimation("Opening");

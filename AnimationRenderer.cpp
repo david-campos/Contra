@@ -15,11 +15,9 @@ void AnimationRenderer::Update(float dt) {
         m_currentTime += m_goingForward ? dt : -dt;
     }
 
-    int frame = floor(m_currentTime / m_currentAnimation->speed);
-
     // Check if it is over the top or bellow zero to loop the animation
     float animation_duration = (float) m_currentAnimation->frames * m_currentAnimation->speed;
-    while (frame >= m_currentAnimation->frames || frame < 0) {
+    while (m_currentTime > animation_duration || m_currentTime < 0) {
         if (m_currentAnimation->stop == DONT_STOP) {
             float modulo = abs(fmod(m_currentTime, animation_duration));
             if (m_goingForward) {
@@ -41,14 +39,15 @@ void AnimationRenderer::Update(float dt) {
             }
         } else { // Stop and last or stop and first
             Pause();
+            float last = (float) animation_duration - m_currentAnimation->speed;
             if (m_currentAnimation->stop == STOP_AND_FIRST) {
-                m_currentTime = 0;
+                m_currentTime = m_goingForward ? 0 : last;
             } else {
-                m_currentTime = (float) (m_currentAnimation->frames - 1) * m_currentAnimation->speed;
+                m_currentTime = m_goingForward ? last : 0;
             }
         }
-        frame = floor(m_currentTime / m_currentAnimation->speed);
     }
+    int frame = floor(m_currentTime / m_currentAnimation->speed);
     // Flip the anchor shift in x if we are mirroring horizontally (so the shift is correct)
     int x_shift = (mirrorHorizontal
                    ? m_currentAnimation->frame_w - m_currentAnimation->anchor_x
@@ -104,8 +103,8 @@ void AnimationRenderer::PlayAnimation(int index, bool forward) {
     if (m_currentAnimation != &m_animations[index]) {
         m_currentAnimation = &m_animations[index];
         m_currentTime = forward ? 0.f : (float) m_currentAnimation->frames * m_currentAnimation->speed;
-        Play(-1, forward);
     }
+    Play(-1, forward);
 }
 
 bool AnimationRenderer::IsCurrent(int animationIndex) {
