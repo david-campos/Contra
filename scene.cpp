@@ -5,7 +5,6 @@
 #include "scene.h"
 #include "canons.h"
 #include "enemies.h"
-#include <yaml-cpp/yaml.h>
 #include <SDL_log.h>
 #include "yaml_converters.h"
 
