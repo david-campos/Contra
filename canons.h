@@ -17,7 +17,7 @@ public:
     void Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                 const std::shared_ptr<Sprite> &enemies_spritesheet,
                 float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                Grid *grid, int layer);
+                Grid *grid, int layer, int burst_length);
 };
 
 class Gulcan : public GameObject {
@@ -88,7 +88,7 @@ public:
         animDie = m_animator->FindAnimation("Dying");
         m_life = 8;
         m_fireRemainingCooldown = 0;
-        m_burstRemainingCooldown = 0;
+        m_burstRemainingCooldown = m_burstCooldown;
         m_shotBulletsInBurst = 0;
         m_state = HIDDEN;
     }

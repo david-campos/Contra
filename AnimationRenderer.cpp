@@ -86,32 +86,29 @@ void AnimationRenderer::CurrentAndPause(int index, bool forward) {
                 "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
         return;
     }
-    if (m_currentAnimation != &m_animations[index]) {
+    if (!IsCurrent(index)) {
         m_currentAnimation = &m_animations[index];
         m_currentTime = 0.f;
-        m_goingForward = forward;
+        m_currentTime = forward ? 0.f : (float) m_currentAnimation->frames * m_currentAnimation->speed;
         Pause();
     }
 }
 
-void AnimationRenderer::PlayAnimation(int index, bool forward) {
+void AnimationRenderer::PlayAnimation(int index, bool forward, int frame) {
     if (index < 0 || index >= m_animations.size()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                 "AnimationRenderer::PlayAnimation: Invalid animation %d", index);
         return;
     }
-    if (m_currentAnimation != &m_animations[index]) {
+    if (!IsCurrent(index)) {
         m_currentAnimation = &m_animations[index];
+        // In case frame is -1
         m_currentTime = forward ? 0.f : (float) m_currentAnimation->frames * m_currentAnimation->speed;
     }
-    Play(-1, forward);
+    Play(frame, forward);
 }
 
-bool AnimationRenderer::IsCurrent(int animationIndex) {
-    return m_currentAnimation == &m_animations[animationIndex];
-}
-
-int AnimationRenderer::FindAnimation(std::string name) {
+int AnimationRenderer::FindAnimation(std::string name) const {
     for (int i = 0; i < m_animations.size(); i++) {
         if (m_animations[i].name == name) {
             return i;
@@ -140,7 +137,7 @@ AnimationRenderer::Animation AnimationRenderer::GetCurrentAnimation() const {
 }
 
 void AnimationRenderer::GoToFrame(int frame) {
-    if (frame > 0) {
+    if (frame >= 0) {
         m_currentTime = (float) (frame % m_currentAnimation->frames) * m_currentAnimation->speed;
     }
 }

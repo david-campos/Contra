@@ -38,7 +38,7 @@ public:
     }
 
     void Init(const Vector2D &direction, const BulletType &type, int speed = BULLET_SPEED, int damage = 1) {
-        m_direction = direction;
+        m_direction = direction.normalise();
         m_speed = speed;
         m_damage = damage;
         m_type = type;

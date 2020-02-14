@@ -20,8 +20,9 @@ void CanonBehaviour::Fire() {
     auto *bullet = m_bulletPool->FirstAvailable();
     if (bullet != nullptr) {
         float rad = -0.5236f * (float) m_dir;
-        bullet->Init(go->position, BulletBehaviour::ENEMY_BULLET_DEFAULT,
-                Vector2D(cosf(rad), -sinf(rad)), 80 * PIXELS_ZOOM); // Notice our system has y inverted
+        Vector2D dir = Vector2D(cosf(rad), -sinf(rad));
+        bullet->Init(go->position + dir * 13 * PIXELS_ZOOM, BulletBehaviour::ENEMY_BULLET_DEFAULT,
+                dir, 80 * PIXELS_ZOOM); // Notice our system has y inverted
         game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
     }
 }
@@ -100,19 +101,18 @@ void CanonBehaviour::UpdateShown(const Vector2D &player_dir, float dt) {
 
     if (m_burstRemainingCooldown > 0) {
         m_burstRemainingCooldown -= dt;
-    } else {
-        if (m_fireRemainingCooldown > 0) {
-            m_fireRemainingCooldown -= dt;
-        } else if (m_dir == target_dir && m_player->IsAlive() && !is_default) {
-            Fire();
-            m_fireRemainingCooldown = m_fireCooldown;
-            m_shotBulletsInBurst++;
-            if (m_shotBulletsInBurst >= m_burstLength) {
-                m_burstRemainingCooldown = m_burstCooldown;
-                m_fireRemainingCooldown = 0;
-                m_shotBulletsInBurst = 0;
-            }
+    }
+    if (m_fireRemainingCooldown > 0) {
+        m_fireRemainingCooldown -= dt;
+    } else if ((m_shotBulletsInBurst < m_burstLength || m_burstRemainingCooldown <= 0)
+               && m_dir == target_dir && m_player->IsAlive() && !is_default) {
+        if (m_burstRemainingCooldown <= 0) {
+            m_shotBulletsInBurst = 0; // New burst
+            m_burstRemainingCooldown = m_burstCooldown;
         }
+        Fire();
+        m_fireRemainingCooldown = m_fireCooldown;
+        m_shotBulletsInBurst++;
     }
 }
 
@@ -147,7 +147,7 @@ void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
 void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                            const std::shared_ptr<Sprite> &enemies_spritesheet,
                            float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                           Grid *grid, int layer) {
+                           Grid *grid, int layer, int burst_length) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -181,7 +181,7 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
     renderer->Play();
     auto *behaviour = new CanonBehaviour();
     behaviour->Create(engine, this, game_objects, player, bullet_pool, 0, 11, 6, 1.f,
-            1, 2, 0);
+            burst_length, 2, 0.25);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
@@ -229,7 +229,7 @@ void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new GulcanBehaviour();
-    behaviour->Create(engine, this, game_objects, player, bullet_pool, 6, 8, 6, 1.f,
+    behaviour->Create(engine, this, game_objects, player, bullet_pool, 6, 8, 6, 0.5f,
             3, 1.5, 0.25);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,

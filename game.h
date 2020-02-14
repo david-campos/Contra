@@ -46,7 +46,8 @@ public:
     virtual void Create(AvancezLib *avancezLib) {
         SDL_Log("Game::Create");
         this->engine = avancezLib;
-        background = engine->createSprite("data/level1/background_labeled.png");
+        // background = engine->createSprite("data/level1/background_labeled.png");
+        background = engine->createSprite("data/level1/background_no_labels.png");
         level_width = background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>("data/level1/mask.bmp");
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
@@ -99,27 +100,27 @@ public:
 
         auto *tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                Vector2D(1264, 152) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER, 1);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                Vector2D(1648, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER, 1);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                Vector2D(1840, 120) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER, 1);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                Vector2D(2991, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER, 1);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
         tank = new RotatingCanon();
         tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
-                Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                Vector2D(3119, 184) * PIXELS_ZOOM, player, enemy_bullets, &grid, NPCS_COLLISION_LAYER, 3);
         tank->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
 
@@ -144,29 +145,61 @@ public:
         gulcan->AddReceiver(this);
         game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);
 
-        auto *hiddenLedder = new Ledder();
-        hiddenLedder->Create(engine, &game_objects[0], enemy_bullets, player,
+        auto *ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
                 enemies_spritesheet, &camera_x,
                 &grid, NPCS_COLLISION_LAYER,
-                2.f, 2.f, 2.f);
-        hiddenLedder->position = Vector2D(1343, 98) * PIXELS_ZOOM;
-        game_objects[RENDERING_LAYER_ENEMIES].insert(hiddenLedder);
+                2.f, 2.f, 2.f, false, 1, 0.f, false);
+        ledder->position = Vector2D(1343, 98) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
 
-        hiddenLedder = new Ledder();
-        hiddenLedder->Create(engine, &game_objects[0], enemy_bullets, player,
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
                 enemies_spritesheet, &camera_x,
                 &grid, NPCS_COLLISION_LAYER,
-                2.f, 2.f, 2.f);
-        hiddenLedder->position = Vector2D(1552, 66) * PIXELS_ZOOM;
-        game_objects[RENDERING_LAYER_ENEMIES].insert(hiddenLedder);
+                2.f, 2.f, 2.f, false, 1, 0.f, false);
+        ledder->position = Vector2D(1552, 66) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
 
-        hiddenLedder = new Ledder();
-        hiddenLedder->Create(engine, &game_objects[0], enemy_bullets, player,
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
                 enemies_spritesheet, &camera_x,
                 &grid, NPCS_COLLISION_LAYER,
-                2.f, 2.f, 2.f);
-        hiddenLedder->position = Vector2D(3236, 77) * PIXELS_ZOOM;
-        game_objects[RENDERING_LAYER_ENEMIES].insert(hiddenLedder);
+                2.f, 2.f, 0.25f, true, 3, 2.0f, true);
+        ledder->position = Vector2D(3234, 78) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
+
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
+                enemies_spritesheet, &camera_x,
+                &grid, NPCS_COLLISION_LAYER,
+                0.f, 0.f, 0.4f, true, 3, 3.f, false);
+        ledder->position = Vector2D(321, 204) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
+
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
+                enemies_spritesheet, &camera_x,
+                &grid, NPCS_COLLISION_LAYER,
+                0.f, 0.f, 0.4f, true, 3, 3.f, false);
+        ledder->position = Vector2D(641, 204) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
+
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
+                enemies_spritesheet, &camera_x,
+                &grid, NPCS_COLLISION_LAYER,
+                0.f, 0.f,  0.4f, true, 3, 3.f, false);
+        ledder->position = Vector2D(1281, 108) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
+
+        ledder = new Ledder();
+        ledder->Create(engine, &game_objects[0], enemy_bullets, player,
+                enemies_spritesheet, &camera_x,
+                &grid, NPCS_COLLISION_LAYER,
+                0.f, 0.f,   0.4f, true, 3, 3.f, false);
+        ledder->position = Vector2D(2369, 140) * PIXELS_ZOOM;
+        game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
 
         game_objects[RENDERING_LAYER_PLAYER].insert(player);
     }

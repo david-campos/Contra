@@ -45,8 +45,12 @@ public:
     // Adds an animation to the renderer and returns the index
     int AddAnimation(Animation animation);
 
+    [[nodiscard]] Animation GetAnimation(int index) const {
+        return m_animations.at(index);
+    }
+
     /** Plays the indicated animation */
-    void PlayAnimation(int index, bool forward = true);
+    void PlayAnimation(int index, bool forward = true, int frame = -1);
 
     /**
      * If the animation is not being played right now, it changes
@@ -66,7 +70,7 @@ public:
     [[nodiscard]] Animation GetCurrentAnimation() const;
 
     /** Find an animation by name, -1 indicates the animation was not found */
-    int FindAnimation(std::string name);
+    [[nodiscard]] int FindAnimation(std::string name) const;
 
     /** Indicates if the renderer is playing an animation */
     bool IsPlaying() { return playing; }
@@ -75,7 +79,9 @@ public:
     bool IsPlaying(int index) { return IsPlaying() && IsCurrent(index); }
 
     /** Indicates if the animation is the currently selected */
-    bool IsCurrent(int animationIndex);
+    inline bool IsCurrent(int animationIndex) {
+        return m_currentAnimation == &m_animations[animationIndex];
+    }
 
     /** Moves the current time to the start of the specified frame */
     void GoToFrame(int frame);
