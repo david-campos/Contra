@@ -17,11 +17,16 @@ private:
 protected:
     std::vector<GameObject *> receivers;
     std::vector<Component *> components;
-
     int id;
 public:
+    enum OnOutOfScreen {
+        DISABLE_AND_DESTROY,
+        JUST_DISABLE
+    };
+
     static int s_nextId;
     Vector2D position;
+    OnOutOfScreen onOutOfScreen = DISABLE_AND_DESTROY;
 
     GameObject() {
         id = s_nextId++;

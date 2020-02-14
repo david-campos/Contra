@@ -147,7 +147,7 @@ void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
 void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                            const std::shared_ptr<Sprite> &enemies_spritesheet,
                            float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                           Grid *grid, int layer, int burst_length) {
+                           Grid *grid, int burst_length) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -185,7 +185,7 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
-            20 * PIXELS_ZOOM, 20 * PIXELS_ZOOM, -1, layer);
+            20 * PIXELS_ZOOM, 20 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);
 
     AddComponent(behaviour);
@@ -196,7 +196,7 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
 void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
                     const std::shared_ptr<Sprite> &enemies_spritesheet,
                     float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                    Grid *grid, int layer) {
+                    Grid *grid) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
@@ -234,7 +234,7 @@ void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
-            22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, layer);
+            22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);
 
     AddComponent(behaviour);

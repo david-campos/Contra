@@ -52,11 +52,11 @@ bool Gravity::IsOnFloor() const {
     return m_onFloor && m_velocity == 0;
 }
 
-float Gravity::getAcceleration() const {
+float Gravity::GetAcceleration() const {
     return m_acceleration;
 }
 
-void Gravity::setAcceleration(float mAcceleration) {
+void Gravity::SetAcceleration(float mAcceleration) {
     m_acceleration = mAcceleration;
 }
 

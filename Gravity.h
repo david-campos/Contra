@@ -31,13 +31,16 @@ public:
     void SetVelocity(float velocity) {
         m_velocity = velocity;
     }
+    [[nodiscard]] float GetVelocity() const {
+        return m_velocity;
+    }
     void SetFallThoughWater(const bool value) { m_fallThroughWater = value; }
     // Let's the game object fall until it leaves the current floor
     void LetFall();
     [[nodiscard]] bool CanFall() const;
 
-    [[nodiscard]] float getAcceleration() const;
-    void setAcceleration(float acceleration);
+    [[nodiscard]] float GetAcceleration() const;
+    void SetAcceleration(float acceleration);
 
     [[nodiscard]] bool IsOnWater() const;
     [[nodiscard]] bool IsOnFloor() const;

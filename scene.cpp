@@ -30,7 +30,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             auto *tank = new RotatingCanon();
             tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player, enemy_bullets, &grid,
-                    NPCS_COLLISION_LAYER, rc_node["burst_length"].as<int>());
+                    rc_node["burst_length"].as<int>());
             tank->AddReceiver(this);
             not_found_enemies.push(tank);
         }
@@ -38,15 +38,14 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             auto *gulcan = new Gulcan();
             gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player,
-                    enemy_bullets, &grid, NPCS_COLLISION_LAYER);
+                    enemy_bullets, &grid);
             gulcan->AddReceiver(this);
             not_found_enemies.push(gulcan);
         }
         for (const auto &rc_node: scene_root["ledders"]) {
             auto *ledder = new Ledder();
             ledder->Create(engine, &game_objects[0], enemy_bullets, player,
-                    enemies_spritesheet, &camera_x,
-                    &grid, NPCS_COLLISION_LAYER,
+                    enemies_spritesheet, &camera_x, &grid,
                     rc_node["time_hidden"].as<float>(),
                     rc_node["time_shown"].as<float>(),
                     rc_node["cooldown_time"].as<float>(),
@@ -55,9 +54,21 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
                     rc_node["burst_cooldown"].as<float>(),
                     rc_node["horizontally_precise"].as<bool>()
             );
-            ledder->position =  rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
+            ledder->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             ledder->AddReceiver(this);
             not_found_enemies.push(ledder);
+        }
+        for (const auto &rc_node: scene_root["greeders"]) {
+            auto *spawner = new GameObject();
+            spawner->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
+            auto *greeder_spawner = new GreederSpawner();
+            greeder_spawner->Create(engine, spawner, &game_objects[0],
+                    enemies_spritesheet, &camera_x,
+                    &grid, level_floor, this
+            );
+            spawner->AddComponent(greeder_spawner);
+            spawner->AddReceiver(this);
+            not_found_enemies.push(spawner);
         }
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);

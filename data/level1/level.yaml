@@ -72,3 +72,20 @@ ledders:
     burst_length: 3
     burst_cooldown: 3
     horizontally_precise: false
+greeders:
+  - pos: [309, 109]
+  - pos: [415, 109]
+  - pos: [607, 109]
+  - pos: [831, 109]
+  - pos: [1023, 109]
+  - pos: [1260, 109]
+  - pos: [1270, 109]
+  - pos: [1280, 109]
+  - pos: [1500, 205]
+  - pos: [1360, 241]
+  - pos: [1727, 77]
+  - pos: [1819, 141]
+  - pos: [2267, 141]
+  - pos: [2459, 173]
+  - pos: [2778, 141]
+  - pos: [3071, 109]

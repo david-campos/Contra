@@ -12,7 +12,7 @@
 
 void Ledder::Create(AvancezLib *engine, std::set<GameObject *> *game_objects, ObjectPool<Bullet> *bullet_pool,
                     Player *player, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                    int layer, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
+                    float time_hidden, float time_shown, float cooldown_time, bool show_standing,
                     int burst_length, float burst_cooldown, bool horizontally_precise) {
     GameObject::Create();
     auto *renderer = new AnimationRenderer();
@@ -58,12 +58,12 @@ void Ledder::Create(AvancezLib *engine, std::set<GameObject *> *game_objects, Ob
         collider->Create(engine, this, game_objects, grid, camera_x,
                 -6 * PIXELS_ZOOM, -27 * PIXELS_ZOOM,
                 12 * PIXELS_ZOOM, 28 * PIXELS_ZOOM,
-                -1, layer);
+                -1, NPCS_COLLISION_LAYER);
     } else {
         collider->Create(engine, this, game_objects, grid, camera_x,
                 -6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
                 10 * PIXELS_ZOOM, 15 * PIXELS_ZOOM,
-                -1, layer);
+                -1, NPCS_COLLISION_LAYER);
     }
     collider->SetListener(behaviour);
 
@@ -204,3 +204,144 @@ void LedderBehaviour::OnCollision(const CollideComponent &collider) {
         }
     }
 }
+
+void Greeder::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+                     std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
+                     const std::weak_ptr<Floor> &the_floor) {
+    GameObject::Create();
+    auto *renderer = new AnimationRenderer();
+    renderer->Create(engine, this, game_objects, std::move(enemies_spritesheet), camera_x);
+    renderer->AddAnimation({
+            1, 2, 0.1, 3,
+            17, 32, 9, 32,
+            "Running", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            109, 6, 0.2, 1,
+            17, 32, 9, 32,
+            "Jumping", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            286, 11, 0.2, 2,
+            18, 15, 9, 14,
+            "Drowning", AnimationRenderer::STOP_AND_LAST
+    });
+    renderer->AddAnimation({
+            186, 610, 0.15, 3,
+            34, 34, 17, 26,
+            "Dying", AnimationRenderer::STOP_AND_LAST
+    });
+    renderer->Play();
+    auto *gravity = new Gravity();
+    gravity->Create(engine, this, game_objects, the_floor);
+    auto *behaviour = new GreederBehaviour();
+    behaviour->Create(engine, this, game_objects, the_floor);
+    auto *collider = new BoxCollider();
+    collider->Create(engine, this, game_objects, grid, camera_x,
+            -5 * PIXELS_ZOOM, -32 * PIXELS_ZOOM,
+            9 * PIXELS_ZOOM, 32 * PIXELS_ZOOM,
+            PLAYER_COLLISION_LAYER, NPCS_COLLISION_LAYER);
+    collider->SetListener(behaviour);
+
+    AddComponent(behaviour);
+    AddComponent(gravity);
+    AddComponent(collider);
+    AddComponent(renderer);
+}
+
+void GreederBehaviour::Update(float dt) {
+    auto level_floor = m_floor.lock();
+    if (!level_floor) return;
+
+    if (m_isDeath) {
+        if (m_deathFor < 0.25) {
+            m_deathFor += dt;
+            if (m_deathFor >= 0.25) {
+                m_animator->PlayAnimation(m_animDying);
+                m_gravity->SetAcceleration(0);
+                m_gravity->SetVelocity(0);
+            }
+        } else {
+            if (!m_animator->IsPlaying()) {
+                go->Disable();
+                game_objects->erase(go);
+                if (go->onOutOfScreen == GameObject::DISABLE_AND_DESTROY) {
+                    go->Destroy();
+                }
+            }
+        }
+    } else if (m_gravity->IsOnFloor()) {
+        go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM, 0) * m_direction * dt;
+        m_animator->PlayAnimation(m_animRunning);
+        float x = std::floor((go->position.x + 4 * PIXELS_ZOOM * m_direction) / PIXELS_ZOOM);
+        float y = std::floor(go->position.y / PIXELS_ZOOM);
+        if (!level_floor->IsFloor(x, y)) {
+            if (m_direction == 1 || m_random_dist(m_mt) <= 0.2f) {
+                m_direction *= -1;
+            } else {
+                m_gravity->SetVelocity(-PLAYER_JUMP / 1.3 * PIXELS_ZOOM);
+            }
+        }
+    } else if (m_gravity->IsOnWater()) {
+        m_isDeath = true;
+        m_deathFor = 10.f; // Just enough so it dies as soon as the animation is ended
+        m_gravity->SetVelocity(0);
+        m_gravity->SetAcceleration(0);
+        m_animator->PlayAnimation(m_animDrowning);
+    } else {
+        go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * 1.1, 0) * m_direction * dt;
+        m_animator->PlayAnimation(m_animJumping);
+    }
+    m_animator->mirrorHorizontal = m_direction == 1;
+}
+
+void GreederBehaviour::OnCollision(const CollideComponent &collider) {
+    if (!m_isDeath) {
+        auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
+        if (bullet) {
+            bullet->Kill();
+            m_animator->PlayAnimation(m_animJumping);
+            m_gravity->SetVelocity(-3 * PLAYER_SPEED * PIXELS_ZOOM);
+            m_deathFor = 0;
+            m_isDeath = true;
+        }
+    }
+}
+
+void GreederBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+                              std::weak_ptr<Floor> the_floor) {
+    Component::Create(engine, go, game_objects);
+    m_floor = std::move(the_floor);
+}
+
+void GreederSpawner::Create(AvancezLib *engine, GameObject* go, std::set<GameObject *> *game_objects,
+                            std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
+                            const std::weak_ptr<Floor> &the_floor, GameObject* receiver) {
+    Component::Create(engine, go, game_objects);
+    m_greeder = new Greeder();
+    this->m_cameraX = camera_x;
+    m_greeder->Create(engine, game_objects, std::move(enemies_spritesheet), camera_x, grid, the_floor);
+    m_greeder->onOutOfScreen = GameObject::JUST_DISABLE;
+    m_greeder->AddReceiver(receiver);
+}
+
+void GreederSpawner::Update(float dt) {
+    if (go->IsEnabled()) {
+        if(*m_cameraX + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
+            if (!m_greeder->IsEnabled()) {
+                m_greeder->position = go->position;
+                m_greeder->Init();
+                game_objects[RENDERING_LAYER_ENEMIES].insert(m_greeder);
+            }
+        } else {
+            go->Disable();
+        }
+    }
+}
+
+void GreederSpawner::Destroy() {
+    Component::Destroy();
+    game_objects->erase(m_greeder); // If not it might be destroyed twice
+    m_greeder->Destroy();
+}
+

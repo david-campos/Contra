@@ -71,8 +71,9 @@ public:
             if (game_object->position.x < camera_x - RENDERING_MARGINS) {
                 game_object->Disable();
                 game_objects->erase(game_object);
-                game_object->Destroy();
-                SDL_Log("Object destroyed");
+                if (game_object->onOutOfScreen == DISABLE_AND_DESTROY) {
+                    game_object->Destroy();
+                }
             }
         }
 
