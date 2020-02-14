@@ -1,0 +1,74 @@
+background: background_no_labels.png
+floor_mask: mask.bmp
+rotating_canons:
+  - pos: [1264, 152]
+    burst_length: 1
+  - pos: [1648, 120]
+    burst_length: 1
+  - pos: [1840, 120]
+    burst_length: 1
+  - pos: [2991, 184]
+    burst_length: 1
+  - pos: [3119, 184]
+    burst_length: 3
+gulcans:
+  - pos: [2063, 152]
+  - pos: [2191, 56]
+  - pos: [2767, 120]
+ledders:
+  - pos: [1343, 98]
+    time_hidden: 2
+    time_shown: 2
+    cooldown_time: 2
+    show_standing: false
+    burst_length: 1
+    burst_cooldown: 0
+    horizontally_precise: false
+  - pos: [1552, 66]
+    time_hidden: 2
+    time_shown: 2
+    cooldown_time: 2
+    show_standing: false
+    burst_length: 1
+    burst_cooldown: 0
+    horizontally_precise: false
+  - pos: [3234, 78]
+    time_hidden: 2
+    time_shown: 2
+    cooldown_time: 0.25
+    show_standing: true
+    burst_length: 3
+    burst_cooldown: 2
+    horizontally_precise: true
+  - pos: [321, 204]
+    time_hidden: 0
+    time_shown: 0
+    cooldown_time: 0.4
+    show_standing: true
+    burst_length: 3
+    burst_cooldown: 3
+    horizontally_precise: false
+  - pos: [641, 204]
+    time_hidden: 0
+    time_shown: 0
+    cooldown_time: 0.4
+    show_standing: true
+    burst_length: 3
+    burst_cooldown: 3
+    horizontally_precise: false
+  - pos: [1281, 108]
+    time_hidden: 0
+    time_shown: 0
+    cooldown_time: 0.4
+    show_standing: true
+    burst_length: 3
+    burst_cooldown: 3
+    horizontally_precise: false
+  - pos: [2369, 140]
+    time_hidden: 0
+    time_shown: 0
+    cooldown_time: 0.4
+    show_standing: true
+    burst_length: 3
+    burst_cooldown: 3
+    horizontally_precise: false
