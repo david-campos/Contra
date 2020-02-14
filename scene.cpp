@@ -27,25 +27,22 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         CreatePlayer();
 
         for (const auto &rc_node: scene_root["rotating_canons"]) {
-            SDL_Log("Rotating Canon");
             auto *tank = new RotatingCanon();
             tank->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player, enemy_bullets, &grid,
                     NPCS_COLLISION_LAYER, rc_node["burst_length"].as<int>());
             tank->AddReceiver(this);
-            game_objects[RENDERING_LAYER_ENEMIES].insert(tank);
+            not_found_enemies.push(tank);
         }
         for (const auto &rc_node: scene_root["gulcans"]) {
-            SDL_Log("Gulcan Canon");
             auto *gulcan = new Gulcan();
             gulcan->Create(engine, &game_objects[0], enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player,
                     enemy_bullets, &grid, NPCS_COLLISION_LAYER);
             gulcan->AddReceiver(this);
-            game_objects[RENDERING_LAYER_ENEMIES].insert(gulcan);
+            not_found_enemies.push(gulcan);
         }
         for (const auto &rc_node: scene_root["ledders"]) {
-            SDL_Log("Ledder");
             auto *ledder = new Ledder();
             ledder->Create(engine, &game_objects[0], enemy_bullets, player,
                     enemies_spritesheet, &camera_x,
@@ -60,7 +57,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             );
             ledder->position =  rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             ledder->AddReceiver(this);
-            game_objects[RENDERING_LAYER_ENEMIES].insert(ledder);
+            not_found_enemies.push(ledder);
         }
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);
@@ -73,6 +70,10 @@ void Level::Destroy() {
     for (const auto &layer: game_objects) {
         for (auto game_object : layer)
             game_object->Destroy();
+    }
+    while (!not_found_enemies.empty()) {
+        not_found_enemies.top()->Destroy();
+        not_found_enemies.pop();
     }
     default_bullets->Destroy();
     delete default_bullets;
@@ -130,7 +131,15 @@ void Level::CreateBulletPools() {
 void Level::Init() {
     GameObject::Init();
     camera_x = 0;
-    player->Init();
+
+    next_enemy_x = not_found_enemies.top()->position.x;
+    while (next_enemy_x < WINDOW_WIDTH) {
+        if (!not_found_enemies.empty()) {
+            game_objects[RENDERING_LAYER_ENEMIES].insert(not_found_enemies.top());
+            not_found_enemies.pop();
+            next_enemy_x = not_found_enemies.top()->position.x;
+        }
+    }
 
     for (const auto &layer: game_objects) {
         for (auto game_object : layer)

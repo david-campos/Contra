@@ -5,8 +5,6 @@
 int GameObject::s_nextId = 0;
 
 void GameObject::Create() {
-    SDL_Log("GameObject::Create");
-
     enabled = false;
 }
 
@@ -17,7 +15,6 @@ void GameObject::AddComponent(Component *component) {
 
 void GameObject::Init() {
     SDL_Log("GameObject::Init");
-
     for (auto it = components.begin(); it != components.end(); it++)
         (*it)->Init();
 

@@ -6,6 +6,7 @@
 #define CONTRA_SCENE_H
 
 
+#include <queue>
 #include "game_object.h"
 #include "floor.h"
 #include "avancezlib.h"
@@ -13,6 +14,12 @@
 #include "Player.h"
 
 class Level : public GameObject {
+    struct game_objects_comp_x {
+        bool operator()(const GameObject *lhs, const GameObject *rhs) const {
+            return lhs->position.x > rhs->position.x;
+        }
+    };
+
     AvancezLib *engine;
     std::unique_ptr<Sprite> background;
     std::shared_ptr<Sprite> spritesheet;
@@ -20,7 +27,9 @@ class Level : public GameObject {
     std::shared_ptr<Floor> level_floor;
     Player *player;
     PlayerControl *playerControl;
-    std::set<GameObject*> game_objects[RENDERING_LAYERS];
+    std::set<GameObject *> game_objects[RENDERING_LAYERS];
+    std::priority_queue<GameObject *, std::deque<GameObject *>, game_objects_comp_x> not_found_enemies;
+    float next_enemy_x;
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     Grid grid;
@@ -48,42 +57,31 @@ public:
         else
             camera_x = level_width - WINDOW_WIDTH;
 
+        // We progressively init the enemies in front of the camera
+        while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
+            auto *enemy = not_found_enemies.top();
+            game_objects[RENDERING_LAYER_ENEMIES].insert(enemy);
+            enemy->Init();
+            not_found_enemies.pop();
+            next_enemy_x = not_found_enemies.top()->position.x;
+        }
+
+        // And eliminate the enemies behind the camera
+        for (auto *game_object : game_objects[RENDERING_LAYER_ENEMIES]) {
+            if (game_object->position.x < camera_x - RENDERING_MARGINS) {
+                game_object->Disable();
+                game_objects->erase(game_object);
+                game_object->Destroy();
+                SDL_Log("Object destroyed");
+            }
+        }
+
         // Draw background (smoothing the zoom)
         int camera_without_zoom = int(floor(camera_x / PIXELS_ZOOM));
         int reminder = int(round(camera_x - camera_without_zoom * PIXELS_ZOOM));
         background->draw(-reminder, 0, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT,
                 camera_without_zoom, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1,
                 WINDOW_HEIGHT / PIXELS_ZOOM);
-
-        // Debug floor printing
-//        SDL_Color floor{0, 255, 0};
-//        SDL_Color water{0, 0, 255};
-//        for (int y = 0; y < level_floor->getHeight(); y++) {
-//            for (int x = 0; x < level_floor->getWidth(); x++) {
-//                if (level_floor->IsFloor(x, y)) {
-//                    engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, floor);
-//                } else if (level_floor->IsWater(x, y)) {
-//                    engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, water);
-//                }
-//            }
-//        }
-//        // Debug grid
-//        int cells = WINDOW_WIDTH / grid.getCellSize() + 1;
-//        int start = floor(camera_x / grid.getCellSize());
-//        for (int i = 0; i < grid.getColSize(); i++) {
-//            for (int j = start; j < start + cells; j++) {
-//                if (!grid.GetCell(j, i)->GetLayer(PLAYER_COLLISION_LAYER)->empty()) {
-//                    engine->fillSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(), grid.getCellSize(),
-//                            {0, 0, 0});
-//                } else {
-//                    engine->fillSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(), grid.getCellSize(),
-//                            {255, 255, 255});
-//                }
-//                engine->strokeSquare(j * grid.getCellSize() - camera_x, i*grid.getCellSize(),
-//                        j * grid.getCellSize() - camera_x + grid.getCellSize(), (i+1)*grid.getCellSize(),
-//                        {155, 155, 155});
-//            }
-//        }
 
         for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
             spritesheet->draw(
@@ -101,8 +99,10 @@ public:
     }
 
     void Destroy() override;
+
 private:
     void CreateBulletPools();
+
     void CreatePlayer();
 };
 
