@@ -67,6 +67,7 @@ public:
 		bool up; // up arrow
 		bool down; // down arrow
 		bool esc; // escape button
+		bool pause; // pause button
 		bool debug; // godmode
 	};
 

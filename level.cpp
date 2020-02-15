@@ -78,9 +78,9 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
                     level_floor, rc_node["content"].as<PickUpType>());
             auto *pick_up_holder = new GameObject();
             pick_up_holder->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
-            auto* behaviour = new CoveredPickUpHolderBehaviour();
+            auto *behaviour = new CoveredPickUpHolderBehaviour();
             behaviour->Create(engine, pick_up_holder, game_objects, pickup);
-            auto* renderer = new AnimationRenderer();
+            auto *renderer = new AnimationRenderer();
             renderer->Create(engine, pick_up_holder, game_objects, enemies_spritesheet, &camera_x);
             renderer->AddAnimation({
                     1, 76, 0.15, 1,
@@ -141,33 +141,34 @@ void Level::Destroy() {
 
 void Level::CreateBulletPools() {
     // Create bullet pools for the player
-    default_bullets = new ObjectPool<Bullet>();
-    default_bullets->Create(MAX_DEFAULT_BULLETS);
-    for (auto *bullet: default_bullets->pool) {
-        bullet->Create();
-        auto *renderer = new SimpleRenderer();
-        renderer->Create(engine, bullet, game_objects, spritesheet, &camera_x,
-                82, 10, 3, 3, 1, 1);
-        auto *behaviour = new BulletBehaviour();
-        behaviour->Create(engine, bullet, game_objects, &camera_x);
-        auto *box_collider = new BoxCollider();
-        box_collider->Create(engine, bullet, game_objects, &grid, &camera_x,
-                -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
-                3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
-        bullet->AddComponent(behaviour);
-        bullet->AddComponent(renderer);
-        bullet->AddComponent(box_collider);
-        bullet->AddReceiver(this);
-    }
+    default_bullets = CreatePlayerBulletPool(MAX_DEFAULT_BULLETS, {
+            82, 10, 0.2, 1,
+            3, 3, 1, 1,
+            "Bullet", AnimationRenderer::STOP_AND_LAST
+    }, {-1, -1, 2, 2});
+    machine_gun_bullets = CreatePlayerBulletPool(MAX_MACHINE_GUN_BULLETS, {
+            89, 9, 0.2, 1,
+            5, 5, 2, 2,
+            "Bullet", AnimationRenderer::STOP_AND_LAST
+    }, {-2, -2, 2, 2});
+    spread_bullets = CreatePlayerBulletPool(MAX_SPREAD_BULLETS, {
+            88, 8, 0.2, 3,
+            8, 8, 4, 4,
+            "Bullet", AnimationRenderer::STOP_AND_LAST
+    }, {-2, -2, 2, 2});
 
     // Create bullet pool for the npcs
     enemy_bullets = new ObjectPool<Bullet>();
     enemy_bullets->Create(MAX_NPC_BULLETS);
     for (auto *bullet: enemy_bullets->pool) {
         bullet->Create();
-        auto *renderer = new SimpleRenderer();
-        renderer->Create(engine, bullet, game_objects, enemies_spritesheet, &camera_x,
-                199, 72, 3, 3, 1, 1);
+        auto *renderer = new AnimationRenderer();
+        renderer->Create(engine, bullet, game_objects, enemies_spritesheet, &camera_x);
+        renderer->AddAnimation({
+                199, 72, 0.2, 1,
+                3, 3, 1, 1,
+                "Bullet", AnimationRenderer::STOP_AND_LAST
+        });
         auto *behaviour = new BulletBehaviour();
         behaviour->Create(engine, bullet, game_objects, &camera_x);
         auto *box_collider = new BoxCollider();
@@ -202,9 +203,42 @@ void Level::Init() {
 
 void Level::CreatePlayer() {
     player = new Player();
-    player->Create(engine, game_objects, spritesheet, level_floor, &camera_x, default_bullets, &grid,
-            PLAYER_COLLISION_LAYER);
+    player->Create(engine, game_objects, spritesheet, level_floor, &camera_x,
+            default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets,
+            &grid, PLAYER_COLLISION_LAYER);
     playerControl = player->GetComponent<PlayerControl *>();
     player->AddReceiver(this);
     game_objects[RENDERING_LAYER_PLAYER]->insert(player);
+}
+
+ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
+                                                  const Box &box) {
+    auto *pool = new ObjectPool<Bullet>();
+    pool->Create(num_bullets);
+    for (auto *bullet: pool->pool) {
+        bullet->Create();
+        auto *renderer = new AnimationRenderer();
+        renderer->Create(engine, bullet, game_objects, spritesheet, &camera_x);
+        renderer->AddAnimation(animation);
+        renderer->AddAnimation({
+                104, 0, 0.2, 1,
+                7, 7, 3, 3,
+                "Kill", AnimationRenderer::STOP_AND_FIRST
+        });
+        renderer->Play();
+        auto *behaviour = new BulletBehaviour();
+        behaviour->Create(engine, bullet, game_objects, &camera_x);
+        auto *box_collider = new BoxCollider();
+        box_collider->Create(engine, bullet, game_objects, &grid, &camera_x, {
+                box.top_left_x * PIXELS_ZOOM,
+                box.top_left_y * PIXELS_ZOOM,
+                box.bottom_right_x * PIXELS_ZOOM,
+                box.bottom_right_y * PIXELS_ZOOM
+        }, NPCS_COLLISION_LAYER, -1);
+        bullet->AddComponent(behaviour);
+        bullet->AddComponent(renderer);
+        bullet->AddComponent(box_collider);
+        bullet->AddReceiver(this);
+    }
+    return pool;
 }

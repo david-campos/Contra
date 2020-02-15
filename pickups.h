@@ -8,18 +8,18 @@
 #include <utility>
 
 #include "component.h"
-#include "AnimationRenderer.h"
+#include "SimpleRenderer.h"
 #include "bullets.h"
 #include "Gravity.h"
 #include "Player.h"
 
 enum PickUpType {
-    POWER_UP_MACHINE_GUN,
-    POWER_UP_FIRE_GUN,
-    POWER_UP_SPREAD,
-    POWER_UP_RAPID_FIRE,
-    POWER_UP_BARRIER,
-    POWER_UP_LASER
+    PICKUP_MACHINE_GUN,
+    PICKUP_FIRE_GUN,
+    PICKUP_SPREAD,
+    PICKUP_RAPID_FIRE,
+    PICKUP_BARRIER,
+    PICKUP_LASER
 };
 
 class PickUpBehaviour: public Component {

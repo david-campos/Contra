@@ -108,6 +108,9 @@ void AvancezLib::processInput() {
 				case SDLK_g:
 					key.debug = true;
 					break;
+			    case SDLK_p:
+			        key.pause = true;
+			        break;
 			}
 		}
 
@@ -134,6 +137,9 @@ void AvancezLib::processInput() {
 				case SDLK_g:
 					key.debug = false;
 					break;
+			    case SDLK_p:
+			        key.pause = false;
+			        break;
 			}
 		}
 
@@ -234,6 +240,7 @@ void AvancezLib::getKeyStatus(KeyStatus &keys) {
 	keys.down = key.down;
 	keys.esc = key.esc;
 	keys.debug = key.debug;
+	keys.pause = key.pause;
 }
 
 

@@ -91,7 +91,7 @@ void PlayerControl::Update(float dt) {
             } else if (keyStatus.down && !keyStatus.up) {
                 m_animator->PlayAnimation(m_runDownAnim);
             } else {
-                if (shooting) {
+                if (shooting || (keyStatus.fire && m_currentWeapon->IsAutomatic())) {
                     m_animator->PlayAnimation(m_runShootAnim);
                 } else if (!m_animator->IsPlaying(m_runShootAnim)) {
                     m_animator->PlayAnimation(m_runAnim);
@@ -195,7 +195,7 @@ void PlayerControl::Init() {
             -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
-    m_currentWeapon = std::make_unique<DefaultWeapon>(m_bulletPool, game_objects);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, game_objects);
     m_previousKeyStatus = {false, false, false, false, false, false, false,
                            false};
     m_remainingLives = 2;
@@ -215,6 +215,7 @@ void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     go->position = Vector2D(*m_cameraX + 50 * PIXELS_ZOOM, 0);
     m_gravity->SetFallThoughWater(false);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, game_objects);
     m_facingRight = true;
     m_hasInertia = false;
     m_gravity->SetVelocity(0);
@@ -276,17 +277,27 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
         }
         auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour*>();
         if (pickup) {
-            SDL_Log("PICKED %d", pickup->GetType());
+            PickUp(pickup->GetType());
             game_objects[RENDERING_LAYER_ENEMIES]->erase(pickup->GetGameObject());
             pickup->GetGameObject()->Destroy();
         }
     }
 }
 
+void PlayerControl::PickUp(PickUpType type) {
+    switch (type) {
+        case PICKUP_MACHINE_GUN:
+            m_currentWeapon.reset(new MachineGun(m_machineGunBullets, game_objects));
+            break;
+    }
+}
+
 void
 Player::Create(AvancezLib *engine, std::set<GameObject *> **game_objects,
                const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
-               ObjectPool<Bullet> *bullet_pool, Grid *grid, int player_collision_layer) {
+               ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
+               ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
+               ObjectPool<Bullet> *laser_bullets, Grid *grid, int player_collision_layer) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
     renderer->Create(engine, this, game_objects, spritesheet, camera_x);
@@ -374,7 +385,8 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> **game_objects,
     auto *gravity = new Gravity();
     gravity->Create(engine, this, game_objects, floor);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(engine, this, game_objects, camera_x, bullet_pool);
+    playerControl->Create(engine, this, game_objects, camera_x,
+            default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets);
     auto *collider = new BoxCollider();
     collider->Create(engine, this, game_objects, grid, camera_x,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,

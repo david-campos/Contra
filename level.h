@@ -121,7 +121,8 @@ public:
 
 private:
     void CreateBulletPools();
-
+    ObjectPool<Bullet>* CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation& animation,
+            const Box& box);
     void CreatePlayer();
 };
 

@@ -19,6 +19,8 @@ private:
     std::shared_ptr<Sprite> pickups_spritesheet;
 
     bool game_over;
+    bool paused;
+    bool pause_pressed_before;
 public:
     virtual void Create(AvancezLib *avancezLib) {
         SDL_Log("Game::Create");
@@ -35,12 +37,20 @@ public:
     void Init() override {
         Enable();
         game_over = false;
+        pause_pressed_before = false;
         currentLevel->Init();
     }
 
 
     void Update(float dt) override {
-        if (IsGameOver())
+        AvancezLib::KeyStatus keyStatus;
+        engine->getKeyStatus(keyStatus);
+        if (keyStatus.pause && !pause_pressed_before) {
+            paused = !paused;
+        }
+        pause_pressed_before = keyStatus.pause;
+
+        if (IsGameOver() || paused)
             dt = 0.f;
 
         currentLevel->Update(dt);

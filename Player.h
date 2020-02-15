@@ -17,12 +17,15 @@
 #include "Gravity.h"
 #include "bullets.h"
 #include "weapons.h"
+#include "pickups.h"
 
 class Player : public GameObject {
 public:
     void Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
                 const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
-                ObjectPool<Bullet> *bullet_pool, Grid* grid, int player_layer);
+                ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
+                ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
+                ObjectPool<Bullet> *laser_bullets, Grid* grid, int player_layer);
 };
 
 class PlayerControl : public Component, public CollideComponentListener {
@@ -32,11 +35,20 @@ public:
     void Update(float dt) override;
 
     void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                float *camera_x, ObjectPool<Bullet> *bullet_pool) {
+                float *camera_x,
+                ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
+                ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
+                ObjectPool<Bullet> *laser_bullets) {
         Component::Create(engine, go, game_objects);
         m_cameraX = camera_x;
-        m_bulletPool = bullet_pool;
+        m_defaultBullets = default_bullets;
+        m_fireBullets = fire_bullets;
+        m_machineGunBullets = machine_gun_bullets;
+        m_spreadBullets = spread_bullets;
+        m_laserBullets = laser_bullets;
     }
+
+    void PickUp(PickUpType type);
 
     void Kill();
 
@@ -50,7 +62,8 @@ public:
 private:
     AnimationRenderer *m_animator;
     BoxCollider *m_collider;
-    ObjectPool<Bullet> *m_bulletPool;
+    ObjectPool<Bullet> *m_defaultBullets, *m_fireBullets,
+            *m_machineGunBullets, *m_spreadBullets, *m_laserBullets;
     AvancezLib::KeyStatus m_previousKeyStatus;
     Gravity *m_gravity;
     float *m_cameraX;

@@ -9,7 +9,7 @@
 #include "game_object.h"
 #include "component.h"
 #include "consts.h"
-#include "SimpleRenderer.h"
+#include "AnimationRenderer.h"
 
 #define BULLET_SPEED 160
 
@@ -27,25 +27,28 @@ private:
     float *m_cameraX;
     int m_speed;
     int m_damage;
-    SimpleRenderer *m_renderer;
+    AnimationRenderer *m_renderer;
     CollideComponent *m_collider;
+    int m_animBullet, m_animKill;
     float m_destroyIn;
-    BulletType m_type;
 public:
     void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, float *camera_x) {
         Component::Create(engine, go, game_objects);
         m_cameraX = camera_x;
     }
 
-    void Init(const Vector2D &direction, const BulletType &type, int speed = BULLET_SPEED, int damage = 1) {
+    void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1) {
         m_direction = direction.normalise();
         m_speed = speed;
         m_damage = damage;
-        m_type = type;
         m_destroyIn = -1;
-        if (!m_renderer) m_renderer = go->GetComponent<SimpleRenderer *>();
+        if (!m_renderer) {
+            m_renderer = go->GetComponent<AnimationRenderer *>();
+            m_animBullet = m_renderer->FindAnimation("Bullet");
+            m_animKill = m_renderer->FindAnimation("Kill");
+        }
         if (!m_collider) m_collider = go->GetComponent<CollideComponent *>();
-        RestoreRender();
+        m_renderer->PlayAnimation(m_animBullet);
         m_collider->Enable();
     }
 
@@ -68,39 +71,21 @@ public:
 
     void Kill() {
         m_collider->Disable();
-        switch (m_type) {
-            case ENEMY_BULLET_DEFAULT:
-                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
-                go->Disable();
-                break;
-            default:
-                m_renderer->ChangeCoords(104, 0, 7, 7, 3, 3);
-                m_destroyIn = 0.1f;
-                break;
+        if (m_animKill) {
+            m_renderer->PlayAnimation(m_animKill);
+            m_destroyIn = 0.1f;
+        } else {
+            game_objects[RENDERING_LAYER_BULLETS]->erase(go);
+            go->Disable();
         }
     }
 
     [[nodiscard]] int GetDamage() const { return m_damage; }
-
-private:
-    void RestoreRender() {
-        switch (m_type) {
-            case ENEMY_BULLET_DEFAULT:
-                m_renderer->ChangeCoords(199, 72, 3, 3, 1, 1);
-                break;
-            case PLAYER_BULLET_DEFAULT:
-            case PLAYER_BULLET_FLAME:
-            case PLAYER_BULLET_LASER:
-            case PLAYER_BULLET_MACHINE_GUN:
-                m_renderer->ChangeCoords(82, 10, 3, 3, 1, 1);
-                break;
-        }
-    }
 };
 
 class Bullet : public GameObject {
 public:
-    void Init(const Vector2D &pos, BulletBehaviour::BulletType type, const Vector2D &direction,
+    void Init(const Vector2D &pos, const Vector2D &direction,
             const int speed = BULLET_SPEED * PIXELS_ZOOM) {
         GameObject::Init();
         position = pos;
@@ -108,7 +93,7 @@ public:
         if (!behaviour) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find bullet behaviour.");
         } else {
-            behaviour->Init(direction, type, speed);
+            behaviour->Init(direction, speed);
         }
     }
 };

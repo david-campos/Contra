@@ -92,3 +92,7 @@ greeders:
 covered_pickups:
   - pos: [335, 152]
     content: M
+  - pos: [1583, 152]
+    content: F
+  - pos: [2287, 184]
+    content: S

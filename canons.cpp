@@ -21,7 +21,7 @@ void CanonBehaviour::Fire() {
     if (bullet != nullptr) {
         float rad = -0.5236f * (float) m_dir;
         Vector2D dir = Vector2D(cosf(rad), -sinf(rad));
-        bullet->Init(go->position + dir * 13 * PIXELS_ZOOM, BulletBehaviour::ENEMY_BULLET_DEFAULT,
+        bullet->Init(go->position + dir * 13 * PIXELS_ZOOM,
                 dir, 80 * PIXELS_ZOOM); // Notice our system has y inverted
         game_objects[RENDERING_LAYER_BULLETS]->insert(bullet);
     }

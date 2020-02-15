@@ -28,22 +28,22 @@ namespace YAML {
         static bool decode(const Node& node, PickUpType& powerUp) {
             switch(node.as<std::string>()[0]) {
                 case 'M':
-                    powerUp = POWER_UP_MACHINE_GUN;
+                    powerUp = PICKUP_MACHINE_GUN;
                     break;
                 case 'F':
-                    powerUp = POWER_UP_FIRE_GUN;
+                    powerUp = PICKUP_FIRE_GUN;
                     break;
                 case 'R':
-                    powerUp = POWER_UP_RAPID_FIRE;
+                    powerUp = PICKUP_RAPID_FIRE;
                     break;
                 case 'L':
-                    powerUp = POWER_UP_LASER;
+                    powerUp = PICKUP_LASER;
                     break;
                 case 'S':
-                    powerUp = POWER_UP_SPREAD;
+                    powerUp = PICKUP_SPREAD;
                     break;
                 case 'B':
-                    powerUp = POWER_UP_BARRIER;
+                    powerUp = PICKUP_BARRIER;
                     break;
                 default:
                     return false;
