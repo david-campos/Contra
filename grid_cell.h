@@ -16,24 +16,31 @@ class CollideComponent;
 #define GRID_CELL_LAYERS 2
 
 class GridCell {
-    std::set<CollideComponent *> game_objects[GRID_CELL_LAYERS];
+    // We can't use std::set because, after loosing a WHOLE day debugging random errors
+    // I found out std::set::erase is not safe while iterating, so we would not be able
+    // to erase colliders while other colliders are iterating -.-'
+    std::vector<CollideComponent *> colliders[GRID_CELL_LAYERS];
 public:
-    std::set<CollideComponent *> *GetLayer(int layer) {
+    std::vector<CollideComponent *> *GetLayer(int layer) {
         if (layer < GRID_CELL_LAYERS && layer >= 0) {
-            return &game_objects[layer];
+            return &colliders[layer];
         }
         return nullptr;
     }
 
     void Add(CollideComponent *collider, int layer) {
         if (layer < GRID_CELL_LAYERS && layer >= 0) {
-            game_objects[layer].insert(collider);
+            colliders[layer].push_back(collider);
         }
     }
 
     void Remove(CollideComponent *collider, int layer) {
         if (layer < GRID_CELL_LAYERS && layer >= 0) {
-            game_objects[layer].erase(collider);
+            for (int i = 0; i < colliders[layer].size(); i++) {
+                if (colliders[layer][i] == collider) {
+                    colliders[layer].erase(colliders[layer].begin() + i);
+                }
+            }
         }
     }
 };

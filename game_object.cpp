@@ -14,7 +14,6 @@ void GameObject::AddComponent(Component *component) {
 
 
 void GameObject::Init() {
-    SDL_Log("GameObject::Init");
     for (auto it = components.begin(); it != components.end(); it++)
         (*it)->Init();
 
@@ -30,12 +29,13 @@ void GameObject::Update(float dt) {
 }
 
 void GameObject::Destroy() {
+    SDL_Log("GameObject(%d)::Destroy", id);
     for (auto it = components.begin(); it != components.end(); it++)
         (*it)->Destroy();
 }
 
 GameObject::~GameObject() {
-    SDL_Log("GameObject::~GameObject");
+    SDL_Log("GameObject(%d)::~GameObject", id);
 }
 
 void GameObject::AddReceiver(GameObject *go) {

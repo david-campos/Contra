@@ -19,7 +19,7 @@ private:
     bool m_lettingFall;
     bool m_fallThroughWater; // Used after death
 public:
-    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
                 std::weak_ptr<Floor> floor) {
         Component::Create(engine, go, game_objects);
         m_floor = std::move(floor);

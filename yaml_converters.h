@@ -6,7 +6,8 @@
 #define CONTRA_YAML_CONVERTERS_H
 
 #include "vector2D.h"
-#include "scene.h"
+#include "level.h"
+#include "pickups.h"
 #include <yaml-cpp/yaml.h>
 
 namespace YAML {
@@ -19,6 +20,34 @@ namespace YAML {
 
             rhs.x = node[0].as<double>();
             rhs.y = node[1].as<double>();
+            return true;
+        }
+    };
+    template<>
+    struct convert<PickUpType> {
+        static bool decode(const Node& node, PickUpType& powerUp) {
+            switch(node.as<std::string>()[0]) {
+                case 'M':
+                    powerUp = POWER_UP_MACHINE_GUN;
+                    break;
+                case 'F':
+                    powerUp = POWER_UP_FIRE_GUN;
+                    break;
+                case 'R':
+                    powerUp = POWER_UP_RAPID_FIRE;
+                    break;
+                case 'L':
+                    powerUp = POWER_UP_LASER;
+                    break;
+                case 'S':
+                    powerUp = POWER_UP_SPREAD;
+                    break;
+                case 'B':
+                    powerUp = POWER_UP_BARRIER;
+                    break;
+                default:
+                    return false;
+            }
             return true;
         }
     };

@@ -10,7 +10,7 @@
 #define FIRE_SHIFT (Vector2D(-13, -11) * PIXELS_ZOOM)
 #define FIRE_SHIFT_MIRROR (Vector2D(13, -11) * PIXELS_ZOOM)
 
-void Ledder::Create(AvancezLib *engine, std::set<GameObject *> *game_objects, ObjectPool<Bullet> *bullet_pool,
+void Ledder::Create(AvancezLib *engine,std::set<GameObject *> **game_objects, ObjectPool<Bullet> *bullet_pool,
                     Player *player, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
                     float time_hidden, float time_shown, float cooldown_time, bool show_standing,
                     int burst_length, float burst_cooldown, bool horizontally_precise) {
@@ -119,13 +119,13 @@ void LedderBehaviour::Update(float dt) {
         case DYING:
             if (!m_animator->IsPlaying()) {
                 go->Disable();
-                game_objects->erase(go);
+                game_objects[RENDERING_LAYER_ENEMIES]->erase(go);
             }
             break;
     }
 }
 
-void LedderBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+void LedderBehaviour::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
                              ObjectPool<Bullet> *bullet_pool, Player *player, float time_hidden,
                              float time_shown, float cooldown_time, bool show_standing,
                              int burst_length, float burst_cooldown, bool horizontally_precise) {
@@ -189,7 +189,7 @@ void LedderBehaviour::Fire() {
         }
 
         bullet->Init(go->position + shift, BulletBehaviour::ENEMY_BULLET_DEFAULT, direction, 80 * PIXELS_ZOOM);
-        game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
+        game_objects[RENDERING_LAYER_BULLETS]->insert(bullet);
     }
 }
 
@@ -205,7 +205,7 @@ void LedderBehaviour::OnCollision(const CollideComponent &collider) {
     }
 }
 
-void Greeder::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+void Greeder::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
                      std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
                      const std::weak_ptr<Floor> &the_floor) {
     GameObject::Create();
@@ -264,7 +264,7 @@ void GreederBehaviour::Update(float dt) {
         } else {
             if (!m_animator->IsPlaying()) {
                 go->Disable();
-                game_objects->erase(go);
+                game_objects[RENDERING_LAYER_ENEMIES]->erase(go);
                 if (go->onOutOfScreen == GameObject::DISABLE_AND_DESTROY) {
                     go->Destroy();
                 }
@@ -308,13 +308,13 @@ void GreederBehaviour::OnCollision(const CollideComponent &collider) {
     }
 }
 
-void GreederBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+void GreederBehaviour::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
                               std::weak_ptr<Floor> the_floor) {
     Component::Create(engine, go, game_objects);
     m_floor = std::move(the_floor);
 }
 
-void GreederSpawner::Create(AvancezLib *engine, GameObject* go, std::set<GameObject *> *game_objects,
+void GreederSpawner::Create(AvancezLib *engine, GameObject* go,std::set<GameObject *> **game_objects,
                             std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
                             const std::weak_ptr<Floor> &the_floor, GameObject* receiver) {
     Component::Create(engine, go, game_objects);
@@ -331,7 +331,7 @@ void GreederSpawner::Update(float dt) {
             if (!m_greeder->IsEnabled()) {
                 m_greeder->position = go->position;
                 m_greeder->Init();
-                game_objects[RENDERING_LAYER_ENEMIES].insert(m_greeder);
+                game_objects[RENDERING_LAYER_ENEMIES]->insert(m_greeder);
             }
         } else {
             go->Disable();
@@ -341,7 +341,7 @@ void GreederSpawner::Update(float dt) {
 
 void GreederSpawner::Destroy() {
     Component::Destroy();
-    game_objects->erase(m_greeder); // If not it might be destroyed twice
+    game_objects[RENDERING_LAYER_ENEMIES]->erase(m_greeder);
     m_greeder->Destroy();
 }
 

@@ -24,7 +24,7 @@ void Grid::Update(CollideComponent *collider) {
 
 void Grid::Remove(CollideComponent *collider) {
     CellsSquare occupied_before{};
-    collider->GetPreviouslyOccupiedCells(occupied_before);
+    collider->GetPreviouslyOccupiedCells(occupied_before, false);
     for (int y = occupied_before.min_cell_y; y <= occupied_before.max_cell_y; y++) {
         for (int x = occupied_before.min_cell_x; x <= occupied_before.max_cell_x; x++) {
             GetCell(x, y)->Remove(collider, collider->GetLayer());

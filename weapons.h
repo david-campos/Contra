@@ -11,9 +11,9 @@
 class Weapon {
 protected:
     ObjectPool<Bullet> *m_bulletPool;
-    std::set<GameObject *> *m_gameObjects;
+   std::set<GameObject *> **m_gameObjects;
 public:
-    explicit Weapon(ObjectPool<Bullet> *mBulletPool, std::set<GameObject *>* game_objects)
+    explicit Weapon(ObjectPool<Bullet> *mBulletPool,std::set<GameObject *>* *game_objects)
             : m_bulletPool(mBulletPool), m_gameObjects(game_objects) {}
 
     /**
@@ -36,7 +36,7 @@ private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
 public:
-    DefaultWeapon(ObjectPool<Bullet> *mBulletPool, std::set<GameObject *> *gameObjects) : Weapon(mBulletPool,
+    DefaultWeapon(ObjectPool<Bullet> *mBulletPool,std::set<GameObject *> **gameObjects) : Weapon(mBulletPool,
             gameObjects) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
@@ -52,7 +52,7 @@ public:
         auto *bullet = m_bulletPool->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, BulletBehaviour::PLAYER_BULLET_DEFAULT, direction.normalise());
-            m_gameObjects[RENDERING_LAYER_BULLETS].insert(bullet);
+            m_gameObjects[RENDERING_LAYER_BULLETS]->insert(bullet);
             m_hasShot = true;
             m_shootDowntime = 0.2;
             return true;

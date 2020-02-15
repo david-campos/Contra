@@ -23,7 +23,7 @@ void CanonBehaviour::Fire() {
         Vector2D dir = Vector2D(cosf(rad), -sinf(rad));
         bullet->Init(go->position + dir * 13 * PIXELS_ZOOM, BulletBehaviour::ENEMY_BULLET_DEFAULT,
                 dir, 80 * PIXELS_ZOOM); // Notice our system has y inverted
-        game_objects[RENDERING_LAYER_BULLETS].insert(bullet);
+        game_objects[RENDERING_LAYER_BULLETS]->insert(bullet);
     }
 }
 
@@ -33,7 +33,7 @@ void CanonBehaviour::Update(float dt) {
             m_animator->PlayAnimation(animDie);
         } else if (!m_animator->IsPlaying()) {
             go->Destroy();
-            game_objects[RENDERING_LAYER_BULLETS].erase(go);
+            game_objects[RENDERING_LAYER_ENEMIES]->erase(go);
         }
         return;
     }
@@ -120,7 +120,7 @@ void CanonBehaviour::UpdateHiding(const Vector2D &player_dir, float dt) {
     if (!m_animator->IsPlaying()) m_state = HIDDEN;
 }
 
-void CanonBehaviour::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Player *player,
+void CanonBehaviour::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Player *player,
                             ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int default_dir,
                             float rotation_interval, int burst_length, float burst_cooldown, float shoot_cooldown) {
     Component::Create(engine, go, game_objects);
@@ -144,7 +144,7 @@ void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
     }
 }
 
-void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+void RotatingCanon::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
                            const std::shared_ptr<Sprite> &enemies_spritesheet,
                            float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                            Grid *grid, int burst_length) {
@@ -193,7 +193,7 @@ void RotatingCanon::Create(AvancezLib *engine, std::set<GameObject *> *game_obje
     AddComponent(collider);
 }
 
-void Gulcan::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+void Gulcan::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
                     const std::shared_ptr<Sprite> &enemies_spritesheet,
                     float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                     Grid *grid) {

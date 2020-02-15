@@ -17,13 +17,18 @@ class Component {
 protected:
     AvancezLib *engine;    // used to access the engine
     GameObject *go;        // the game object this component is part of
-    std::set<GameObject *> *game_objects;    // the global container of game objects (pointer to the first layer)
+    std::set<GameObject *> **game_objects;    // the global container of game objects (pointer to the first layer)
 public:
     virtual ~Component() {}
 
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects);
+    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> **game_objects);
 
-    virtual void Init() {}
+    virtual void Init() {
+        if (!go) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                    "Component::Init: No GameObject assigned, probably a missing Component::Create call?");
+        }
+    }
 
     virtual void OnGameObjectEnabled() {}
 
@@ -45,10 +50,10 @@ protected:
     float *camera_x;
 public:
     virtual void
-    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, const char *sprite_name,
+    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, const char *sprite_name,
            float *camera_x);
 
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+    virtual void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
                         std::shared_ptr<Sprite> sprite, float *camera_x);
 
     void Destroy() override;
@@ -78,7 +83,7 @@ public:
      * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
      * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
      */
-    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid,
+    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid,
                 int layer, int checkLayer);
 
     /**
@@ -96,9 +101,11 @@ public:
 
     [[nodiscard]] int GetLayer() const { return m_layer; }
 
-    void GetPreviouslyOccupiedCells(Grid::CellsSquare &square) {
+    void GetPreviouslyOccupiedCells(Grid::CellsSquare &square, const bool update=true) {
         square = is_occupying;
-        GetOccupiedCells(is_occupying); // Update for next time
+        if (update) {
+            GetOccupiedCells(is_occupying);
+        }
     }
 
     /**
@@ -112,7 +119,7 @@ public:
      * the given collider.
      * @param other
      */
-    virtual bool IsColliding(const CollideComponent &other) = 0;
+    virtual bool IsColliding(const CollideComponent *other) = 0;
 
     void Update(float dt) override;
 
@@ -134,12 +141,12 @@ protected:
 
     void GetOccupiedCells(Grid::CellsSquare &square) override;
 
-    bool IsColliding(const CollideComponent &other) override;
+    bool IsColliding(const CollideComponent *other) override;
 
     float *m_camera_x;
 public:
     virtual void
-    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float *camera_x,
+    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid, float *camera_x,
            int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
         Create(engine, go, game_objects, grid, camera_x, {
                 local_top_left_x,
@@ -150,7 +157,7 @@ public:
     }
 
     virtual void
-    Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, Grid *grid, float *camera_x,
+    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid, float *camera_x,
            Box box, int layer, int checkLayer) {
         CollideComponent::Create(engine, go, game_objects, grid, layer, checkLayer);
         m_box = box;

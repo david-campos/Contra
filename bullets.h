@@ -32,7 +32,7 @@ private:
     float m_destroyIn;
     BulletType m_type;
 public:
-    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects, float *camera_x) {
+    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, float *camera_x) {
         Component::Create(engine, go, game_objects);
         m_cameraX = camera_x;
     }
@@ -53,14 +53,14 @@ public:
         if (m_destroyIn > 0) {
             m_destroyIn -= dt;
             if (m_destroyIn < 0) {
-                game_objects[RENDERING_LAYER_BULLETS].erase(go);
+                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
                 go->Disable();
             }
         } else {
             go->position = go->position + m_direction * m_speed * dt;
             if ((go->position.x < *m_cameraX or go->position.x > *m_cameraX + WINDOW_WIDTH)
                 or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
-                game_objects[RENDERING_LAYER_BULLETS].erase(go);
+                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
                 go->Disable();
             }
         }
@@ -70,7 +70,7 @@ public:
         m_collider->Disable();
         switch (m_type) {
             case ENEMY_BULLET_DEFAULT:
-                game_objects[RENDERING_LAYER_BULLETS].erase(go);
+                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
                 go->Disable();
                 break;
             default:

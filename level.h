@@ -2,8 +2,8 @@
 // Created by david on 14/2/20.
 //
 
-#ifndef CONTRA_SCENE_H
-#define CONTRA_SCENE_H
+#ifndef CONTRA_LEVEL_H
+#define CONTRA_LEVEL_H
 
 
 #include <queue>
@@ -24,10 +24,11 @@ class Level : public GameObject {
     std::unique_ptr<Sprite> background;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
+    std::shared_ptr<Sprite> pickups_spritesheet;
     std::shared_ptr<Floor> level_floor;
     Player *player;
     PlayerControl *playerControl;
-    std::set<GameObject *> game_objects[RENDERING_LAYERS];
+    std::set<GameObject *> *game_objects[RENDERING_LAYERS];
     std::priority_queue<GameObject *, std::deque<GameObject *>, game_objects_comp_x> not_found_enemies;
     float next_enemy_x;
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
@@ -36,8 +37,21 @@ class Level : public GameObject {
     float camera_x;
     int level_width;
 public:
+    Level() {
+        for (int i = 0; i < RENDERING_LAYERS; i++) {
+            game_objects[i] = new std::set<GameObject *>();
+        }
+    }
+
+    ~Level() {
+        for (int i = 0; i < RENDERING_LAYERS; i++) {
+            delete game_objects[i];
+        }
+    }
+
     void Create(const std::string &folder, const std::shared_ptr<Sprite> &sprite_sheet,
-                const std::shared_ptr<Sprite> &enemies_spritesheet, AvancezLib *engine);
+                const std::shared_ptr<Sprite> &enemies_spritesheet, const std::shared_ptr<Sprite> &pickups_spritesheet,
+                AvancezLib *engine);
 
     void Init() override;
 
@@ -60,20 +74,24 @@ public:
         // We progressively init the enemies in front of the camera
         while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
             auto *enemy = not_found_enemies.top();
-            game_objects[RENDERING_LAYER_ENEMIES].insert(enemy);
+            game_objects[RENDERING_LAYER_ENEMIES]->insert(enemy);
             enemy->Init();
             not_found_enemies.pop();
             next_enemy_x = not_found_enemies.top()->position.x;
         }
 
         // And eliminate the enemies behind the camera
-        for (auto *game_object : game_objects[RENDERING_LAYER_ENEMIES]) {
+        std::set<GameObject *>::iterator it = game_objects[RENDERING_LAYER_ENEMIES]->begin();
+        while (it != game_objects[RENDERING_LAYER_ENEMIES]->end()) {
+            auto *game_object = *it;
             if (game_object->position.x < camera_x - RENDERING_MARGINS) {
                 game_object->Disable();
-                game_objects->erase(game_object);
+                it = game_objects[RENDERING_LAYER_ENEMIES]->erase(it);
                 if (game_object->onOutOfScreen == DISABLE_AND_DESTROY) {
                     game_object->Destroy();
                 }
+            } else {
+                it++;
             }
         }
 
@@ -95,7 +113,7 @@ public:
 
         grid.ClearCollisionCache(); // Clear collision cache
         for (const auto &layer: game_objects)
-            for (auto *game_object : layer)
+            for (auto *game_object : *layer)
                 game_object->Update(dt);
     }
 
@@ -107,4 +125,4 @@ private:
     void CreatePlayer();
 };
 
-#endif //CONTRA_SCENE_H
+#endif //CONTRA_LEVEL_H

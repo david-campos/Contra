@@ -24,7 +24,7 @@ public:
                      m_srcX, m_srcY, m_width, m_height);
     }
 
-    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> *game_objects,
+    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
                 std::shared_ptr<Sprite> sprite, float *camera_x, int srcX, int srcY, int width, int height,
                 int anchorX, int anchorY) {
         RenderComponent::Create(engine, go, game_objects, std::move(sprite), camera_x);

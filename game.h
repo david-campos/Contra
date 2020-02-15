@@ -8,7 +8,7 @@
 #include "bullets.h"
 #include "canons.h"
 #include "enemies.h"
-#include "scene.h"
+#include "level.h"
 
 class Game : public GameObject {
 private:
@@ -16,6 +16,8 @@ private:
     AvancezLib *engine;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
+    std::shared_ptr<Sprite> pickups_spritesheet;
+
     bool game_over;
 public:
     virtual void Create(AvancezLib *avancezLib) {
@@ -23,9 +25,10 @@ public:
         this->engine = avancezLib;
         spritesheet.reset(engine->createSprite("data/spritesheet.png"));
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
+        pickups_spritesheet.reset(engine->createSprite("data/pickups.png"));
 
         currentLevel = new Level();
-        currentLevel->Create("data/level1/", spritesheet, enemies_spritesheet, engine);
+        currentLevel->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
         currentLevel->AddReceiver(this);
     }
 

@@ -6,6 +6,8 @@
 
 #include <memory>
 #include "consts.h"
+#include "enemies.h"
+#include "pickups.h"
 
 void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
@@ -35,7 +37,8 @@ void PlayerControl::Update(float dt) {
         } else {
             m_waitDead -= dt;
             if (m_animator->IsPlaying(m_dieAnim)) {
-                go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt * (m_facingRight ? -1.f : 1.f), 0);
+                go->position =
+                        go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt * (m_facingRight ? -1.f : 1.f), 0);
             }
         }
         return;
@@ -78,7 +81,7 @@ void PlayerControl::Update(float dt) {
     if (m_currentWeapon->ShouldFire(keyStatus.fire, dt))
         shooting = Fire(keyStatus);
 
-    Box* box = &m_standingBox;
+    Box *box = &m_standingBox;
     m_diving = false;
     // Animation
     if (m_gravity->IsOnFloor()) {
@@ -261,12 +264,27 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
             bullet->Kill();
+            return;
+        }
+        auto *greeder = collider.GetGameObject()->GetComponent<GreederBehaviour *>();
+        if (greeder) {
+            if (greeder->IsAlive()) {
+                Kill();
+                m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+            }
+            return;
+        }
+        auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour*>();
+        if (pickup) {
+            SDL_Log("PICKED %d", pickup->GetType());
+            game_objects[RENDERING_LAYER_ENEMIES]->erase(pickup->GetGameObject());
+            pickup->GetGameObject()->Destroy();
         }
     }
 }
 
 void
-Player::Create(AvancezLib *engine, std::set<GameObject *> *game_objects,
+Player::Create(AvancezLib *engine, std::set<GameObject *> **game_objects,
                const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
                ObjectPool<Bullet> *bullet_pool, Grid *grid, int player_collision_layer) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);

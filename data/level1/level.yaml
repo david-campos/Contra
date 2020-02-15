@@ -89,3 +89,6 @@ greeders:
   - pos: [2459, 173]
   - pos: [2778, 141]
   - pos: [3071, 109]
+covered_pickups:
+  - pos: [335, 152]
+    content: M
