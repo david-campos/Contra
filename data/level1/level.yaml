@@ -75,18 +75,32 @@ ledders:
 greeders:
   - pos: [309, 109]
   - pos: [415, 109]
+    chance_skip: 0.8
   - pos: [607, 109]
   - pos: [831, 109]
+    chance_skip: 0.5
   - pos: [1023, 109]
+    chance_skip: 0.5
+  - pos: [1230, 109]
+    chance_skip: 0.7
+  - pos: [1240, 109]
+    chance_skip: 0.7
   - pos: [1260, 109]
+    chance_skip: 0.7
+  - pos: [1260, 109]
+    chance_skip: 0.7
   - pos: [1270, 109]
+    chance_skip: 0.7
   - pos: [1280, 109]
+    chance_skip: 0.7
   - pos: [1500, 205]
   - pos: [1360, 241]
   - pos: [1727, 77]
+    chance_skip: 0.5
   - pos: [1819, 141]
   - pos: [2267, 141]
   - pos: [2459, 173]
+    chance_skip: 0.5
   - pos: [2778, 141]
   - pos: [3071, 109]
 covered_pickups:

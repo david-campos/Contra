@@ -31,10 +31,12 @@ class GreederSpawner : public Component {
 private:
     float* m_cameraX;
     Greeder *m_greeder;
+    float m_randomInterval;
+    float m_intervalCount;
 public:
     void Create(AvancezLib *engine, GameObject* go,std::set<GameObject *> **game_objects,
                 std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                const std::weak_ptr<Floor> &the_floor, GameObject* receiver);
+                const std::weak_ptr<Floor> &the_floor, GameObject* receiver, float random_interval);
     void Update(float dt) override;
 
     void Destroy() override;

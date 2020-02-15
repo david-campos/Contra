@@ -5,9 +5,6 @@
 #ifndef CONTRA_PLAYER_H
 #define CONTRA_PLAYER_H
 
-#define PLAYER_SPEED 55
-#define PLAYER_JUMP 200
-
 #include <utility>
 
 #include "component.h"

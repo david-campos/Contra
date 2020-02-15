@@ -8,8 +8,8 @@
 #include <SDL_log.h>
 #include "game_object.h"
 #include "component.h"
-#include "consts.h"
 #include "AnimationRenderer.h"
+#include "consts.h"
 
 #define BULLET_SPEED 160
 

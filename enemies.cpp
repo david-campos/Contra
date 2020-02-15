@@ -6,6 +6,7 @@
 
 #include <utility>
 #include "AnimationRenderer.h"
+#include "consts.h"
 
 #define FIRE_SHIFT (Vector2D(-13, -11) * PIXELS_ZOOM)
 #define FIRE_SHIFT_MIRROR (Vector2D(13, -11) * PIXELS_ZOOM)
@@ -316,16 +317,22 @@ void GreederBehaviour::Create(AvancezLib *engine, GameObject *go,std::set<GameOb
 
 void GreederSpawner::Create(AvancezLib *engine, GameObject* go,std::set<GameObject *> **game_objects,
                             std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                            const std::weak_ptr<Floor> &the_floor, GameObject* receiver) {
+                            const std::weak_ptr<Floor> &the_floor, GameObject* receiver, float random_interval) {
     Component::Create(engine, go, game_objects);
     m_greeder = new Greeder();
     this->m_cameraX = camera_x;
     m_greeder->Create(engine, game_objects, std::move(enemies_spritesheet), camera_x, grid, the_floor);
     m_greeder->onOutOfScreen = GameObject::JUST_DISABLE;
     m_greeder->AddReceiver(receiver);
+    m_randomInterval = random_interval;
 }
 
 void GreederSpawner::Update(float dt) {
+    m_intervalCount -= dt;
+    if (m_intervalCount > m_randomInterval)
+        return;
+    m_intervalCount = m_randomInterval;
+
     if (go->IsEnabled()) {
         if(*m_cameraX + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
             if (!m_greeder->IsEnabled()) {

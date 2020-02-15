@@ -12,6 +12,7 @@
 #include "bullets.h"
 #include "Gravity.h"
 #include "Player.h"
+#include "consts.h"
 
 enum PickUpType {
     PICKUP_MACHINE_GUN,
@@ -25,17 +26,29 @@ enum PickUpType {
 class PickUpBehaviour: public Component {
 private:
     PickUpType m_type;
+    Gravity* m_gravity;
 public:
     void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> **game_objects, PickUpType type) {
         Component::Create(engine, go, game_objects);
         m_type = type;
     }
 
+    void Init() override {
+        Component::Init();
+        if (!m_gravity) {
+            m_gravity = go->GetComponent<Gravity*>();
+        }
+    }
+
     [[nodiscard]] PickUpType GetType() const {
         return m_type;
     }
 
-    void Update(float dt) override {}
+    void Update(float dt) override {
+        if (!m_gravity->IsOnFloor()) {
+            go->position = go->position + Vector2D(PICKUP_SPEED * PIXELS_ZOOM, 0) * dt;
+        }
+    }
 };
 
 class PickUp: public GameObject {

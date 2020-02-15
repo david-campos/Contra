@@ -7,11 +7,13 @@
 
 
 #include <queue>
+#include <random>
 #include "game_object.h"
 #include "floor.h"
 #include "avancezlib.h"
 #include "bullets.h"
 #include "Player.h"
+#include "consts.h"
 
 class Level : public GameObject {
     struct game_objects_comp_x {
@@ -36,6 +38,10 @@ class Level : public GameObject {
     Grid grid;
     float camera_x;
     int level_width;
+
+    std::random_device rd;
+    std::mt19937 m_mt = std::mt19937(rd());
+    std::uniform_real_distribution<float> m_random_dist = std::uniform_real_distribution<float>(0.f, 1.f);
 public:
     Level() {
         for (int i = 0; i < RENDERING_LAYERS; i++) {

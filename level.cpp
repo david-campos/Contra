@@ -61,12 +61,17 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             not_found_enemies.push(ledder);
         }
         for (const auto &rc_node: scene_root["greeders"]) {
+            if (rc_node["chance_skip"]) {
+                if (m_random_dist(m_mt) < rc_node["chance_skip"].as<float>())
+                    continue;
+            }
             auto *spawner = new GameObject();
             spawner->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             auto *greeder_spawner = new GreederSpawner();
             greeder_spawner->Create(engine, spawner, game_objects,
                     enemies_spritesheet, &camera_x,
-                    &grid, level_floor, this
+                    &grid, level_floor, this,
+                    m_random_dist(m_mt)
             );
             spawner->AddComponent(greeder_spawner);
             spawner->AddReceiver(this);

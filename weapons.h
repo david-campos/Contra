@@ -71,10 +71,6 @@ public:
     bool IsAutomatic() override {
         return false;
     }
-
-    virtual ~DefaultWeapon() {
-        printf("DEFAULT WEAPON DESTROYED\n");
-    }
 };
 
 class MachineGun : public Weapon {
@@ -103,10 +99,6 @@ public:
 
     bool IsAutomatic() override {
         return true;
-    }
-
-    virtual ~MachineGun() {
-        printf("MACHINE GUN DESTROYED\n");
     }
 };
 
