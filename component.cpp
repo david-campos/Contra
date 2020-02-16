@@ -1,7 +1,7 @@
 #include "component.h"
 #include "game_object.h"
 #include "avancezlib.h"
-#include "grid_cell.h"
+#include "grid.h"
 #include "level.h"
 
 void Component::Create(Level *level, GameObject *go) {
@@ -9,24 +9,23 @@ void Component::Create(Level *level, GameObject *go) {
     this->level = level;
 }
 
-void RenderComponent::Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite, float *camera_x) {
+void RenderComponent::Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite) {
     Component::Create(level, go);
     this->sprite = std::move(sprite);
-    this->camera_x = camera_x;
 }
 
 void RenderComponent::Destroy() {
     sprite.reset();
 }
 
-void CollideComponent::Create(Level *level, GameObject *go, Grid *grid, int layer, int checkLayer) {
+void CollideComponent::Create(Level *level, GameObject *go, int layer, int checkLayer) {
     Component::Create(level, go);
-    this->grid = grid;
     this->m_layer = layer;
     this->m_checkLayer = checkLayer;
 }
 
 void CollideComponent::Update(float dt) {
+    auto* grid = level->GetGrid();
     if (m_disabled || !go->IsEnabled()) return;
     if (m_checkLayer >= 0) {
         Grid::CellsSquare square{};
@@ -59,20 +58,20 @@ void CollideComponent::Update(float dt) {
 
 void CollideComponent::Destroy() {
     if (m_layer >= 0) {
-        grid->Remove(this);
+        level->GetGrid()->Remove(this);
     }
     Component::Destroy();
 }
 
 void CollideComponent::OnGameObjectDisabled() {
     if (m_layer >= 0) {
-        grid->Remove(this);
+        level->GetGrid()->Remove(this);
     }
 }
 
 void CollideComponent::Disable() {
     if (m_layer >= 0) {
-        grid->Remove(this);
+        level->GetGrid()->Remove(this);
     }
     m_disabled = true;
 }
@@ -83,12 +82,13 @@ void CollideComponent::Enable() {
 
 void BoxCollider::Update(float dt) {
     CollideComponent::Update(dt);
-    level->GetEngine()->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
-            AbsoluteTopLeftY(), AbsoluteBottomRightX() - *m_camera_x, AbsoluteBottomRightY(),
+    level->GetEngine()->strokeSquare(AbsoluteTopLeftX() - level->GetCameraX(),
+            AbsoluteTopLeftY(), AbsoluteBottomRightX() - level->GetCameraX(), AbsoluteBottomRightY(),
             {0, 0, 255});
 }
 
 void BoxCollider::GetOccupiedCells(Grid::CellsSquare &square) {
+    auto* grid = level->GetGrid();
     int cell_size = grid->getCellSize();
     int row_size = grid->getRowSize();
     int col_size = grid->getColSize();

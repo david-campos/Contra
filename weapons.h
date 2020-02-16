@@ -9,11 +9,9 @@
 
 class Weapon {
 protected:
-    ObjectPool<Bullet> *m_bulletPool;
     Level* m_level;
 public:
-    explicit Weapon(ObjectPool<Bullet> *mBulletPool, Level* level)
-            : m_bulletPool(mBulletPool), m_level(level) {}
+    explicit Weapon(Level* level) : m_level(level) {}
 
     virtual ~Weapon() {}
 
@@ -43,7 +41,7 @@ private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
 public:
-    DefaultWeapon(ObjectPool<Bullet> *mBulletPool, Level* level) : Weapon(mBulletPool, level) {}
+    DefaultWeapon(Level* level) : Weapon(level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -55,7 +53,7 @@ public:
 
     bool Fire(const Vector2D &position, const Vector2D &direction) override {
         // Grab the bullet from the pool
-        auto *bullet = m_bulletPool->FirstAvailable();
+        auto *bullet = m_level->GetDefaultBullets()->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise());
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
@@ -75,7 +73,7 @@ class MachineGun : public Weapon {
 private:
     float m_shootDowntime = 0;
 public:
-    MachineGun(ObjectPool<Bullet> *mBulletPool, Level* level) : Weapon(mBulletPool, level) {}
+    MachineGun(Level* level) : Weapon(level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -84,7 +82,7 @@ public:
 
     bool Fire(const Vector2D &position, const Vector2D &direction) override {
         // Grab the bullet from the pool
-        auto *bullet = m_bulletPool->FirstAvailable();
+        auto *bullet = m_level->GetMachineGunBullets()->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise());
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);

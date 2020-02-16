@@ -4,13 +4,14 @@
 
 #include "Gravity.h"
 #include "consts.h"
+#include "level.h"
 
 void Gravity::Update(float dt) {
     m_onFloor = false;
     m_onWater = false;
     m_canFall = false;
 
-    auto floor = m_floor.lock();
+    auto floor = level->GetLevelFloor().lock();
     if (!floor) {
         return;
     }

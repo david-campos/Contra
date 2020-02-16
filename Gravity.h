@@ -14,15 +14,10 @@ class Gravity: public Component {
 private:
     float m_velocity;
     float m_acceleration = 350 * PIXELS_ZOOM;
-    std::weak_ptr<Floor> m_floor;
     bool m_onFloor, m_onWater, m_canFall;
     bool m_lettingFall;
     bool m_fallThroughWater; // Used after death
 public:
-    void Create(Level* level, GameObject *go, std::weak_ptr<Floor> floor) {
-        Component::Create(level, go);
-        m_floor = std::move(floor);
-    }
     void Update(float dt) override;
     void AddVelocity(float velocity) {
         m_velocity += velocity;

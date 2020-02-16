@@ -11,13 +11,11 @@
 #define FIRE_SHIFT (Vector2D(-13, -11) * PIXELS_ZOOM)
 #define FIRE_SHIFT_MIRROR (Vector2D(13, -11) * PIXELS_ZOOM)
 
-void Ledder::Create(Level *level, ObjectPool<Bullet> *bullet_pool,
-                    Player *player, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                    float time_hidden, float time_shown, float cooldown_time, bool show_standing,
+void Ledder::Create(Level *level, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
                     int burst_length, float burst_cooldown, bool horizontally_precise) {
     GameObject::Create();
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, std::move(enemies_spritesheet), camera_x);
+    renderer->Create(level, this, std::move(level->GetEnemiesSpritesheet()));
     renderer->AddAnimation({
             214, 59, 0.2, 3,
             25, 16, 19, 16,
@@ -51,17 +49,17 @@ void Ledder::Create(Level *level, ObjectPool<Bullet> *bullet_pool,
     if (time_hidden > 0) renderer->CurrentAndPause(0);
 
     auto *behaviour = new LedderBehaviour();
-    behaviour->Create(level, this, bullet_pool, player,
+    behaviour->Create(level, this,
             time_hidden, time_shown, cooldown_time, show_standing, burst_length, burst_cooldown, horizontally_precise);
 
     auto *collider = new BoxCollider();
     if (show_standing) {
-        collider->Create(level, this, grid, camera_x,
+        collider->Create(level, this,
                 -6 * PIXELS_ZOOM, -27 * PIXELS_ZOOM,
                 12 * PIXELS_ZOOM, 28 * PIXELS_ZOOM,
                 -1, NPCS_COLLISION_LAYER);
     } else {
-        collider->Create(level, this, grid, camera_x,
+        collider->Create(level, this,
                 -6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
                 10 * PIXELS_ZOOM, 15 * PIXELS_ZOOM,
                 -1, NPCS_COLLISION_LAYER);
@@ -85,8 +83,8 @@ void LedderBehaviour::Update(float dt) {
                 if (m_burstCoolDown > 0) m_burstCoolDown -= dt;
                 if (m_coolDown > 0) m_coolDown -= dt;
                 if (m_coolDown <= 0 && (m_firedInBurst < m_burstLength || m_burstCoolDown <= 0)) {
-                    if (m_showStanding or (go->position.y < m_player->position.y
-                                           && go->position.y > m_player->position.y - 33 * PIXELS_ZOOM)) {
+                    if (m_showStanding or (go->position.y < level->GetPlayer()->position.y
+                                           && go->position.y > level->GetPlayer()->position.y - 33 * PIXELS_ZOOM)) {
                         if (m_burstCoolDown <= 0) {
                             m_burstCoolDown = m_burstCoolDownTime;
                             m_firedInBurst = 0; // New burst
@@ -126,20 +124,17 @@ void LedderBehaviour::Update(float dt) {
     }
 }
 
-void LedderBehaviour::Create(Level *level, GameObject *go,
-                             ObjectPool<Bullet> *bullet_pool, Player *player, float time_hidden,
+void LedderBehaviour::Create(Level *level, GameObject *go, float time_hidden,
                              float time_shown, float cooldown_time, bool show_standing,
                              int burst_length, float burst_cooldown, bool horizontally_precise) {
     Component::Create(level, go);
     m_timeHidden = time_hidden;
     m_timeShown = time_shown;
     m_coolDownTime = cooldown_time;
-    m_bulletPool = bullet_pool;
     m_burstCoolDownTime = burst_cooldown;
     m_burstLength = burst_length;
     m_showStanding = show_standing;
     m_horizontallyPrecise = horizontally_precise;
-    m_player = player;
 }
 
 void LedderBehaviour::ChangeToState(LedderBehaviour::State state) {
@@ -149,11 +144,12 @@ void LedderBehaviour::ChangeToState(LedderBehaviour::State state) {
 
 void LedderBehaviour::Fire() {
     // Grab the bullet from the pool
-    auto *bullet = m_bulletPool->FirstAvailable();
+    auto *bullet = level->GetEnemyBullets()->FirstAvailable();
+    auto *player = level->GetPlayer();
     if (bullet != nullptr) {
         Vector2D shift, direction;
         // All position changes occur when firing
-        bool mirrored = go->position.x < m_player->position.x;
+        bool mirrored = go->position.x < player->position.x;
         m_animator->mirrorHorizontal = mirrored;
         if (m_showStanding) {
             // In the original game for NES they shoot like the canons, limited to some angles,
@@ -161,19 +157,19 @@ void LedderBehaviour::Fire() {
             // of the limitations in the time, and we want to give them more precision for this one to make
             // it a bit harder. Still, if we shoot horizontal we want to shoot only horizontal
             // like in the original game cause it seems to cause interesting gameplay.
-            auto player_y = (float) m_player->position.y;
+            auto player_y = (float) player->position.y;
             if (player_y - 33 * PIXELS_ZOOM > go->position.y) {
                 m_animator->PlayAnimation(m_animShootDown, true, 1);
-                direction = m_player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
+                direction = player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
                 shift = Vector2D(mirrored ? 16 : -16, -12) * PIXELS_ZOOM;
             } else if (player_y < go->position.y - 33 * PIXELS_ZOOM) {
                 shift = Vector2D(mirrored ? 11 : -11, -36) * PIXELS_ZOOM;
-                direction = m_player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
+                direction = player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
                 m_animator->PlayAnimation(m_animShootUp, true, 1);
             } else {
                 shift = Vector2D(mirrored ? 16 : -16, -25) * PIXELS_ZOOM;
                 if (m_horizontallyPrecise) {
-                    direction = m_player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
+                    direction = player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
                 } else {
                     direction = Vector2D(mirrored ? 1 : -1, 0);
                 }
@@ -182,7 +178,7 @@ void LedderBehaviour::Fire() {
         } else {
             shift = (mirrored ? FIRE_SHIFT_MIRROR : FIRE_SHIFT);
             if (m_horizontallyPrecise) {
-                direction = m_player->position - Vector2D(0, 16) - go->position - shift;
+                direction = player->position - Vector2D(0, 16) - go->position - shift;
             } else {
                 direction = Vector2D(mirrored ? 1 : -1, 0);
             }
@@ -206,11 +202,10 @@ void LedderBehaviour::OnCollision(const CollideComponent &collider) {
     }
 }
 
-void Greeder::Create(Level *level, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                     const std::weak_ptr<Floor> &the_floor) {
+void Greeder::Create(Level *level) {
     GameObject::Create();
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, std::move(enemies_spritesheet), camera_x);
+    renderer->Create(level, this, std::move(level->GetEnemiesSpritesheet()));
     renderer->AddAnimation({
             1, 2, 0.1, 3,
             17, 32, 9, 32,
@@ -233,11 +228,11 @@ void Greeder::Create(Level *level, std::shared_ptr<Sprite> enemies_spritesheet, 
     });
     renderer->Play();
     auto *gravity = new Gravity();
-    gravity->Create(level, this, the_floor);
+    gravity->Create(level, this);
     auto *behaviour = new GreederBehaviour();
-    behaviour->Create(level, this, the_floor);
+    behaviour->Create(level, this);
     auto *collider = new BoxCollider();
-    collider->Create(level, this, grid, camera_x,
+    collider->Create(level, this,
             -5 * PIXELS_ZOOM, -32 * PIXELS_ZOOM,
             9 * PIXELS_ZOOM, 32 * PIXELS_ZOOM,
             PLAYER_COLLISION_LAYER, NPCS_COLLISION_LAYER);
@@ -250,7 +245,7 @@ void Greeder::Create(Level *level, std::shared_ptr<Sprite> enemies_spritesheet, 
 }
 
 void GreederBehaviour::Update(float dt) {
-    auto level_floor = m_floor.lock();
+    auto level_floor = level->GetLevelFloor().lock();
     if (!level_floor) return;
 
     if (m_isDeath) {
@@ -305,20 +300,16 @@ void GreederBehaviour::OnCollision(const CollideComponent &collider) {
     }
 }
 
-void GreederBehaviour::Create(Level *level, GameObject *go, std::weak_ptr<Floor> the_floor) {
+void GreederBehaviour::Create(Level *level, GameObject *go) {
     Component::Create(level, go);
-    m_floor = std::move(the_floor);
 }
 
-void GreederSpawner::Create(Level *level, GameObject *go, std::shared_ptr<Sprite> enemies_spritesheet,
-                            float *camera_x, Grid *grid, const std::weak_ptr<Floor> &the_floor, GameObject *receiver,
-                            float random_interval) {
+void GreederSpawner::Create(Level *level, GameObject *go, float random_interval) {
     Component::Create(level, go);
     m_greeder = new Greeder();
-    this->m_cameraX = camera_x;
-    m_greeder->Create(level, std::move(enemies_spritesheet), camera_x, grid, the_floor);
+    m_greeder->Create(level);
     m_greeder->onRemoval = GameObject::DO_NOT_DESTROY;
-    m_greeder->AddReceiver(receiver);
+    m_greeder->AddReceiver(level);
     m_randomInterval = random_interval;
 }
 
@@ -329,7 +320,7 @@ void GreederSpawner::Update(float dt) {
     m_intervalCount = m_randomInterval;
 
     if (go->IsEnabled()) {
-        if (*m_cameraX + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
+        if (level->GetCameraX() + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
             if (!m_greeder->IsEnabled()) {
                 m_greeder->position = go->position;
                 m_greeder->Init();
@@ -342,9 +333,9 @@ void GreederSpawner::Update(float dt) {
 }
 
 void GreederSpawner::Destroy() {
+    m_greeder->onRemoval = GameObject::DESTROY;
+    m_greeder->MarkToRemove();
+    level->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES); // Just let the level remove it, to avoid problems
     Component::Destroy();
-    // TODO: fix this, can cause problems if we are iterating the layer!!
-    // game_objects[RENDERING_LAYER_ENEMIES]->erase(m_greeder);
-    m_greeder->Destroy();
 }
 

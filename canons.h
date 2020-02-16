@@ -14,16 +14,12 @@
 
 class RotatingCanon : public GameObject {
 public:
-    void Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
-                float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                Grid *grid, int burst_length);
+    void Create(Level* level, const Vector2D &pos, int burst_length);
 };
 
 class Gulcan : public GameObject {
 public:
-    void Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
-                float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
-                Grid *grid);
+    void Create(Level* level, const Vector2D &pos);
 };
 
 class CanonBehaviour : public Component, public CollideComponentListener {
@@ -39,14 +35,12 @@ protected:
     float m_currentDirTime, m_fireRemainingCooldown, m_burstRemainingCooldown;
     int m_burstLength, m_shotBulletsInBurst;
     float m_burstCooldown, m_fireCooldown, m_rotationInterval;
-    PlayerControl *m_player;
     AnimationRenderer *m_animator;
     int animHidden, animShowing, animDirsFirst, animDie;
-    ObjectPool<Bullet> *m_bulletPool;
     int m_life;
 
     [[nodiscard]] Vector2D GetPlayerDir() const {
-        return m_player->GetGameObject()->position
+        return level->GetPlayer()->position
         - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     }
 
@@ -74,8 +68,7 @@ protected:
 
     void Fire();
 public:
-    void Create(Level* level, GameObject *go, Player *player,
-                ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int m_defaultDir, float rotation_interval,
+    void Create(Level* level, GameObject *go, int min_dir, int max_dir, int m_defaultDir, float rotation_interval,
                 int burst_length, float burst_cooldown, float shoot_cooldown);
     void Init() override {
         Component::Init();

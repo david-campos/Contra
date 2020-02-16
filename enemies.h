@@ -12,28 +12,23 @@
 class Ledder : public GameObject {
 public:
     void
-    Create(Level* level, ObjectPool<Bullet> *bullet_pool, Player *player,
-           std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-           float time_hidden, float time_shown, float cooldown_time, bool show_standing,
+    Create(Level* level, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
            int burst_length, float burst_cooldown, bool horizontally_precise);
 };
 
 class Greeder : public GameObject {
 public:
     void
-    Create(Level* level, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-           const std::weak_ptr<Floor> &the_floor);
+    Create(Level* level);
 };
 
 class GreederSpawner : public Component {
 private:
-    float* m_cameraX;
     Greeder *m_greeder;
     float m_randomInterval;
     float m_intervalCount;
 public:
-    void Create(Level* level, GameObject* go, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x,
-            Grid *grid, const std::weak_ptr<Floor> &the_floor, GameObject* receiver, float random_interval);
+    void Create(Level* level, GameObject* go, float random_interval);
     void Update(float dt) override;
 
     void Destroy() override;
@@ -56,12 +51,9 @@ private:
     int m_firedInBurst, m_burstLength;
     int m_animShow, m_animStanding, m_animShootUp, m_animShootDown, m_animGoingToDie, m_animDying;
     AnimationRenderer *m_animator;
-    ObjectPool<Bullet> *m_bulletPool;
-    Player *m_player;
 public:
     void
-    Create(Level* level, GameObject *go, ObjectPool<Bullet> *bullet_pool,
-           Player *player, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
+    Create(Level* level, GameObject *go, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
            int burst_length, float burst_cooldown, bool horizontally_precise);
 
     void Init() override {
@@ -110,9 +102,8 @@ private:
     std::random_device rd;
     std::mt19937 m_mt = std::mt19937(rd());
     std::uniform_real_distribution<float> m_random_dist = std::uniform_real_distribution<float>(0.f, 1.f);
-    std::weak_ptr<Floor> m_floor;
 public:
-    void Create(Level* level, GameObject *go, std::weak_ptr<Floor> the_floor);
+    void Create(Level* level, GameObject *go);
 
     void OnGameObjectDisabled() override {
         Component::OnGameObjectDisabled();

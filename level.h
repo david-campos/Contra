@@ -12,7 +12,7 @@
 #include "floor.h"
 #include "avancezlib.h"
 #include "consts.h"
-#include "grid_cell.h"
+#include "grid.h"
 #include "object_pool.h"
 #include "AnimationRenderer.h"
 #include "pickup_types.h"
@@ -99,7 +99,66 @@ public:
         }
     }
 
+    /**
+     * @return The x position of the camera, this corresponds to the exact left side of the same.
+     */
+    float GetCameraX() const {
+        return camera_x;
+    }
+
     void Destroy() override;
+
+    const std::shared_ptr<Sprite> &GetSpritesheet() const {
+        return spritesheet;
+    }
+
+    const std::shared_ptr<Sprite> &GetEnemiesSpritesheet() const {
+        return enemies_spritesheet;
+    }
+
+    const std::shared_ptr<Sprite> &GetPickupsSpritesheet() const {
+        return pickups_spritesheet;
+    }
+
+    const std::weak_ptr<Floor> GetLevelFloor() const {
+        return level_floor;
+    }
+
+    Player *GetPlayer() const {
+        return player;
+    }
+
+    PlayerControl *GetPlayerControl() const {
+        return playerControl;
+    }
+
+    ObjectPool<Bullet> *GetDefaultBullets() const {
+        return default_bullets;
+    }
+
+    ObjectPool<Bullet> *GetFireBullets() const {
+        return fire_bullets;
+    }
+
+    ObjectPool<Bullet> *GetMachineGunBullets() const {
+        return machine_gun_bullets;
+    }
+
+    ObjectPool<Bullet> *GetSpreadBullets() const {
+        return spread_bullets;
+    }
+
+    ObjectPool<Bullet> *GetLaserBullets() const {
+        return laser_bullets;
+    }
+
+    ObjectPool<Bullet> *GetEnemyBullets() const {
+        return enemy_bullets;
+    }
+
+    Grid* GetGrid() {
+        return &grid;
+    }
 
 private:
     void CreateBulletPools();

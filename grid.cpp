@@ -2,7 +2,7 @@
 // Created by david on 8/2/20.
 //
 
-#include "grid_cell.h"
+#include "grid.h"
 #include "component.h"
 
 void Grid::Update(CollideComponent *collider) {

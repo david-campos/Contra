@@ -63,6 +63,7 @@ public:
 
     void Receive(Message m) override {
         if (m == GAME_OVER) {
+            SDL_Log("GAME OVER");
             game_over = true;
         }
     }

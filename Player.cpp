@@ -70,8 +70,8 @@ void PlayerControl::Update(float dt) {
     if (keyStatus.left || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
         go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         // The player can't go back in Contra
-        if (go->position.x - 12 < *m_cameraX) {
-            go->position.x = *m_cameraX + 12;
+        if (go->position.x - 12 < level->GetCameraX()) {
+            go->position.x = level->GetCameraX() + 12;
         }
         m_hasInertia = true;
         m_facingRight = false;
@@ -195,7 +195,7 @@ void PlayerControl::Init() {
             -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
-    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, level);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(level);
     m_previousKeyStatus = {false, false, false, false, false, false, false,
                            false};
     m_remainingLives = 2;
@@ -213,9 +213,9 @@ void PlayerControl::Kill() {
 
 void PlayerControl::Respawn() {
     if (!m_isDeath) return;
-    go->position = Vector2D(*m_cameraX + 50 * PIXELS_ZOOM, 0);
+    go->position = Vector2D(level->GetCameraX() + 50 * PIXELS_ZOOM, 0);
     m_gravity->SetFallThoughWater(false);
-    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, level);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(level);
     m_facingRight = true;
     m_hasInertia = false;
     m_gravity->SetVelocity(0);
@@ -287,20 +287,16 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 void PlayerControl::PickUp(PickUpType type) {
     switch (type) {
         case PICKUP_MACHINE_GUN:
-            m_currentWeapon.reset(new MachineGun(m_machineGunBullets, level));
+            m_currentWeapon.reset(new MachineGun(level));
             break;
     }
 }
 
 void
-Player::Create(Level *level, const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor,
-               float *camera_x,
-               ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
-               ObjectPool<Bullet> *machine_gun_bullets, ObjectPool<Bullet> *spread_bullets,
-               ObjectPool<Bullet> *laser_bullets, Grid *grid, int player_collision_layer) {
+Player::Create(Level *level) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, spritesheet, camera_x);
+    renderer->Create(level, this, level->GetSpritesheet());
     renderer->AddAnimation({
             0, 8, 0.1, 2,
             24, 34, 8, 33,
@@ -383,14 +379,13 @@ Player::Create(Level *level, const std::shared_ptr<Sprite> &spritesheet, const s
     });
 
     auto *gravity = new Gravity();
-    gravity->Create(level, this, floor);
+    gravity->Create(level, this);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(level, this, camera_x,
-            default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets);
+    playerControl->Create(level, this);
     auto *collider = new BoxCollider();
-    collider->Create(level, this, grid, camera_x,
+    collider->Create(level, this,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
-            6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM, -1, player_collision_layer);
+            6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM, -1, PLAYER_COLLISION_LAYER);
     collider->SetListener(playerControl);
     AddComponent(gravity);
     AddComponent(playerControl);

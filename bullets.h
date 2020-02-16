@@ -10,6 +10,7 @@
 #include "AnimationRenderer.h"
 #include "component.h"
 #include "consts.h"
+#include "level.h"
 
 #define BULLET_SPEED 160
 
@@ -24,7 +25,6 @@ public:
     };
 private:
     Vector2D m_direction;
-    float *m_cameraX;
     int m_speed;
     int m_damage;
     AnimationRenderer *m_renderer;
@@ -32,9 +32,8 @@ private:
     int m_animBullet, m_animKill;
     float m_destroyIn;
 public:
-    void Create(Level* level, GameObject *go, float *camera_x) {
+    void Create(Level* level, GameObject *go) {
         Component::Create(level, go);
-        m_cameraX = camera_x;
     }
 
     void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1) {
@@ -61,7 +60,7 @@ public:
             }
         } else {
             go->position = go->position + m_direction * m_speed * dt;
-            if ((go->position.x < *m_cameraX or go->position.x > *m_cameraX + WINDOW_WIDTH)
+            if ((go->position.x < level->GetCameraX() or go->position.x > level->GetCameraX() + WINDOW_WIDTH)
                 or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
                 go->Disable();
                 go->MarkToRemove();
@@ -71,7 +70,7 @@ public:
 
     void Kill() {
         m_collider->Disable();
-        if (m_animKill) {
+        if (m_animKill >= 0) {
             m_renderer->PlayAnimation(m_animKill);
             m_destroyIn = 0.1f;
         } else {

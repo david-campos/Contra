@@ -46,19 +46,19 @@ public:
 class PickUp : public GameObject {
 public:
     void Create(Level *level, std::shared_ptr<Sprite> pickups_spritesheet,
-                Grid *grid, float *camera_x, std::weak_ptr<Floor> level_floor, PickUpType type) {
+                Grid *grid, std::weak_ptr<Floor> level_floor, PickUpType type) {
         GameObject::Create();
         auto *behaviour = new PickUpBehaviour();
         behaviour->Create(level, this, type);
         auto *gravity = new Gravity();
-        gravity->Create(level, this, std::move(level_floor));
+        gravity->Create(level, this);
         auto *renderer = new SimpleRenderer();
-        renderer->Create(level, this, std::move(pickups_spritesheet), camera_x,
+        renderer->Create(level, this, std::move(pickups_spritesheet),
                 25 * (int) type, 0, 24, 15, 12, 14);
         gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
         auto *collider = new BoxCollider();
-        collider->Create(level, this, grid,
-                camera_x, -4 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+        collider->Create(level, this,
+                -4 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
                 8 * PIXELS_ZOOM, 11 * PIXELS_ZOOM,
                 PLAYER_COLLISION_LAYER, -1);
         AddComponent(gravity);
@@ -173,6 +173,9 @@ public:
         m_time += dt;
         go->position = m_initialPosition + Vector2D(
                 1.3 * PLAYER_SPEED * m_time * PIXELS_ZOOM, sinf(6 * m_time) * 20 * PIXELS_ZOOM);
+        if (go->position.x > level->GetCameraX() + WINDOW_WIDTH + RENDERING_MARGINS) {
+            go->MarkToRemove();
+        }
     }
 };
 

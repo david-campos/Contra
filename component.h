@@ -4,7 +4,7 @@
 #include <memory>
 #include "object_pool.h"
 #include "game_object.h"
-#include "grid_cell.h"
+#include "grid.h"
 
 class GameObject;
 class Level;
@@ -46,9 +46,8 @@ public:
 class RenderComponent : public Component {
 protected:
     std::shared_ptr<Sprite> sprite;
-    float *camera_x;
 public:
-    virtual void Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite, float *camera_x);
+    virtual void Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite);
 
     void Destroy() override;
 
@@ -62,7 +61,6 @@ public:
 
 class CollideComponent : public Component {
 protected:
-    Grid *grid;
     Grid::CellsSquare is_occupying;
     int m_layer, m_checkLayer;
     CollideComponentListener *listener = nullptr;
@@ -70,14 +68,10 @@ protected:
 public:
     /**
      * Creates the collide component
-     * @param engine
-     * @param go
-     * @param game_objects
-     * @param grid
      * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
      * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
      */
-    void Create(Level* level, GameObject *go, Grid *grid, int layer, int checkLayer);
+    void Create(Level* level, GameObject *go, int layer, int checkLayer);
 
     /**
      * Changes the listener for the collisions of the collider, be aware if there was a previous
@@ -135,13 +129,11 @@ protected:
     void GetOccupiedCells(Grid::CellsSquare &square) override;
 
     bool IsColliding(const CollideComponent *other) override;
-
-    float *m_camera_x;
 public:
     virtual void
-    Create(Level* level, GameObject *go, Grid *grid, float *camera_x,
+    Create(Level* level, GameObject *go,
            int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
-        Create(level, go, grid, camera_x, {
+        Create(level, go, {
                 local_top_left_x,
                 local_top_left_y,
                 local_top_left_x + width,
@@ -150,10 +142,9 @@ public:
     }
 
     virtual void
-    Create(Level* level, GameObject *go, Grid *grid, float *camera_x, Box box, int layer, int checkLayer) {
-        CollideComponent::Create(level, go, grid, layer, checkLayer);
+    Create(Level* level, GameObject *go, Box box, int layer, int checkLayer) {
+        CollideComponent::Create(level, go, layer, checkLayer);
         m_box = box;
-        m_camera_x = camera_x;
     }
 
     void Update(float dt) override;

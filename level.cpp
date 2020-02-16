@@ -94,7 +94,7 @@ void Level::Update(float dt) {
 
     // Add new ones
     while (!game_objects_to_add.empty()) {
-        std::pair<GameObject*, int> next = game_objects_to_add.front();
+        std::pair<GameObject *, int> next = game_objects_to_add.front();
         game_objects_to_add.pop();
         game_objects[next.second]->insert(next.first);
     }
@@ -121,24 +121,21 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 
         for (const auto &rc_node: scene_root["rotating_canons"]) {
             auto *tank = new RotatingCanon();
-            tank->Create(this, enemies_spritesheet, &camera_x,
-                    rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player, enemy_bullets, &grid,
+            tank->Create(this,
+                    rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
                     rc_node["burst_length"].as<int>());
             tank->AddReceiver(this);
             not_found_enemies.push(tank);
         }
         for (const auto &rc_node: scene_root["gulcans"]) {
             auto *gulcan = new Gulcan();
-            gulcan->Create(this, enemies_spritesheet, &camera_x,
-                    rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player,
-                    enemy_bullets, &grid);
+            gulcan->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
             gulcan->AddReceiver(this);
             not_found_enemies.push(gulcan);
         }
         for (const auto &rc_node: scene_root["ledders"]) {
             auto *ledder = new Ledder();
-            ledder->Create(this, enemy_bullets, player,
-                    enemies_spritesheet, &camera_x, &grid,
+            ledder->Create(this,
                     rc_node["time_hidden"].as<float>(),
                     rc_node["time_shown"].as<float>(),
                     rc_node["cooldown_time"].as<float>(),
@@ -159,11 +156,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             auto *spawner = new GameObject();
             spawner->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             auto *greeder_spawner = new GreederSpawner();
-            greeder_spawner->Create(this, spawner,
-                    enemies_spritesheet, &camera_x,
-                    &grid, level_floor, this,
-                    m_random_dist(m_mt)
-            );
+            greeder_spawner->Create(this, spawner, m_random_dist(m_mt));
             spawner->AddComponent(greeder_spawner);
             spawner->AddReceiver(this);
             not_found_enemies.push(spawner);
@@ -262,16 +255,16 @@ void Level::CreateBulletPools() {
     for (auto *bullet: enemy_bullets->pool) {
         bullet->Create();
         auto *renderer = new AnimationRenderer();
-        renderer->Create(this, bullet, enemies_spritesheet, &camera_x);
+        renderer->Create(this, bullet, enemies_spritesheet);
         renderer->AddAnimation({
                 199, 72, 0.2, 1,
                 3, 3, 1, 1,
                 "Bullet", AnimationRenderer::STOP_AND_LAST
         });
         auto *behaviour = new BulletBehaviour();
-        behaviour->Create(this, bullet, &camera_x);
+        behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(this, bullet, &grid, &camera_x,
+        box_collider->Create(this, bullet,
                 -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                 3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
         bullet->AddComponent(behaviour);
@@ -304,9 +297,7 @@ void Level::Init() {
 
 void Level::CreatePlayer() {
     player = new Player();
-    player->Create(this, spritesheet, level_floor, &camera_x,
-            default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets,
-            &grid, PLAYER_COLLISION_LAYER);
+    player->Create(this);
     playerControl = player->GetComponent<PlayerControl *>();
     player->AddReceiver(this);
     game_objects[RENDERING_LAYER_PLAYER]->insert(player);
@@ -319,7 +310,7 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
     for (auto *bullet: pool->pool) {
         bullet->Create();
         auto *renderer = new AnimationRenderer();
-        renderer->Create(this, bullet, spritesheet, &camera_x);
+        renderer->Create(this, bullet, spritesheet);
         renderer->AddAnimation(animation);
         renderer->AddAnimation({
                 104, 0, 0.2, 1,
@@ -328,9 +319,9 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         });
         renderer->Play();
         auto *behaviour = new BulletBehaviour();
-        behaviour->Create(this, bullet, &camera_x);
+        behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(this, bullet, &grid, &camera_x, {
+        box_collider->Create(this, bullet, {
                 box.top_left_x * PIXELS_ZOOM,
                 box.top_left_y * PIXELS_ZOOM,
                 box.bottom_right_x * PIXELS_ZOOM,
@@ -349,15 +340,15 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
 void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
                                      AnimationRenderer **renderer) {
     auto *pickup = new PickUp();
-    pickup->Create(this, pickups_spritesheet, &grid, &camera_x,
+    pickup->Create(this, pickups_spritesheet, &grid,
             level_floor, type);
     auto *pick_up_holder = new GameObject();
     pick_up_holder->position = position;
     behaviour->Create(this, pick_up_holder, pickup);
     *renderer = new AnimationRenderer();
-    (*renderer)->Create(this, pick_up_holder, enemies_spritesheet, &camera_x);
+    (*renderer)->Create(this, pick_up_holder, enemies_spritesheet);
     auto *collider = new BoxCollider();
-    collider->Create(this, pick_up_holder, &grid, &camera_x,
+    collider->Create(this, pick_up_holder,
             -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
             22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);
