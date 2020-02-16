@@ -169,7 +169,7 @@ private:
      * @param behaviour Create will be called, no need to create it first
      */
     void CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
-                                  AnimationRenderer **renderer_out);
+                                  const Box& box, AnimationRenderer **renderer_out);
 };
 
 #endif //CONTRA_LEVEL_H

@@ -110,3 +110,12 @@ covered_pickups:
     content: F
   - pos: [2287, 184]
     content: S
+flying_pickups:
+  - pos: [257, 56]
+    content: R
+  - pos: [1137, 88]
+    content: S
+  - pos: [2337, 88]
+    content: R
+  - pos: [2337, 200]
+    content: L

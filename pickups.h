@@ -157,6 +157,7 @@ public:
 class FlyingPickupHolderBehaviour : public PickUpHolderBehaviour {
 private:
     Vector2D m_initialPosition;
+    CollideComponent* m_collider;
     float m_time;
 public:
     void Init() override {
@@ -165,16 +166,24 @@ public:
         m_lives = 1;
         m_canBeHit = true;
         m_time = 0;
+        m_collider = go->GetComponent<CollideComponent*>();
     }
 
     void Update(float dt) override {
         PickUpHolderBehaviour::Update(dt);
         if (m_lives <= 0) return;
-        m_time += dt;
-        go->position = m_initialPosition + Vector2D(
-                1.3 * PLAYER_SPEED * m_time * PIXELS_ZOOM, sinf(6 * m_time) * 20 * PIXELS_ZOOM);
-        if (go->position.x > level->GetCameraX() + WINDOW_WIDTH + RENDERING_MARGINS) {
-            go->MarkToRemove();
+        if (m_initialPosition.x > level->GetCameraX() - m_animator->GetCurrentAnimation().frame_w) {
+            m_animator->enabled = false;
+            if(!m_collider->IsDisabled()) m_collider->Disable();
+        } else {
+            m_animator->enabled = true;
+            if(m_collider->IsDisabled()) m_collider->Enable();
+            m_time += dt;
+            go->position = m_initialPosition + Vector2D(
+                    1.7 * PLAYER_SPEED * m_time * PIXELS_ZOOM, sinf(6 * m_time) * 20 * PIXELS_ZOOM);
+            if (go->position.x > level->GetCameraX() + WINDOW_WIDTH + RENDERING_MARGINS) {
+                go->MarkToRemove();
+            }
         }
     }
 };

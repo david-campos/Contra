@@ -82,6 +82,7 @@ void CollideComponent::Enable() {
 
 void BoxCollider::Update(float dt) {
     CollideComponent::Update(dt);
+    if (m_disabled) return;
     level->GetEngine()->strokeSquare(AbsoluteTopLeftX() - level->GetCameraX(),
             AbsoluteTopLeftY(), AbsoluteBottomRightX() - level->GetCameraX(), AbsoluteBottomRightY(),
             {0, 0, 255});

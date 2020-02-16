@@ -165,7 +165,9 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             AnimationRenderer *renderer;
             CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
-                    new CoveredPickUpHolderBehaviour(), &renderer);
+                    new CoveredPickUpHolderBehaviour(),
+                    {-12, -15,10, 15},
+                    &renderer);
             renderer->AddAnimation({
                     1, 76, 0.15, 1,
                     34, 34, 17, 17,
@@ -190,7 +192,9 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             AnimationRenderer *renderer;
             CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
-                    new FlyingPickupHolderBehaviour(), &renderer);
+                    new FlyingPickupHolderBehaviour(),
+                    {-9, -6,9, 6},
+                    &renderer);
             renderer->AddAnimation({
                     243, 120, 0.15, 1,
                     24, 14, 12, 7,
@@ -321,12 +325,7 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         auto *behaviour = new BulletBehaviour();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(this, bullet, {
-                box.top_left_x * PIXELS_ZOOM,
-                box.top_left_y * PIXELS_ZOOM,
-                box.bottom_right_x * PIXELS_ZOOM,
-                box.bottom_right_y * PIXELS_ZOOM
-        }, NPCS_COLLISION_LAYER, -1);
+        box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
         bullet->AddComponent(behaviour);
         bullet->AddComponent(renderer);
         bullet->AddComponent(box_collider);
@@ -337,20 +336,17 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
     return pool;
 }
 
-void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
-                                     AnimationRenderer **renderer) {
+void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position,
+                                     PickUpHolderBehaviour *behaviour, const Box &box, AnimationRenderer **renderer) {
     auto *pickup = new PickUp();
-    pickup->Create(this, pickups_spritesheet, &grid,
-            level_floor, type);
+    pickup->Create(this, pickups_spritesheet, &grid, level_floor, type);
     auto *pick_up_holder = new GameObject();
     pick_up_holder->position = position;
     behaviour->Create(this, pick_up_holder, pickup);
     *renderer = new AnimationRenderer();
     (*renderer)->Create(this, pick_up_holder, enemies_spritesheet);
     auto *collider = new BoxCollider();
-    collider->Create(this, pick_up_holder,
-            -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
-            22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
+    collider->Create(this, pick_up_holder, box * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);
 
     pick_up_holder->AddComponent(behaviour);

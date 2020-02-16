@@ -7,7 +7,9 @@
 #include "grid.h"
 
 class GameObject;
+
 class Level;
+
 class AvancezLib;
 
 class Sprite;
@@ -15,12 +17,12 @@ class Sprite;
 
 class Component {
 protected:
-    Level* level; // the level reference
+    Level *level; // the level reference
     GameObject *go;        // the game object this component is part of
 public:
     virtual ~Component() {}
 
-    virtual void Create(Level* level, GameObject *go);
+    virtual void Create(Level *level, GameObject *go);
 
     virtual void Init() {
         if (!go) {
@@ -71,7 +73,7 @@ public:
      * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
      * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
      */
-    void Create(Level* level, GameObject *go, int layer, int checkLayer);
+    void Create(Level *level, GameObject *go, int layer, int checkLayer);
 
     /**
      * Changes the listener for the collisions of the collider, be aware if there was a previous
@@ -83,12 +85,18 @@ public:
     void Destroy() override;
 
     void OnGameObjectDisabled() override;
+
     void Disable();
+
     void Enable();
+
+    bool IsDisabled() const {
+        return m_disabled;
+    }
 
     [[nodiscard]] int GetLayer() const { return m_layer; }
 
-    void GetPreviouslyOccupiedCells(Grid::CellsSquare &square, const bool update=true) {
+    void GetPreviouslyOccupiedCells(Grid::CellsSquare &square, const bool update = true) {
         square = is_occupying;
         if (update) {
             GetOccupiedCells(is_occupying);
@@ -120,6 +128,15 @@ struct Box {
     int top_left_y;
     int bottom_right_x;
     int bottom_right_y;
+
+    Box operator*(const int &rhs) const {
+        return Box{
+                top_left_x * rhs,
+                top_left_y * rhs,
+                bottom_right_x * rhs,
+                bottom_right_y * rhs
+        };
+    }
 };
 
 class BoxCollider : public CollideComponent {
@@ -129,9 +146,10 @@ protected:
     void GetOccupiedCells(Grid::CellsSquare &square) override;
 
     bool IsColliding(const CollideComponent *other) override;
+
 public:
     virtual void
-    Create(Level* level, GameObject *go,
+    Create(Level *level, GameObject *go,
            int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
         Create(level, go, {
                 local_top_left_x,
@@ -142,14 +160,14 @@ public:
     }
 
     virtual void
-    Create(Level* level, GameObject *go, Box box, int layer, int checkLayer) {
+    Create(Level *level, GameObject *go, Box box, int layer, int checkLayer) {
         CollideComponent::Create(level, go, layer, checkLayer);
         m_box = box;
     }
 
     void Update(float dt) override;
 
-    void ChangeBox(const Box& box) {
+    void ChangeBox(const Box &box) {
         m_box = box;
     }
 
