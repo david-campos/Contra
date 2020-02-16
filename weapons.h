@@ -9,11 +9,20 @@
 
 class Weapon {
 protected:
-    Level* m_level;
+    Level *m_level;
+    float m_bulletSpeedMultiplier = 1.f;
 public:
-    explicit Weapon(Level* level) : m_level(level) {}
+    explicit Weapon(Level *level) : m_level(level) {}
 
     virtual ~Weapon() {}
+
+    float GetBulletSpeedMultiplier() const {
+        return m_bulletSpeedMultiplier;
+    }
+
+    void SetBulletSpeedMultiplier(float bulletSpeedMultiplier) {
+        m_bulletSpeedMultiplier = bulletSpeedMultiplier;
+    }
 
     /**
      * Called each frame to check if we should fire or not
@@ -41,7 +50,7 @@ private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
 public:
-    DefaultWeapon(Level* level) : Weapon(level) {}
+    DefaultWeapon(Level *level) : Weapon(level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -55,10 +64,10 @@ public:
         // Grab the bullet from the pool
         auto *bullet = m_level->GetDefaultBullets()->FirstAvailable();
         if (bullet != nullptr) {
-            bullet->Init(position, direction.normalise());
+            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
-            m_shootDowntime = 0.2;
+            m_shootDowntime = 0.1;
             return true;
         }
         return false;
@@ -73,7 +82,7 @@ class MachineGun : public Weapon {
 private:
     float m_shootDowntime = 0;
 public:
-    MachineGun(Level* level) : Weapon(level) {}
+    MachineGun(Level *level) : Weapon(level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -84,9 +93,9 @@ public:
         // Grab the bullet from the pool
         auto *bullet = m_level->GetMachineGunBullets()->FirstAvailable();
         if (bullet != nullptr) {
-            bullet->Init(position, direction.normalise());
+            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
-            m_shootDowntime = 0.2;
+            m_shootDowntime = 0.1;
             return true;
         }
         return false;
@@ -94,6 +103,44 @@ public:
 
     bool IsAutomatic() override {
         return true;
+    }
+};
+
+class SpreadGun : public Weapon {
+private:
+    float m_shootDowntime = 0;
+    bool m_hasShot = false;
+public:
+    SpreadGun(Level *level) : Weapon(level) {}
+
+    bool ShouldFire(bool fireKey, float dt) override {
+        m_shootDowntime -= dt;
+        if (!fireKey) {
+            m_hasShot = false;
+        }
+        return !m_hasShot && fireKey && m_shootDowntime <= 0;
+    }
+
+    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+        m_hasShot = false;
+        std::vector<Bullet*> bullets  = m_level->GetSpreadBullets()->FirstAvailableN(5);
+        if (bullets.size() >= 3) {
+            for (int i = 0; i < bullets.size(); i++) {
+                float angle = 0.2618f - i * 0.5236f / (bullets.size() - 1); // 15deg - (30deg / (num bullets + 1)) * i
+                bullets[i]->Init(position,
+                        direction.rotate(angle).normalise(),
+                        m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
+                m_level->AddGameObject(bullets[i], RENDERING_LAYER_BULLETS);
+            }
+            m_hasShot = true;
+            m_shootDowntime = 0.1;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsAutomatic() override {
+        return false;
     }
 };
 

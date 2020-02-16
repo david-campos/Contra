@@ -31,6 +31,15 @@ public:
         return x * rhs.x + y * rhs.y;
     }
 
+    [[nodiscard]] Vector2D rotate(const float angle) const {
+        float cos = cosf(angle);
+        float sin = sinf(angle);
+        return Vector2D(
+                cos * x - sin * y,
+                sin * x + cos * y
+        );
+    }
+
     [[nodiscard]] double magnitude() const {
         return sqrt(x * x + y * y);
     }

@@ -48,6 +48,21 @@ public:
 		return NULL;
 	}
 
+	/**
+	 * Tries to return the first n available objects in the pool,
+	 * it may return less.
+	 * @param n
+	 * @return n or less not enabled objects
+	 */
+	std::vector<T*> FirstAvailableN(const int n)
+    {
+	    std::vector<T*> available;
+        for (auto it = pool.begin(); it != pool.end() && available.size() < n; it++)
+            if (!(**it).IsEnabled())
+                available.push_back(*it);
+        return available;
+    }
+
 	// select a random, enabled element in the object pool
 	T* SelectRandom()
 	{

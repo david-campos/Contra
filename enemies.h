@@ -74,11 +74,11 @@ public:
             m_animator->CurrentAndPause(m_animShow, true);
         } else {
             m_state = SHOWN;
-            m_burstCoolDown = m_burstCoolDownTime;
+            m_burstCoolDown = 0.3; // Do not shoot immediately as it enters the screen, it feels awful
             m_animator->CurrentAndPause(m_animStanding, true);
         }
         m_coolDown = 0;
-        m_firedInBurst = 0;
+        m_firedInBurst = m_burstLength; // Wait for cooldown to be zero
     }
 
     void Fire();

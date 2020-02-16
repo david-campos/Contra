@@ -80,6 +80,7 @@ void LedderBehaviour::Update(float dt) {
                 m_animator->PlayAnimation(m_animShow, false);
                 ChangeToState(HIDING);
             } else {
+                if (level->GetCameraX() + WINDOW_WIDTH < go->position.x) break; // Wait to be in camera
                 if (m_burstCoolDown > 0) m_burstCoolDown -= dt;
                 if (m_coolDown > 0) m_coolDown -= dt;
                 if (m_coolDown <= 0 && (m_firedInBurst < m_burstLength || m_burstCoolDown <= 0)) {

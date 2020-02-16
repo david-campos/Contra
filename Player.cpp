@@ -259,28 +259,30 @@ bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
-    if (m_invincibleTime <= 0 && !m_isDeath && !m_diving && !m_godMode) {
-        auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
-        if (bullet) {
+    if (m_isDeath ) return;
+
+    auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
+    if (bullet) {
+        if (m_invincibleTime <= 0 && !m_diving && !m_godMode) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
             bullet->Kill();
-            return;
         }
-        auto *greeder = collider.GetGameObject()->GetComponent<GreederBehaviour *>();
-        if (greeder) {
-            if (greeder->IsAlive()) {
-                Kill();
-                m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
-            }
-            return;
+        return;
+    }
+    auto *greeder = collider.GetGameObject()->GetComponent<GreederBehaviour *>();
+    if (greeder) {
+        if (greeder->IsAlive() && m_invincibleTime <= 0 && !m_diving && !m_godMode) {
+            Kill();
+            m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
         }
-        auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour *>();
-        if (pickup) {
-            PickUp(pickup->GetType());
-            // Safe to erase as it is not the current layer (current layer is player layer)
-            level->RemoveImmediately(pickup->GetGameObject(), RENDERING_LAYER_ENEMIES);
-        }
+        return;
+    }
+    auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour *>();
+    if (pickup) {
+        PickUp(pickup->GetType());
+        // Safe to erase as it is not the current layer (current layer is player layer)
+        level->RemoveImmediately(pickup->GetGameObject(), RENDERING_LAYER_ENEMIES);
     }
 }
 
@@ -288,6 +290,17 @@ void PlayerControl::PickUp(PickUpType type) {
     switch (type) {
         case PICKUP_MACHINE_GUN:
             m_currentWeapon.reset(new MachineGun(level));
+            break;
+        case PICKUP_RAPID_FIRE:
+            m_currentWeapon->SetBulletSpeedMultiplier(1.5);
+            break;
+        case PICKUP_SPREAD:
+            m_currentWeapon.reset(new SpreadGun(level));
+            break;
+        case PICKUP_FIRE_GUN:
+        case PICKUP_LASER:
+        case PICKUP_BARRIER:
+            // TODO: Do these pickups
             break;
     }
 }
