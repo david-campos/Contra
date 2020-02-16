@@ -21,6 +21,7 @@ class Player;
 class PlayerControl;
 struct Box;
 class Bullet;
+class BulletBehaviour;
 class PickUpHolderBehaviour;
 
 class Level : public GameObject {
@@ -162,6 +163,8 @@ public:
 
 private:
     void CreateBulletPools();
+
+    template<typename T>
     ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
                                                const Box &box);
     void CreatePlayer();

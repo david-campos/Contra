@@ -237,18 +237,23 @@ void Level::Destroy() {
 
 void Level::CreateBulletPools() {
     // Create bullet pools for the player
-    default_bullets = CreatePlayerBulletPool(MAX_DEFAULT_BULLETS, {
+    default_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_DEFAULT_BULLETS, {
             82, 10, 0.2, 1,
             3, 3, 1, 1,
             "Bullet", AnimationRenderer::STOP_AND_LAST
     }, {-1, -1, 2, 2});
-    machine_gun_bullets = CreatePlayerBulletPool(MAX_MACHINE_GUN_BULLETS, {
+    machine_gun_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_MACHINE_GUN_BULLETS, {
             89, 9, 0.2, 1,
             5, 5, 2, 2,
             "Bullet", AnimationRenderer::STOP_AND_LAST
     }, {-2, -2, 2, 2});
-    spread_bullets = CreatePlayerBulletPool(MAX_SPREAD_BULLETS, {
+    spread_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_SPREAD_BULLETS, {
             88, 8, 0.2, 3,
+            8, 8, 4, 4,
+            "Bullet", AnimationRenderer::STOP_AND_LAST
+    }, {-2, -2, 2, 2});
+    fire_bullets = CreatePlayerBulletPool<BulletCirclesMovement>(MAX_FIRE_BULLETS, {
+            112, 8, 0.2, 1,
             8, 8, 4, 4,
             "Bullet", AnimationRenderer::STOP_AND_LAST
     }, {-2, -2, 2, 2});
@@ -265,7 +270,7 @@ void Level::CreateBulletPools() {
                 3, 3, 1, 1,
                 "Bullet", AnimationRenderer::STOP_AND_LAST
         });
-        auto *behaviour = new BulletBehaviour();
+        auto *behaviour = new BulletStraightMovement();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
         box_collider->Create(this, bullet,
@@ -307,6 +312,7 @@ void Level::CreatePlayer() {
     game_objects[RENDERING_LAYER_PLAYER]->insert(player);
 }
 
+template<typename T>
 ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
                                                   const Box &box) {
     auto *pool = new ObjectPool<Bullet>();
@@ -322,7 +328,7 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
                 "Kill", AnimationRenderer::STOP_AND_FIRST
         });
         renderer->Play();
-        auto *behaviour = new BulletBehaviour();
+        auto* behaviour = new T();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
         box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);

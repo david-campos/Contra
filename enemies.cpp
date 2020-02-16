@@ -186,7 +186,7 @@ void LedderBehaviour::Fire() {
             m_animator->CurrentAndPause(m_animShow, false);
         }
 
-        bullet->Init(go->position + shift, direction, 80 * PIXELS_ZOOM);
+        bullet->Init(go->position + shift, direction, ENEMY_BULLET_SPEED * PIXELS_ZOOM);
         level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
     }
 }

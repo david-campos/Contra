@@ -49,6 +49,10 @@ public:
         return Vector2D(x / len, y / len);
     }
 
+    [[nodiscard]] Vector2D perpendicular() const {
+        return Vector2D(-y, x);
+    }
+
     Vector2D(double x, double y) {
         this->x = x;
         this->y = y;

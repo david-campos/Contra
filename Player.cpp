@@ -225,18 +225,23 @@ void PlayerControl::Respawn() {
 
 bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D displacement(
-            m_facingRight ? 12 : -12,
-            m_gravity->IsOnWater() ? -3 : -21
+            m_facingRight ? 15 : -15,
+            m_gravity->IsOnWater() ? 0 : -21
     );
     Vector2D direction(m_facingRight ? 1 : -1, 0);
     if (keyStatus.up && !keyStatus.down) {
         direction.y = -1;
-        displacement.y = m_gravity->IsOnWater() ? -25 : -35;
+        displacement.y = m_gravity->IsOnWater() ? -25 : -40;
         if (!keyStatus.right && !keyStatus.left) {
             direction.x = 0;
-            displacement.x = m_facingRight ? 3 : -3;
+            displacement.x = m_facingRight ? 4 : -4;
         } else if (m_gravity->IsOnWater()) {
             displacement.y = -20;
+        } else {
+            displacement = Vector2D(
+                    m_facingRight ? 10 : -10,
+                    -35
+            );
         }
         if (m_animator->IsCurrent(m_jumpAnim)) {
             displacement.x = 0;
@@ -250,6 +255,11 @@ bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
             if (!keyStatus.left && !keyStatus.right) {
                 displacement = Vector2D(0, 0);
                 direction.x = 0;
+            } else {
+                displacement = Vector2D(
+                        m_facingRight ? 12 : -12,
+                        -12
+                );
             }
         }
     } else if (m_animator->IsCurrent(m_jumpAnim)) {
@@ -259,7 +269,7 @@ bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
-    if (m_isDeath ) return;
+    if (m_isDeath) return;
 
     auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
     if (bullet) {
@@ -298,6 +308,8 @@ void PlayerControl::PickUp(PickUpType type) {
             m_currentWeapon.reset(new SpreadGun(level));
             break;
         case PICKUP_FIRE_GUN:
+            m_currentWeapon.reset(new FireGun(level));
+            break;
         case PICKUP_LASER:
         case PICKUP_BARRIER:
             // TODO: Do these pickups

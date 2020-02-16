@@ -6,6 +6,7 @@
 #define CONTRA_WEAPONS_H
 
 #include "level.h"
+#include "consts.h"
 
 class Weapon {
 protected:
@@ -49,6 +50,8 @@ class DefaultWeapon : public Weapon {
 private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
+protected:
+    int m_bulletSpeed = BULLET_SPEED;
 public:
     DefaultWeapon(Level *level) : Weapon(level) {}
 
@@ -62,9 +65,9 @@ public:
 
     bool Fire(const Vector2D &position, const Vector2D &direction) override {
         // Grab the bullet from the pool
-        auto *bullet = m_level->GetDefaultBullets()->FirstAvailable();
+        auto *bullet = GetBulletPool()->FirstAvailable();
         if (bullet != nullptr) {
-            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
+            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * m_bulletSpeed * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
             m_shootDowntime = 0.1;
@@ -73,8 +76,23 @@ public:
         return false;
     }
 
+    virtual ObjectPool<Bullet>* GetBulletPool() const {
+        return m_level->GetDefaultBullets();
+    }
+
     bool IsAutomatic() override {
         return false;
+    }
+};
+
+class FireGun: public DefaultWeapon {
+public:
+    FireGun(Level *level) : DefaultWeapon(level) {
+        m_bulletSpeed = FIRE_BULLET_SPEED;
+    }
+
+    ObjectPool<Bullet> *GetBulletPool() const override {
+        return m_level->GetFireBullets();
     }
 };
 
