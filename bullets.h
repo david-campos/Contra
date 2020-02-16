@@ -7,8 +7,8 @@
 
 #include <SDL_log.h>
 #include "game_object.h"
-#include "component.h"
 #include "AnimationRenderer.h"
+#include "component.h"
 #include "consts.h"
 
 #define BULLET_SPEED 160
@@ -32,8 +32,8 @@ private:
     int m_animBullet, m_animKill;
     float m_destroyIn;
 public:
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, float *camera_x) {
-        Component::Create(engine, go, game_objects);
+    void Create(Level* level, GameObject *go, float *camera_x) {
+        Component::Create(level, go);
         m_cameraX = camera_x;
     }
 
@@ -56,15 +56,15 @@ public:
         if (m_destroyIn > 0) {
             m_destroyIn -= dt;
             if (m_destroyIn < 0) {
-                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
                 go->Disable();
+                go->MarkToRemove();
             }
         } else {
             go->position = go->position + m_direction * m_speed * dt;
             if ((go->position.x < *m_cameraX or go->position.x > *m_cameraX + WINDOW_WIDTH)
                 or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
-                game_objects[RENDERING_LAYER_BULLETS]->erase(go);
                 go->Disable();
+                go->MarkToRemove();
             }
         }
     }
@@ -75,8 +75,8 @@ public:
             m_renderer->PlayAnimation(m_animKill);
             m_destroyIn = 0.1f;
         } else {
-            game_objects[RENDERING_LAYER_BULLETS]->erase(go);
             go->Disable();
+            go->MarkToRemove();
         }
     }
 
@@ -86,7 +86,7 @@ public:
 class Bullet : public GameObject {
 public:
     void Init(const Vector2D &pos, const Vector2D &direction,
-            const int speed = BULLET_SPEED * PIXELS_ZOOM) {
+              const int speed = BULLET_SPEED * PIXELS_ZOOM) {
         GameObject::Init();
         position = pos;
         auto *behaviour = GetComponent<BulletBehaviour *>();

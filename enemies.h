@@ -7,13 +7,12 @@
 
 #include <random>
 #include "component.h"
-#include "AnimationRenderer.h"
 #include "Player.h"
 
 class Ledder : public GameObject {
 public:
     void
-    Create(AvancezLib *engine,std::set<GameObject *> **game_objects, ObjectPool<Bullet> *bullet_pool, Player *player,
+    Create(Level* level, ObjectPool<Bullet> *bullet_pool, Player *player,
            std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
            float time_hidden, float time_shown, float cooldown_time, bool show_standing,
            int burst_length, float burst_cooldown, bool horizontally_precise);
@@ -22,8 +21,7 @@ public:
 class Greeder : public GameObject {
 public:
     void
-    Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
-           std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
+    Create(Level* level, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
            const std::weak_ptr<Floor> &the_floor);
 };
 
@@ -34,9 +32,8 @@ private:
     float m_randomInterval;
     float m_intervalCount;
 public:
-    void Create(AvancezLib *engine, GameObject* go,std::set<GameObject *> **game_objects,
-                std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x, Grid *grid,
-                const std::weak_ptr<Floor> &the_floor, GameObject* receiver, float random_interval);
+    void Create(Level* level, GameObject* go, std::shared_ptr<Sprite> enemies_spritesheet, float *camera_x,
+            Grid *grid, const std::weak_ptr<Floor> &the_floor, GameObject* receiver, float random_interval);
     void Update(float dt) override;
 
     void Destroy() override;
@@ -63,7 +60,7 @@ private:
     Player *m_player;
 public:
     void
-    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, ObjectPool<Bullet> *bullet_pool,
+    Create(Level* level, GameObject *go, ObjectPool<Bullet> *bullet_pool,
            Player *player, float time_hidden, float time_shown, float cooldown_time, bool show_standing,
            int burst_length, float burst_cooldown, bool horizontally_precise);
 
@@ -115,8 +112,7 @@ private:
     std::uniform_real_distribution<float> m_random_dist = std::uniform_real_distribution<float>(0.f, 1.f);
     std::weak_ptr<Floor> m_floor;
 public:
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                std::weak_ptr<Floor> the_floor);
+    void Create(Level* level, GameObject *go, std::weak_ptr<Floor> the_floor);
 
     void OnGameObjectDisabled() override {
         Component::OnGameObjectDisabled();

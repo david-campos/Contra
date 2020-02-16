@@ -34,6 +34,6 @@
 #define PLAYER_SPEED 55
 #define PLAYER_JUMP 200
 
-#define PICKUP_SPEED 55
+#define PICKUP_SPEED 50
 
 #endif //CONTRA_CONSTS_H

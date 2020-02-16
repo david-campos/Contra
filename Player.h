@@ -18,7 +18,7 @@
 
 class Player : public GameObject {
 public:
-    void Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
+    void Create(Level* level,
                 const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
                 ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
                 ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
@@ -31,12 +31,11 @@ public:
 
     void Update(float dt) override;
 
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                float *camera_x,
+    void Create(Level* level, GameObject *go, float *camera_x,
                 ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
                 ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
                 ObjectPool<Bullet> *laser_bullets) {
-        Component::Create(engine, go, game_objects);
+        Component::Create(level, go);
         m_cameraX = camera_x;
         m_defaultBullets = default_bullets;
         m_fireBullets = fire_bullets;

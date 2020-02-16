@@ -6,6 +6,7 @@
 #include "consts.h"
 
 #include <utility>
+#include "level.h"
 
 void AnimationRenderer::Update(float dt) {
     if (!go->IsEnabled() || !enabled || !sprite || !m_currentAnimation)
@@ -62,7 +63,7 @@ void AnimationRenderer::Update(float dt) {
             m_currentAnimation->frame_w, m_currentAnimation->frame_h,
             mirrorHorizontal
     );
-    engine->fillSquare(round(go->position.x - 2 - *camera_x),
+    level->GetEngine()->fillSquare(round(go->position.x - 2 - *camera_x),
             round(go->position.y) - 2, 4, {255, 0, 0});
 }
 

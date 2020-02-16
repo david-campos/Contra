@@ -14,22 +14,24 @@ class Component;
 class GameObject {
 private:
     bool enabled;
+    bool marked_to_remove;
 protected:
     std::vector<GameObject *> receivers;
     std::vector<Component *> components;
     int id;
 public:
     enum OnOutOfScreen {
-        DISABLE_AND_DESTROY,
-        JUST_DISABLE
+        DESTROY,
+        DO_NOT_DESTROY
     };
 
     static int s_nextId;
     Vector2D position;
-    OnOutOfScreen onOutOfScreen = DISABLE_AND_DESTROY;
+    OnOutOfScreen onRemoval = DESTROY;
 
     GameObject() {
         id = s_nextId++;
+        marked_to_remove = false;
     }
 
     virtual ~GameObject();
@@ -49,7 +51,21 @@ public:
     virtual void Receive(Message m) {}
 
     void OnEnabled();
+
     void OnDisabled();
+
+    /**
+     * Marks the object to be removed at the end of the frame
+     */
+    void MarkToRemove() { marked_to_remove = true; }
+    /**
+     * Used by the level to unmark removed objects
+     */
+    void UnmarkToRemove() { marked_to_remove = false; }
+
+    [[nodiscard]] bool IsMarkedToRemove() const {
+        return marked_to_remove;
+    }
 
     void Send(Message m);
 

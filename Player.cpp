@@ -11,7 +11,7 @@
 
 void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
-    engine->getKeyStatus(keyStatus);
+    level->GetEngine()->getKeyStatus(keyStatus);
 
     if (keyStatus.debug && !m_previousKeyStatus.debug) {
         m_godMode = !m_godMode;
@@ -195,7 +195,7 @@ void PlayerControl::Init() {
             -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
-    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, game_objects);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, level);
     m_previousKeyStatus = {false, false, false, false, false, false, false,
                            false};
     m_remainingLives = 2;
@@ -215,7 +215,7 @@ void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     go->position = Vector2D(*m_cameraX + 50 * PIXELS_ZOOM, 0);
     m_gravity->SetFallThoughWater(false);
-    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, game_objects);
+    m_currentWeapon = std::make_unique<DefaultWeapon>(m_defaultBullets, level);
     m_facingRight = true;
     m_hasInertia = false;
     m_gravity->SetVelocity(0);
@@ -275,11 +275,11 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
             }
             return;
         }
-        auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour*>();
+        auto *pickup = collider.GetGameObject()->GetComponent<PickUpBehaviour *>();
         if (pickup) {
             PickUp(pickup->GetType());
-            game_objects[RENDERING_LAYER_ENEMIES]->erase(pickup->GetGameObject());
-            pickup->GetGameObject()->Destroy();
+            // Safe to erase as it is not the current layer (current layer is player layer)
+            level->RemoveImmediately(pickup->GetGameObject(), RENDERING_LAYER_ENEMIES);
         }
     }
 }
@@ -287,20 +287,20 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 void PlayerControl::PickUp(PickUpType type) {
     switch (type) {
         case PICKUP_MACHINE_GUN:
-            m_currentWeapon.reset(new MachineGun(m_machineGunBullets, game_objects));
+            m_currentWeapon.reset(new MachineGun(m_machineGunBullets, level));
             break;
     }
 }
 
 void
-Player::Create(AvancezLib *engine, std::set<GameObject *> **game_objects,
-               const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor, float *camera_x,
+Player::Create(Level *level, const std::shared_ptr<Sprite> &spritesheet, const std::weak_ptr<Floor> &floor,
+               float *camera_x,
                ObjectPool<Bullet> *default_bullets, ObjectPool<Bullet> *fire_bullets,
-               ObjectPool<Bullet> *machine_gun_bullets,  ObjectPool<Bullet> *spread_bullets,
+               ObjectPool<Bullet> *machine_gun_bullets, ObjectPool<Bullet> *spread_bullets,
                ObjectPool<Bullet> *laser_bullets, Grid *grid, int player_collision_layer) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
-    renderer->Create(engine, this, game_objects, spritesheet, camera_x);
+    renderer->Create(level, this, spritesheet, camera_x);
     renderer->AddAnimation({
             0, 8, 0.1, 2,
             24, 34, 8, 33,
@@ -383,12 +383,12 @@ Player::Create(AvancezLib *engine, std::set<GameObject *> **game_objects,
     });
 
     auto *gravity = new Gravity();
-    gravity->Create(engine, this, game_objects, floor);
+    gravity->Create(level, this, floor);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(engine, this, game_objects, camera_x,
+    playerControl->Create(level, this, camera_x,
             default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets);
     auto *collider = new BoxCollider();
-    collider->Create(engine, this, game_objects, grid, camera_x,
+    collider->Create(level, this, grid, camera_x,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
             6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM, -1, player_collision_layer);
     collider->SetListener(playerControl);

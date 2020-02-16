@@ -2,23 +2,15 @@
 #include "game_object.h"
 #include "avancezlib.h"
 #include "grid_cell.h"
+#include "level.h"
 
-void Component::Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> **game_objects) {
+void Component::Create(Level *level, GameObject *go) {
     this->go = go;
-    this->engine = engine;
-    this->game_objects = game_objects;
+    this->level = level;
 }
 
-void RenderComponent::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                             const char *sprite_name, float *camera_x) {
-    Component::Create(engine, go, game_objects);
-    sprite.reset(engine->createSprite(sprite_name));
-    this->camera_x = camera_x;
-}
-
-void RenderComponent::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                             std::shared_ptr<Sprite> sprite, float *camera_x) {
-    Component::Create(engine, go, game_objects);
+void RenderComponent::Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite, float *camera_x) {
+    Component::Create(level, go);
     this->sprite = std::move(sprite);
     this->camera_x = camera_x;
 }
@@ -27,9 +19,8 @@ void RenderComponent::Destroy() {
     sprite.reset();
 }
 
-void CollideComponent::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid,
-                              int layer, int checkLayer) {
-    Component::Create(engine, go, game_objects);
+void CollideComponent::Create(Level *level, GameObject *go, Grid *grid, int layer, int checkLayer) {
+    Component::Create(level, go);
     this->grid = grid;
     this->m_layer = layer;
     this->m_checkLayer = checkLayer;
@@ -44,7 +35,7 @@ void CollideComponent::Update(float dt) {
         for (int y = square.min_cell_y; y <= square.max_cell_y; y++) {
             for (int x = square.min_cell_x; x <= square.max_cell_x; x++) {
                 auto *layer = grid->GetCell(x, y)->GetLayer(m_checkLayer);
-                for (auto* collider: *layer) {
+                for (auto *collider: *layer) {
                     if (collider == this) continue;
                     // Check if the other collider had already registered a collision with me
                     short collision = grid->GetCollisionCached(collider, this);
@@ -90,14 +81,25 @@ void CollideComponent::Enable() {
     m_disabled = false;
 }
 
+void BoxCollider::Update(float dt) {
+    CollideComponent::Update(dt);
+    level->GetEngine()->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
+            AbsoluteTopLeftY(), AbsoluteBottomRightX() - *m_camera_x, AbsoluteBottomRightY(),
+            {0, 0, 255});
+}
+
 void BoxCollider::GetOccupiedCells(Grid::CellsSquare &square) {
     int cell_size = grid->getCellSize();
     int row_size = grid->getRowSize();
     int col_size = grid->getColSize();
-    square.min_cell_x = std::min(std::max((int) floor((go->position.x + m_box.top_left_x) / cell_size), 0), row_size - 1);
-    square.max_cell_x = std::min(std::max((int) floor((go->position.x + m_box.bottom_right_x) / cell_size), 0), row_size - 1);
-    square.min_cell_y = std::min(std::max((int) floor((go->position.y + m_box.top_left_y) / cell_size), 0), col_size - 1);
-    square.max_cell_y = std::min(std::max((int) floor((go->position.y + m_box.bottom_right_y) / cell_size), 0), col_size - 1);
+    square.min_cell_x = std::min(std::max((int) floor((go->position.x + m_box.top_left_x) / cell_size), 0),
+            row_size - 1);
+    square.max_cell_x = std::min(std::max((int) floor((go->position.x + m_box.bottom_right_x) / cell_size), 0),
+            row_size - 1);
+    square.min_cell_y = std::min(std::max((int) floor((go->position.y + m_box.top_left_y) / cell_size), 0),
+            col_size - 1);
+    square.max_cell_y = std::min(std::max((int) floor((go->position.y + m_box.bottom_right_y) / cell_size), 0),
+            col_size - 1);
 }
 
 bool BoxCollider::IsColliding(const CollideComponent *other) {

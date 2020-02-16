@@ -23,7 +23,7 @@ void CanonBehaviour::Fire() {
         Vector2D dir = Vector2D(cosf(rad), -sinf(rad));
         bullet->Init(go->position + dir * 13 * PIXELS_ZOOM,
                 dir, 80 * PIXELS_ZOOM); // Notice our system has y inverted
-        game_objects[RENDERING_LAYER_BULLETS]->insert(bullet);
+        level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
     }
 }
 
@@ -32,8 +32,7 @@ void CanonBehaviour::Update(float dt) {
         if (!m_animator->IsCurrent(animDie)) {
             m_animator->PlayAnimation(animDie);
         } else if (!m_animator->IsPlaying()) {
-            go->Destroy();
-            game_objects[RENDERING_LAYER_ENEMIES]->erase(go);
+            go->MarkToRemove();
         }
         return;
     }
@@ -120,10 +119,10 @@ void CanonBehaviour::UpdateHiding(const Vector2D &player_dir, float dt) {
     if (!m_animator->IsPlaying()) m_state = HIDDEN;
 }
 
-void CanonBehaviour::Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Player *player,
+void CanonBehaviour::Create(Level* level, GameObject *go, Player *player,
                             ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int default_dir,
                             float rotation_interval, int burst_length, float burst_cooldown, float shoot_cooldown) {
-    Component::Create(engine, go, game_objects);
+    Component::Create(level, go);
     m_player = player->GetComponent<PlayerControl *>();
     m_bulletPool = bullet_pool;
     m_rotationInterval = rotation_interval;
@@ -144,14 +143,13 @@ void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
     }
 }
 
-void RotatingCanon::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
-                           const std::shared_ptr<Sprite> &enemies_spritesheet,
+void RotatingCanon::Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
                            float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                            Grid *grid, int burst_length) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
-    renderer->Create(engine, this, game_objects, enemies_spritesheet, camera_x);
+    renderer->Create(level, this, enemies_spritesheet, camera_x);
     // Add all the directions as consecutive animations
     const int frame_side = 34;
     const int anim_len = 3;
@@ -180,10 +178,10 @@ void RotatingCanon::Create(AvancezLib *engine,std::set<GameObject *> **game_obje
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new CanonBehaviour();
-    behaviour->Create(engine, this, game_objects, player, bullet_pool, 0, 11, 6, 1.f,
+    behaviour->Create(level, this, player, bullet_pool, 0, 11, 6, 1.f,
             burst_length, 2, 0.25);
     auto *collider = new BoxCollider();
-    collider->Create(engine, this, game_objects, grid, camera_x,
+    collider->Create(level, this, grid, camera_x,
             -10 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             20 * PIXELS_ZOOM, 20 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);
@@ -193,14 +191,13 @@ void RotatingCanon::Create(AvancezLib *engine,std::set<GameObject *> **game_obje
     AddComponent(collider);
 }
 
-void Gulcan::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
-                    const std::shared_ptr<Sprite> &enemies_spritesheet,
+void Gulcan::Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
                     float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                     Grid *grid) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
-    renderer->Create(engine, this, game_objects, enemies_spritesheet, camera_x);
+    renderer->Create(level, this, enemies_spritesheet, camera_x);
     // Add all the directions as consecutive animations
     const int frame_side = 34;
     const int anim_len = 3;
@@ -229,10 +226,10 @@ void Gulcan::Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
             "Dying", AnimationRenderer::BOUNCE_AND_STOP});
     renderer->Play();
     auto *behaviour = new GulcanBehaviour();
-    behaviour->Create(engine, this, game_objects, player, bullet_pool, 6, 8, 6, 0.5f,
+    behaviour->Create(level, this, player, bullet_pool, 6, 8, 6, 0.5f,
             3, 1.5, 0.25);
     auto *collider = new BoxCollider();
-    collider->Create(engine, this, game_objects, grid, camera_x,
+    collider->Create(level, this, grid, camera_x,
             -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
             22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);

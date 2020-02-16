@@ -7,7 +7,7 @@
 #include "grid_cell.h"
 
 class GameObject;
-
+class Level;
 class AvancezLib;
 
 class Sprite;
@@ -15,13 +15,12 @@ class Sprite;
 
 class Component {
 protected:
-    AvancezLib *engine;    // used to access the engine
+    Level* level; // the level reference
     GameObject *go;        // the game object this component is part of
-    std::set<GameObject *> **game_objects;    // the global container of game objects (pointer to the first layer)
 public:
     virtual ~Component() {}
 
-    virtual void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> **game_objects);
+    virtual void Create(Level* level, GameObject *go);
 
     virtual void Init() {
         if (!go) {
@@ -49,12 +48,7 @@ protected:
     std::shared_ptr<Sprite> sprite;
     float *camera_x;
 public:
-    virtual void
-    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, const char *sprite_name,
-           float *camera_x);
-
-    virtual void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
-                        std::shared_ptr<Sprite> sprite, float *camera_x);
+    virtual void Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite, float *camera_x);
 
     void Destroy() override;
 
@@ -83,8 +77,7 @@ public:
      * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
      * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
      */
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid,
-                int layer, int checkLayer);
+    void Create(Level* level, GameObject *go, Grid *grid, int layer, int checkLayer);
 
     /**
      * Changes the listener for the collisions of the collider, be aware if there was a previous
@@ -146,9 +139,9 @@ protected:
     float *m_camera_x;
 public:
     virtual void
-    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid, float *camera_x,
+    Create(Level* level, GameObject *go, Grid *grid, float *camera_x,
            int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
-        Create(engine, go, game_objects, grid, camera_x, {
+        Create(level, go, grid, camera_x, {
                 local_top_left_x,
                 local_top_left_y,
                 local_top_left_x + width,
@@ -157,19 +150,13 @@ public:
     }
 
     virtual void
-    Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Grid *grid, float *camera_x,
-           Box box, int layer, int checkLayer) {
-        CollideComponent::Create(engine, go, game_objects, grid, layer, checkLayer);
+    Create(Level* level, GameObject *go, Grid *grid, float *camera_x, Box box, int layer, int checkLayer) {
+        CollideComponent::Create(level, go, grid, layer, checkLayer);
         m_box = box;
         m_camera_x = camera_x;
     }
 
-    void Update(float dt) override {
-        CollideComponent::Update(dt);
-        engine->strokeSquare(AbsoluteTopLeftX() - *m_camera_x,
-                AbsoluteTopLeftY(), AbsoluteBottomRightX() - *m_camera_x, AbsoluteBottomRightY(),
-                {0, 0, 255});
-    }
+    void Update(float dt) override;
 
     void ChangeBox(const Box& box) {
         m_box = box;

@@ -8,6 +8,97 @@
 #include <SDL_log.h>
 #include "yaml_converters.h"
 #include "pickups.h"
+#include "component.h"
+#include "bullets.h"
+#include "Player.h"
+
+void Level::Update(float dt) {
+    AvancezLib::KeyStatus keys{};
+    engine->getKeyStatus(keys);
+    if (keys.esc) {
+        Destroy();
+        engine->quit();
+    }
+
+    if (player->position.x < level_width - WINDOW_WIDTH) {
+        if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
+            camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
+    } else if (camera_x < level_width - WINDOW_WIDTH)
+        camera_x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
+    else
+        camera_x = level_width - WINDOW_WIDTH;
+
+    // We progressively init the enemies in front of the camera
+    while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
+        auto *enemy = not_found_enemies.top();
+        game_objects[RENDERING_LAYER_ENEMIES]->insert(enemy);
+        enemy->Init();
+        not_found_enemies.pop();
+        next_enemy_x = not_found_enemies.top()->position.x;
+    }
+
+    // And eliminate the enemies behind the camera
+    std::set<GameObject *>::iterator it = game_objects[RENDERING_LAYER_ENEMIES]->begin();
+    while (it != game_objects[RENDERING_LAYER_ENEMIES]->end()) {
+        auto *game_object = *it;
+        if (game_object->position.x < camera_x - RENDERING_MARGINS) {
+            it = game_objects[RENDERING_LAYER_ENEMIES]->erase(it);
+            if (game_object->onRemoval == DESTROY) {
+                game_object->Destroy();
+            }
+        } else {
+            it++;
+        }
+    }
+
+    // Draw background (smoothing the zoom)
+    int camera_without_zoom = int(floor(camera_x / PIXELS_ZOOM));
+    int reminder = int(round(camera_x - camera_without_zoom * PIXELS_ZOOM));
+    background->draw(-reminder, 0, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT,
+            camera_without_zoom, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1,
+            WINDOW_HEIGHT / PIXELS_ZOOM);
+
+    for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
+        spritesheet->draw(
+                ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
+                9 * PIXELS_ZOOM,
+                LIFE_SPRITE_WIDTH * PIXELS_ZOOM, LIFE_SPRITE_HEIGHT * PIXELS_ZOOM,
+                LIFE_SPRITE_X, LIFE_SPRITE_Y, LIFE_SPRITE_WIDTH, LIFE_SPRITE_HEIGHT
+        );
+    }
+
+    grid.ClearCollisionCache(); // Clear collision cache
+    for (const auto &layer: game_objects) {
+        // Update objects which are enabled and not to be removed
+        for (auto *game_object : *layer)
+            if (game_object->IsEnabled() && !game_object->IsMarkedToRemove())
+                game_object->Update(dt);
+    }
+
+    // Delete objects marked to remove
+    for (const auto &layer: game_objects) {
+        it = layer->begin();
+        while (it != layer->end()) {
+            auto *game_object = *it;
+            if (game_object->IsMarkedToRemove()) {
+                it = layer->erase(it);
+                game_object->UnmarkToRemove();
+                if (game_object->onRemoval == DESTROY) {
+                    game_object->Destroy();
+                }
+            } else {
+                it++;
+            }
+        }
+    }
+
+    // Add new ones
+    while (!game_objects_to_add.empty()) {
+        std::pair<GameObject*, int> next = game_objects_to_add.front();
+        game_objects_to_add.pop();
+        game_objects[next.second]->insert(next.first);
+    }
+}
 
 void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &player_spritesheet,
                    const std::shared_ptr<Sprite> &enemy_spritesheet, const std::shared_ptr<Sprite> &pickup_spritesheet,
@@ -30,7 +121,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 
         for (const auto &rc_node: scene_root["rotating_canons"]) {
             auto *tank = new RotatingCanon();
-            tank->Create(engine, game_objects, enemies_spritesheet, &camera_x,
+            tank->Create(this, enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player, enemy_bullets, &grid,
                     rc_node["burst_length"].as<int>());
             tank->AddReceiver(this);
@@ -38,7 +129,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         }
         for (const auto &rc_node: scene_root["gulcans"]) {
             auto *gulcan = new Gulcan();
-            gulcan->Create(engine, game_objects, enemies_spritesheet, &camera_x,
+            gulcan->Create(this, enemies_spritesheet, &camera_x,
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM, player,
                     enemy_bullets, &grid);
             gulcan->AddReceiver(this);
@@ -46,7 +137,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         }
         for (const auto &rc_node: scene_root["ledders"]) {
             auto *ledder = new Ledder();
-            ledder->Create(engine, game_objects, enemy_bullets, player,
+            ledder->Create(this, enemy_bullets, player,
                     enemies_spritesheet, &camera_x, &grid,
                     rc_node["time_hidden"].as<float>(),
                     rc_node["time_shown"].as<float>(),
@@ -68,7 +159,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             auto *spawner = new GameObject();
             spawner->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             auto *greeder_spawner = new GreederSpawner();
-            greeder_spawner->Create(engine, spawner, game_objects,
+            greeder_spawner->Create(this, spawner,
                     enemies_spritesheet, &camera_x,
                     &grid, level_floor, this,
                     m_random_dist(m_mt)
@@ -78,15 +169,10 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             not_found_enemies.push(spawner);
         }
         for (const auto &rc_node: scene_root["covered_pickups"]) {
-            auto *pickup = new PickUp();
-            pickup->Create(engine, game_objects, pickups_spritesheet, &grid, &camera_x,
-                    level_floor, rc_node["content"].as<PickUpType>());
-            auto *pick_up_holder = new GameObject();
-            pick_up_holder->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
-            auto *behaviour = new CoveredPickUpHolderBehaviour();
-            behaviour->Create(engine, pick_up_holder, game_objects, pickup);
-            auto *renderer = new AnimationRenderer();
-            renderer->Create(engine, pick_up_holder, game_objects, enemies_spritesheet, &camera_x);
+            AnimationRenderer *renderer;
+            CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
+                    rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
+                    new CoveredPickUpHolderBehaviour(), &renderer);
             renderer->AddAnimation({
                     1, 76, 0.15, 1,
                     34, 34, 17, 17,
@@ -106,17 +192,21 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
                     92, 611, 0.15, 3,
                     30, 30, 15, 15,
                     "Dying", AnimationRenderer::BOUNCE_AND_STOP});
-            auto *collider = new BoxCollider();
-            collider->Create(engine, pick_up_holder, game_objects, &grid, &camera_x,
-                    -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
-                    22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
-            collider->SetListener(behaviour);
-
-            pick_up_holder->AddComponent(behaviour);
-            pick_up_holder->AddComponent(renderer);
-            pick_up_holder->AddComponent(collider);
-            pick_up_holder->AddReceiver(this);
-            not_found_enemies.push(pick_up_holder);
+        }
+        for (const auto &rc_node: scene_root["flying_pickups"]) {
+            AnimationRenderer *renderer;
+            CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
+                    rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
+                    new FlyingPickupHolderBehaviour(), &renderer);
+            renderer->AddAnimation({
+                    243, 120, 0.15, 1,
+                    24, 14, 12, 7,
+                    "Flying", AnimationRenderer::STOP_AND_LAST
+            });
+            renderer->AddAnimation({
+                    92, 611, 0.15, 3,
+                    30, 30, 15, 15,
+                    "Dying", AnimationRenderer::BOUNCE_AND_STOP});
         }
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);
@@ -132,6 +222,10 @@ void Level::Destroy() {
     while (!not_found_enemies.empty()) {
         not_found_enemies.top()->Destroy();
         not_found_enemies.pop();
+    }
+    while (!game_objects_to_add.empty()) {
+        game_objects_to_add.front().first->Destroy();
+        game_objects_to_add.pop();
     }
     default_bullets->Destroy();
     delete default_bullets;
@@ -168,22 +262,24 @@ void Level::CreateBulletPools() {
     for (auto *bullet: enemy_bullets->pool) {
         bullet->Create();
         auto *renderer = new AnimationRenderer();
-        renderer->Create(engine, bullet, game_objects, enemies_spritesheet, &camera_x);
+        renderer->Create(this, bullet, enemies_spritesheet, &camera_x);
         renderer->AddAnimation({
                 199, 72, 0.2, 1,
                 3, 3, 1, 1,
                 "Bullet", AnimationRenderer::STOP_AND_LAST
         });
         auto *behaviour = new BulletBehaviour();
-        behaviour->Create(engine, bullet, game_objects, &camera_x);
+        behaviour->Create(this, bullet, &camera_x);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(engine, bullet, game_objects, &grid, &camera_x,
+        box_collider->Create(this, bullet, &grid, &camera_x,
                 -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
                 3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
         bullet->AddComponent(behaviour);
         bullet->AddComponent(renderer);
         bullet->AddComponent(box_collider);
         bullet->AddReceiver(this);
+
+        bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
     }
 }
 
@@ -208,7 +304,7 @@ void Level::Init() {
 
 void Level::CreatePlayer() {
     player = new Player();
-    player->Create(engine, game_objects, spritesheet, level_floor, &camera_x,
+    player->Create(this, spritesheet, level_floor, &camera_x,
             default_bullets, fire_bullets, machine_gun_bullets, spread_bullets, laser_bullets,
             &grid, PLAYER_COLLISION_LAYER);
     playerControl = player->GetComponent<PlayerControl *>();
@@ -223,7 +319,7 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
     for (auto *bullet: pool->pool) {
         bullet->Create();
         auto *renderer = new AnimationRenderer();
-        renderer->Create(engine, bullet, game_objects, spritesheet, &camera_x);
+        renderer->Create(this, bullet, spritesheet, &camera_x);
         renderer->AddAnimation(animation);
         renderer->AddAnimation({
                 104, 0, 0.2, 1,
@@ -232,9 +328,9 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         });
         renderer->Play();
         auto *behaviour = new BulletBehaviour();
-        behaviour->Create(engine, bullet, game_objects, &camera_x);
+        behaviour->Create(this, bullet, &camera_x);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(engine, bullet, game_objects, &grid, &camera_x, {
+        box_collider->Create(this, bullet, &grid, &camera_x, {
                 box.top_left_x * PIXELS_ZOOM,
                 box.top_left_y * PIXELS_ZOOM,
                 box.bottom_right_x * PIXELS_ZOOM,
@@ -244,6 +340,31 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         bullet->AddComponent(renderer);
         bullet->AddComponent(box_collider);
         bullet->AddReceiver(this);
+
+        bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
     }
     return pool;
+}
+
+void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
+                                     AnimationRenderer **renderer) {
+    auto *pickup = new PickUp();
+    pickup->Create(this, pickups_spritesheet, &grid, &camera_x,
+            level_floor, type);
+    auto *pick_up_holder = new GameObject();
+    pick_up_holder->position = position;
+    behaviour->Create(this, pick_up_holder, pickup);
+    *renderer = new AnimationRenderer();
+    (*renderer)->Create(this, pick_up_holder, enemies_spritesheet, &camera_x);
+    auto *collider = new BoxCollider();
+    collider->Create(this, pick_up_holder, &grid, &camera_x,
+            -12 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
+            22 * PIXELS_ZOOM, 30 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
+    collider->SetListener(behaviour);
+
+    pick_up_holder->AddComponent(behaviour);
+    pick_up_holder->AddComponent(*renderer);
+    pick_up_holder->AddComponent(collider);
+    pick_up_holder->AddReceiver(this);
+    not_found_enemies.push(pick_up_holder);
 }

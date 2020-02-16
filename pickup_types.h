@@ -1,0 +1,17 @@
+//
+// Created by david on 16/2/20.
+//
+
+#ifndef CONTRA_PICKUP_TYPES_H
+#define CONTRA_PICKUP_TYPES_H
+
+enum PickUpType {
+    PICKUP_MACHINE_GUN,
+    PICKUP_FIRE_GUN,
+    PICKUP_SPREAD,
+    PICKUP_RAPID_FIRE,
+    PICKUP_BARRIER,
+    PICKUP_LASER
+};
+
+#endif //CONTRA_PICKUP_TYPES_H

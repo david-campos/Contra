@@ -11,9 +11,17 @@
 #include "game_object.h"
 #include "floor.h"
 #include "avancezlib.h"
-#include "bullets.h"
-#include "Player.h"
 #include "consts.h"
+#include "grid_cell.h"
+#include "object_pool.h"
+#include "AnimationRenderer.h"
+#include "pickup_types.h"
+
+class Player;
+class PlayerControl;
+struct Box;
+class Bullet;
+class PickUpHolderBehaviour;
 
 class Level : public GameObject {
     struct game_objects_comp_x {
@@ -32,6 +40,7 @@ class Level : public GameObject {
     PlayerControl *playerControl;
     std::set<GameObject *> *game_objects[RENDERING_LAYERS];
     std::priority_queue<GameObject *, std::deque<GameObject *>, game_objects_comp_x> not_found_enemies;
+    std::queue<std::pair<GameObject*, int>> game_objects_to_add;
     float next_enemy_x;
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
@@ -60,76 +69,48 @@ public:
                 AvancezLib *engine);
 
     void Init() override;
+    void Update(float dt) override;
 
-    void Update(float dt) override {
-        AvancezLib::KeyStatus keys{};
-        engine->getKeyStatus(keys);
-        if (keys.esc) {
-            Destroy();
-            engine->quit();
+    [[nodiscard]] AvancezLib *GetEngine() const {
+        return engine;
+    }
+
+    void AddGameObject(GameObject* const game_object, const int layer) {
+        game_objects_to_add.push(std::pair<GameObject*, int>(game_object, layer));
+    }
+
+    /**
+     * Just a convenient method in case someone is confused about how to safely remove objects.
+     * Marks the object to be removed, GameObject::MarkToRemove can safely be used instead
+     * @param game_object
+     */
+    void RemoveGameObject(GameObject *game_object) { game_object->MarkToRemove(); }
+    /**
+     * Removes immediately the object from the layer.
+     * @warning Prefer Level::RemoveGameObject instead, as immediately removing an
+     * object while iterating over the layer can cause memory issues.
+     * @param game_object
+     * @param layer
+     */
+    void RemoveImmediately(GameObject *game_object, const int layer) {
+        game_objects[layer]->erase(game_object);
+        if (game_object->onRemoval == DESTROY) {
+            game_object->Destroy();
         }
-
-        if (player->position.x < level_width - WINDOW_WIDTH) {
-            if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
-                camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
-        } else if (camera_x < level_width - WINDOW_WIDTH)
-            camera_x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
-        else
-            camera_x = level_width - WINDOW_WIDTH;
-
-        // We progressively init the enemies in front of the camera
-        while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
-            auto *enemy = not_found_enemies.top();
-            game_objects[RENDERING_LAYER_ENEMIES]->insert(enemy);
-            enemy->Init();
-            not_found_enemies.pop();
-            next_enemy_x = not_found_enemies.top()->position.x;
-        }
-
-        // And eliminate the enemies behind the camera
-        std::set<GameObject *>::iterator it = game_objects[RENDERING_LAYER_ENEMIES]->begin();
-        while (it != game_objects[RENDERING_LAYER_ENEMIES]->end()) {
-            auto *game_object = *it;
-            if (game_object->position.x < camera_x - RENDERING_MARGINS) {
-                game_object->Disable();
-                it = game_objects[RENDERING_LAYER_ENEMIES]->erase(it);
-                if (game_object->onOutOfScreen == DISABLE_AND_DESTROY) {
-                    game_object->Destroy();
-                }
-            } else {
-                it++;
-            }
-        }
-
-        // Draw background (smoothing the zoom)
-        int camera_without_zoom = int(floor(camera_x / PIXELS_ZOOM));
-        int reminder = int(round(camera_x - camera_without_zoom * PIXELS_ZOOM));
-        background->draw(-reminder, 0, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT,
-                camera_without_zoom, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1,
-                WINDOW_HEIGHT / PIXELS_ZOOM);
-
-        for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
-            spritesheet->draw(
-                    ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
-                    9 * PIXELS_ZOOM,
-                    LIFE_SPRITE_WIDTH * PIXELS_ZOOM, LIFE_SPRITE_HEIGHT * PIXELS_ZOOM,
-                    LIFE_SPRITE_X, LIFE_SPRITE_Y, LIFE_SPRITE_WIDTH, LIFE_SPRITE_HEIGHT
-            );
-        }
-
-        grid.ClearCollisionCache(); // Clear collision cache
-        for (const auto &layer: game_objects)
-            for (auto *game_object : *layer)
-                game_object->Update(dt);
     }
 
     void Destroy() override;
 
 private:
     void CreateBulletPools();
-    ObjectPool<Bullet>* CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation& animation,
-            const Box& box);
+    ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
+                                               const Box &box);
     void CreatePlayer();
+    /**
+     * @param behaviour Create will be called, no need to create it first
+     */
+    void CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
+                                  AnimationRenderer **renderer_out);
 };
 
 #endif //CONTRA_LEVEL_H

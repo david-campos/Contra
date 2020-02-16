@@ -14,16 +14,14 @@
 
 class RotatingCanon : public GameObject {
 public:
-    void Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
-                const std::shared_ptr<Sprite> &enemies_spritesheet,
+    void Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
                 float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                 Grid *grid, int burst_length);
 };
 
 class Gulcan : public GameObject {
 public:
-    void Create(AvancezLib *engine,std::set<GameObject *> **game_objects,
-                const std::shared_ptr<Sprite> &enemies_spritesheet,
+    void Create(Level* level, const std::shared_ptr<Sprite> &enemies_spritesheet,
                 float *camera_x, const Vector2D &pos, Player *player, ObjectPool<Bullet> *bullet_pool,
                 Grid *grid);
 };
@@ -76,10 +74,10 @@ protected:
 
     void Fire();
 public:
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, Player *player,
+    void Create(Level* level, GameObject *go, Player *player,
                 ObjectPool<Bullet> *bullet_pool, int min_dir, int max_dir, int m_defaultDir, float rotation_interval,
                 int burst_length, float burst_cooldown, float shoot_cooldown);
-    void Init() {
+    void Init() override {
         Component::Init();
         m_animator = go->GetComponent<AnimationRenderer *>();
         animHidden = m_animator->FindAnimation("Closed");

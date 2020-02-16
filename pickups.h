@@ -13,30 +13,22 @@
 #include "Gravity.h"
 #include "Player.h"
 #include "consts.h"
+#include "pickup_types.h"
 
-enum PickUpType {
-    PICKUP_MACHINE_GUN,
-    PICKUP_FIRE_GUN,
-    PICKUP_SPREAD,
-    PICKUP_RAPID_FIRE,
-    PICKUP_BARRIER,
-    PICKUP_LASER
-};
-
-class PickUpBehaviour: public Component {
+class PickUpBehaviour : public Component {
 private:
     PickUpType m_type;
-    Gravity* m_gravity;
+    Gravity *m_gravity;
 public:
-    void Create(AvancezLib *engine, GameObject *go, std::set<GameObject *> **game_objects, PickUpType type) {
-        Component::Create(engine, go, game_objects);
+    void Create(Level *level, GameObject *go, PickUpType type) {
+        Component::Create(level, go);
         m_type = type;
     }
 
     void Init() override {
         Component::Init();
         if (!m_gravity) {
-            m_gravity = go->GetComponent<Gravity*>();
+            m_gravity = go->GetComponent<Gravity *>();
         }
     }
 
@@ -51,21 +43,21 @@ public:
     }
 };
 
-class PickUp: public GameObject {
+class PickUp : public GameObject {
 public:
-    void Create(AvancezLib* engine,std::set<GameObject*>* *game_objects, std::shared_ptr<Sprite> pickups_spritesheet,
-                Grid* grid, float* camera_x, std::weak_ptr<Floor> level_floor, PickUpType type) {
+    void Create(Level *level, std::shared_ptr<Sprite> pickups_spritesheet,
+                Grid *grid, float *camera_x, std::weak_ptr<Floor> level_floor, PickUpType type) {
         GameObject::Create();
-        auto* behaviour = new PickUpBehaviour();
-        behaviour->Create(engine, this, game_objects, type);
-        auto* gravity = new Gravity();
-        gravity->Create(engine, this, game_objects, std::move(level_floor));
-        auto* renderer = new SimpleRenderer();
-        renderer->Create(engine, this, game_objects, std::move(pickups_spritesheet), camera_x,
+        auto *behaviour = new PickUpBehaviour();
+        behaviour->Create(level, this, type);
+        auto *gravity = new Gravity();
+        gravity->Create(level, this, std::move(level_floor));
+        auto *renderer = new SimpleRenderer();
+        renderer->Create(level, this, std::move(pickups_spritesheet), camera_x,
                 25 * (int) type, 0, 24, 15, 12, 14);
         gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
-        auto* collider = new BoxCollider();
-        collider->Create(engine, this, game_objects, grid,
+        auto *collider = new BoxCollider();
+        collider->Create(level, this, grid,
                 camera_x, -4 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
                 8 * PIXELS_ZOOM, 11 * PIXELS_ZOOM,
                 PLAYER_COLLISION_LAYER, -1);
@@ -76,16 +68,16 @@ public:
     }
 };
 
-class PickUpHolderBehaviour: public Component, public CollideComponentListener {
+class PickUpHolderBehaviour : public Component, public CollideComponentListener {
 protected:
-    AnimationRenderer* m_animator;
+    AnimationRenderer *m_animator;
     int m_animDying;
     bool m_canBeHit;
-    PickUp* m_powerUp;
+    PickUp *m_powerUp;
     short m_lives;
 public:
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects, PickUp* power_up) {
-        Component::Create(engine, go, game_objects);
+    void Create(Level* level, GameObject *go, PickUp *power_up) {
+        Component::Create(level, go);
         m_powerUp = power_up;
     }
 
@@ -104,6 +96,7 @@ public:
             m_animDying = m_animator->FindAnimation("Dying");
         }
     }
+
     void OnCollision(const CollideComponent &collider) override {
         if (m_canBeHit && m_lives > 0) {
             auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
@@ -112,16 +105,16 @@ public:
                 bullet->Kill();
                 if (m_lives == 0) {
                     m_animator->PlayAnimation(m_animDying);
-                     m_powerUp->position = go->position;
-                     m_powerUp->Init();
-                     game_objects[RENDERING_LAYER_ENEMIES]->insert(m_powerUp);
+                    m_powerUp->position = go->position;
+                    m_powerUp->Init();
+                    level->AddGameObject(m_powerUp, RENDERING_LAYER_ENEMIES);
                 }
             }
         }
     }
 };
 
-class CoveredPickUpHolderBehaviour: public PickUpHolderBehaviour {
+class CoveredPickUpHolderBehaviour : public PickUpHolderBehaviour {
 private:
     float m_waitTime;
     bool m_isOpen;
@@ -130,7 +123,7 @@ public:
     void Init() override {
         PickUpHolderBehaviour::Init();
         if (!m_animator) {
-            m_animator = go->GetComponent<AnimationRenderer*>();
+            m_animator = go->GetComponent<AnimationRenderer *>();
         }
         m_animator->PlayAnimation(0);
         m_isOpen = false;
@@ -138,6 +131,7 @@ public:
         m_waitTime = 1.5;
         m_lives = 2;
     }
+
     void Update(float dt) override {
         PickUpHolderBehaviour::Update(dt);
         if (m_lives <= 0) return;
@@ -159,4 +153,27 @@ public:
         m_canBeHit = m_isOpen && !m_isTransition;
     }
 };
+
+class FlyingPickupHolderBehaviour : public PickUpHolderBehaviour {
+private:
+    Vector2D m_initialPosition;
+    float m_time;
+public:
+    void Init() override {
+        PickUpHolderBehaviour::Init();
+        m_initialPosition = go->position;
+        m_lives = 1;
+        m_canBeHit = true;
+        m_time = 0;
+    }
+
+    void Update(float dt) override {
+        PickUpHolderBehaviour::Update(dt);
+        if (m_lives <= 0) return;
+        m_time += dt;
+        go->position = m_initialPosition + Vector2D(
+                1.3 * PLAYER_SPEED * m_time * PIXELS_ZOOM, sinf(6 * m_time) * 20 * PIXELS_ZOOM);
+    }
+};
+
 #endif //CONTRA_PICKUPS_H

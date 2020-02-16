@@ -19,15 +19,15 @@ public:
             return;
 
         sprite->draw((int) round(go->position.x - *camera_x) - m_anchorX * PIXELS_ZOOM,
-                     (int) round(go->position.y) - m_anchorY * PIXELS_ZOOM,
-                     m_width * PIXELS_ZOOM, m_height * PIXELS_ZOOM,
-                     m_srcX, m_srcY, m_width, m_height);
+                (int) round(go->position.y) - m_anchorY * PIXELS_ZOOM,
+                m_width * PIXELS_ZOOM, m_height * PIXELS_ZOOM,
+                m_srcX, m_srcY, m_width, m_height);
     }
 
-    void Create(AvancezLib *engine, GameObject *go,std::set<GameObject *> **game_objects,
+    void Create(Level *level, GameObject *go,
                 std::shared_ptr<Sprite> sprite, float *camera_x, int srcX, int srcY, int width, int height,
                 int anchorX, int anchorY) {
-        RenderComponent::Create(engine, go, game_objects, std::move(sprite), camera_x);
+        RenderComponent::Create(level, go, std::move(sprite), camera_x);
         m_srcX = srcX;
         m_srcY = srcY;
         m_width = width;

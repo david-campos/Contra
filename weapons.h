@@ -5,16 +5,15 @@
 #ifndef CONTRA_WEAPONS_H
 #define CONTRA_WEAPONS_H
 
-#include "vector2D.h"
-#include "bullets.h"
+#include "level.h"
 
 class Weapon {
 protected:
     ObjectPool<Bullet> *m_bulletPool;
-    std::set<GameObject *> **m_gameObjects;
+    Level* m_level;
 public:
-    explicit Weapon(ObjectPool<Bullet> *mBulletPool, std::set<GameObject *> **game_objects)
-            : m_bulletPool(mBulletPool), m_gameObjects(game_objects) {}
+    explicit Weapon(ObjectPool<Bullet> *mBulletPool, Level* level)
+            : m_bulletPool(mBulletPool), m_level(level) {}
 
     virtual ~Weapon() {}
 
@@ -44,8 +43,7 @@ private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
 public:
-    DefaultWeapon(ObjectPool<Bullet> *mBulletPool, std::set<GameObject *> **gameObjects) : Weapon(mBulletPool,
-            gameObjects) {}
+    DefaultWeapon(ObjectPool<Bullet> *mBulletPool, Level* level) : Weapon(mBulletPool, level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -60,7 +58,7 @@ public:
         auto *bullet = m_bulletPool->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise());
-            m_gameObjects[RENDERING_LAYER_BULLETS]->insert(bullet);
+            m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
             m_shootDowntime = 0.2;
             return true;
@@ -77,8 +75,7 @@ class MachineGun : public Weapon {
 private:
     float m_shootDowntime = 0;
 public:
-    MachineGun(ObjectPool<Bullet> *mBulletPool, std::set<GameObject *> **gameObjects) : Weapon(mBulletPool,
-            gameObjects) {}
+    MachineGun(ObjectPool<Bullet> *mBulletPool, Level* level) : Weapon(mBulletPool, level) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -90,7 +87,7 @@ public:
         auto *bullet = m_bulletPool->FirstAvailable();
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise());
-            m_gameObjects[RENDERING_LAYER_BULLETS]->insert(bullet);
+            m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_shootDowntime = 0.2;
             return true;
         }

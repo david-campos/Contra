@@ -22,7 +22,7 @@ void GameObject::Init() {
 
 void GameObject::Update(float dt) {
     for (auto it = components.begin(); it != components.end(); it++) {
-        if (!enabled)
+        if (!enabled || marked_to_remove)
             return;
         (*it)->Update(dt);
     }
