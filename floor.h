@@ -83,6 +83,14 @@ public:
         auto value = GetFloorPixel(x, y);
         return value == FLOOR || value == WATER || value == FLOOR_NO_FALL;
     }
+
+    void SetAir(int x0, int y0, int width, int height) {
+        for (int y = y0; y < y0 + height; y++) {
+            for (int x = x0; x < x0 + width; x++) {
+                m_map.get()[y * m_floorWidth + x] = AIR;
+            }
+        }
+    }
 private:
     FloorPixel GetFloorPixel(int x, int y) {
         if (x < 0 || y < 0 || x > m_floorWidth || y > m_floorHeight) {

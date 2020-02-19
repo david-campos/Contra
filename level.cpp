@@ -11,6 +11,7 @@
 #include "component.h"
 #include "bullets.h"
 #include "Player.h"
+#include "exploding_bridge.h"
 
 void Level::Update(float dt) {
     AvancezLib::KeyStatus keys{};
@@ -73,6 +74,20 @@ void Level::Update(float dt) {
         for (auto *game_object : *layer)
             if (game_object->IsEnabled() && !game_object->IsMarkedToRemove())
                 game_object->Update(dt);
+    }
+
+    // Debug floor
+    SDL_Color floor{0, 255, 0};
+    SDL_Color water{0, 0, 255};
+    int top_x = std::floor(camera_x + WINDOW_WIDTH / PIXELS_ZOOM);
+    for (int y = 0; y < level_floor->getHeight(); y++) {
+        for (int x = std::floor(camera_x /  PIXELS_ZOOM); x < top_x; x++) {
+            if (level_floor->IsFloor(x, y)) {
+                engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, floor);
+            } else if (level_floor->IsWater(x, y)) {
+                engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, water);
+            }
+        }
     }
 
     // Delete objects marked to remove
@@ -204,6 +219,22 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
                     92, 611, 0.15, 3,
                     30, 30, 15, 15,
                     "Dying", AnimationRenderer::BOUNCE_AND_STOP});
+        }
+        for (const auto &rc_node: scene_root["exploding_bridges"]) {
+            auto *bridge = new GameObject();
+            bridge->Create();
+            auto *renderer = new SimpleRenderer();
+            renderer->Create(this, bridge, GetBridgeSprite(),
+                    0, 0, 128, 31, 0, 0);
+            auto *behaviour = new ExplodingBridgeBehaviour();
+            behaviour->Create(this, bridge);
+            bridge->AddComponent(renderer);
+            bridge->AddComponent(behaviour);
+            bridge->AddReceiver(this);
+            bridge->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
+
+            bridge->Init();
+            game_objects[RENDERING_LAYER_BRIDGES]->insert(bridge);
         }
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);

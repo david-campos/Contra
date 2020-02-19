@@ -44,6 +44,35 @@ public:
         m_anchorX = anchorX;
         m_anchorY = anchorY;
     }
+
+    [[nodiscard]] int GetZoomedWidth() const {
+        return m_width * PIXELS_ZOOM;
+    }
+
+    [[nodiscard]] int GetZoomedHeight() const {
+        return m_height * PIXELS_ZOOM;
+    }
+    [[nodiscard]] int GetWidth() const {
+        return m_width;
+    }
+
+    [[nodiscard]] int GetHeight() const {
+        return m_height;
+    }
+    [[nodiscard]] int GetAnchorX() const {
+        return m_anchorX;
+    }
+
+    [[nodiscard]] int GetAnchorY() const {
+        return m_anchorY;
+    }
+    [[nodiscard]] int GetSrcX() const {
+        return m_srcX;
+    }
+
+    [[nodiscard]] int GetSrcY() const {
+        return m_srcY;
+    }
 };
 
 #endif //CONTRA_SIMPLERENDERER_H

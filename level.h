@@ -36,6 +36,7 @@ class Level : public GameObject {
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
     std::shared_ptr<Sprite> pickups_spritesheet;
+    std::shared_ptr<Sprite> bridge_sprite; // Loaded on demand
     std::shared_ptr<Floor> level_floor;
     Player *player;
     PlayerControl *playerControl;
@@ -74,6 +75,13 @@ public:
 
     [[nodiscard]] AvancezLib *GetEngine() const {
         return engine;
+    }
+
+    std::shared_ptr<Sprite> GetBridgeSprite() {
+        if (!bridge_sprite) {
+            bridge_sprite = std::shared_ptr<Sprite>(engine->createSprite("data/bridge.png"));
+        }
+        return bridge_sprite;
     }
 
     void AddGameObject(GameObject* const game_object, const int layer) {
