@@ -70,7 +70,7 @@ public:
             bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * m_bulletSpeed * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
-            m_shootDowntime = 0.1;
+            m_shootDowntime = 0.15;
             return true;
         }
         return false;
@@ -113,7 +113,7 @@ public:
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
-            m_shootDowntime = 0.1;
+            m_shootDowntime = 0.15;
             return true;
         }
         return false;
@@ -151,7 +151,7 @@ public:
                 m_level->AddGameObject(bullets[i], RENDERING_LAYER_BULLETS);
             }
             m_hasShot = true;
-            m_shootDowntime = 0.1;
+            m_shootDowntime = 0.15;
             return true;
         }
         return false;
