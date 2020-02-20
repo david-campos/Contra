@@ -430,6 +430,54 @@ void Level::CreateDefenseWall() {
     AddNotFoundEnemy(door, RENDERING_LAYER_ENEMIES);
 
     // Blaster canons
+    auto *pool = CreateBlasterBulletPool();
+    auto *canon = new GameObject();
+    canon->Create();
+    animator = new AnimationRenderer();
+    animator->Create(this, canon, sprite);
+    animator->AddAnimation({
+            1, 66, 0.2, 2,
+            25, 15, 0, 0,
+            "Shoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    animator->Pause();
+    auto* behaviour = new BlasterCanonBehaviour();
+    behaviour->Create(this, canon, pool);
+    auto* collider = new BoxCollider();
+    collider->Create(this, canon,
+            PIXELS_ZOOM, PIXELS_ZOOM, 14 * PIXELS_ZOOM, 8 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
+    collider->SetListener(behaviour);
+    canon->AddComponent(behaviour);
+    canon->AddComponent(animator);
+    canon->AddComponent(collider);
+    canon->position = Vector2D(3217, 120) * PIXELS_ZOOM;
+    AddNotFoundEnemy(canon, RENDERING_LAYER_BRIDGES);
+
+    pool = CreateBlasterBulletPool();
+    canon = new GameObject();
+    canon->Create();
+    animator = new AnimationRenderer();
+    animator->Create(this, canon, sprite);
+    animator->AddAnimation({
+            1, 66, 0.2, 2,
+            25, 15, 0, 0,
+            "Shoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    animator->Pause();
+    behaviour = new BlasterCanonBehaviour();
+    behaviour->Create(this, canon, pool);
+    collider = new BoxCollider();
+    collider->Create(this, canon,
+            PIXELS_ZOOM, PIXELS_ZOOM, 14 * PIXELS_ZOOM, 8 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
+    collider->SetListener(behaviour);
+    canon->AddComponent(behaviour);
+    canon->AddComponent(animator);
+    canon->AddComponent(collider);
+    canon->position = Vector2D(3239, 120) * PIXELS_ZOOM;
+    AddNotFoundEnemy(canon, RENDERING_LAYER_PLAYER);
+}
+
+ObjectPool<Bullet> *Level::CreateBlasterBulletPool() {
     auto *pool = new ObjectPool<Bullet>();
     pool->Create(MAX_BLASTER_CANON_BULLETS);
     for (auto *bullet: pool->pool) {
@@ -437,9 +485,9 @@ void Level::CreateDefenseWall() {
         auto *renderer = new AnimationRenderer();
         renderer->Create(this, bullet, GetEnemiesSpritesheet());
         renderer->AddAnimation({
-            204, 67, 0.2, 1,
-            8, 8, 4, 4,
-            "Bullet", AnimationRenderer::STOP_AND_FIRST
+                204, 67, 0.2, 1,
+                8, 8, 4, 4,
+                "Bullet", AnimationRenderer::STOP_AND_FIRST
         });
         renderer->AddAnimation({
                 92, 611, 0.15, 3,
@@ -453,7 +501,7 @@ void Level::CreateDefenseWall() {
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
         Box box{-4, -4, 4, 4};
-        box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
+        box_collider->Create(this, bullet, box * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
         bullet->AddComponent(gravity);
         bullet->AddComponent(behaviour);
         bullet->AddComponent(renderer);
@@ -462,35 +510,5 @@ void Level::CreateDefenseWall() {
 
         bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
     }
-
-    auto *canon = new GameObject();
-    canon->Create();
-    animator = new AnimationRenderer();
-    animator->Create(this, canon, sprite);
-    animator->AddAnimation({
-            1, 66, 0.2, 2,
-            25, 15, 0, 0,
-            "Shoot", AnimationRenderer::STOP_AND_FIRST
-    });
-    animator->Pause();
-    auto* behaviour = new BlasterCanonBehaviour();
-    behaviour->Create(this, canon, pool);
-    canon->AddComponent(behaviour);
-    canon->AddComponent(animator);
-    canon->position = Vector2D(3217, 120) * PIXELS_ZOOM;
-    AddNotFoundEnemy(canon, RENDERING_LAYER_BRIDGES);
-
-    canon = new GameObject();
-    canon->Create();
-    animator = new AnimationRenderer();
-    animator->Create(this, canon, sprite);
-    animator->AddAnimation({
-            1, 66, 0.2, 2,
-            25, 15, 0, 0,
-            "Shoot", AnimationRenderer::STOP_AND_FIRST
-    });
-    animator->Pause();
-    canon->AddComponent(animator);
-    canon->position = Vector2D(3239, 120) * PIXELS_ZOOM;
-    AddNotFoundEnemy(canon, RENDERING_LAYER_PLAYER);
+    return pool;
 }

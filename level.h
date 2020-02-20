@@ -189,6 +189,7 @@ private:
      * Creates the defense wall of the end of stage 1
      */
     void CreateDefenseWall();
+    ObjectPool<Bullet>* CreateBlasterBulletPool();
 };
 
 #endif //CONTRA_LEVEL_H
