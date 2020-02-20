@@ -16,7 +16,8 @@ private:
     float m_acceleration = 350 * PIXELS_ZOOM;
     bool m_onFloor, m_onWater, m_canFall;
     bool m_lettingFall;
-    bool m_fallThroughWater; // Used after death
+    bool m_fallThroughWater = false; // Used after death
+    bool m_fallThroughCanFall = false;
 public:
     void Update(float dt) override;
     void AddVelocity(float velocity) {
@@ -29,6 +30,7 @@ public:
         return m_velocity;
     }
     void SetFallThoughWater(const bool value) { m_fallThroughWater = value; }
+    void SetFallThroughCanFall(const bool value) {m_fallThroughCanFall = value;}
     // Let's the game object fall until it leaves the current floor
     void LetFall();
     [[nodiscard]] bool CanFall() const;

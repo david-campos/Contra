@@ -52,6 +52,7 @@ public:
         behaviour->Create(level, this, type);
         auto *gravity = new Gravity();
         gravity->Create(level, this);
+        gravity->SetFallThoughWater(true);
         auto *renderer = new SimpleRenderer();
         renderer->Create(level, this, std::move(pickups_spritesheet),
                 25 * (int) type, 0, 24, 15, 12, 14);

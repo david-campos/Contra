@@ -448,6 +448,7 @@ void Level::CreateDefenseWall() {
         renderer->Play();
         auto *gravity = new Gravity();
         gravity->Create(this, bullet);
+        gravity->SetFallThroughCanFall(true);
         auto *behaviour = new BlastBulletBehaviour();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();

@@ -42,10 +42,15 @@ void Gravity::Update(float dt) {
         go->position = go->position + Vector2D(0, y_increment); // Falls free
         m_velocity += m_acceleration * dt;
     } else if (!m_lettingFall) {
-        // Put on the floor pixel
-        go->position = Vector2D(go->position.x, y * PIXELS_ZOOM);
-        m_velocity = 0;
         m_canFall = floor->ShouldBeAbleToFall(x, y);
+        if (!m_canFall || !m_fallThroughCanFall) {
+            // Put on the floor pixel
+            go->position = Vector2D(go->position.x, y * PIXELS_ZOOM);
+            m_velocity = 0;
+        } else {
+            go->position = go->position + Vector2D(0, y_increment); // Falls free (yep, again)
+            m_velocity += m_acceleration * dt;
+        }
     }
 }
 

@@ -47,6 +47,7 @@ public:
         }
         if (!m_collider) m_collider = go->GetComponent<CollideComponent *>();
         m_renderer->PlayAnimation(m_animBullet);
+        m_renderer->GoToFrame(0);
         m_collider->Enable();
     }
 
