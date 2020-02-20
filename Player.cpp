@@ -18,6 +18,10 @@ void PlayerControl::Update(float dt) {
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "God mode: %s", m_godMode ? "ON" : "OFF");
     }
 
+    if (m_godMode && m_invincibleTime < 1.0f) {
+        m_invincibleTime = 100.f;
+    }
+
     if (m_invincibleTime > 0) {
         bool display = (int) round(m_invincibleTime * 10) % 2 == 0;
         m_invincibleTime -= dt;
@@ -64,11 +68,17 @@ void PlayerControl::Update(float dt) {
     }
     if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
         go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+        if (m_godMode) {
+            go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+        }
         m_hasInertia = true;
         m_facingRight = true;
     }
     if ((keyStatus.left && !keyStatus.right) || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
         go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+        if (m_godMode) {
+            go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+        }
         // The player can't go back in Contra
         if (go->position.x - 12 < level->GetCameraX()) {
             go->position.x = level->GetCameraX() + 12;
@@ -273,7 +283,7 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 
     auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
     if (bullet) {
-        if (!bullet->IsKilled() && m_invincibleTime <= 0 && !m_diving && !m_godMode) {
+        if (!bullet->IsKilled() && m_invincibleTime <= 0 && !m_diving) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
             bullet->Kill();
@@ -282,7 +292,7 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
     }
     auto *greeder = collider.GetGameObject()->GetComponent<GreederBehaviour *>();
     if (greeder) {
-        if (greeder->IsAlive() && m_invincibleTime <= 0 && !m_diving && !m_godMode) {
+        if (greeder->IsAlive() && m_invincibleTime <= 0 && !m_diving) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
         }

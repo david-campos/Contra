@@ -19,14 +19,12 @@ public:
         if (!m_renderer) {
             m_renderer = go->GetComponent<AnimationRenderer*>();
         }
-        SDL_Log("DestroyOnAnimationStop::Init");
     }
 
     void Update(float dt) override {
         if (!m_renderer->IsPlaying()) {
             go->Disable();
             level->RemoveGameObject(go);
-            SDL_Log("DestroyOnAnimationStop::Removing");
         }
     }
 };

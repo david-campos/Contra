@@ -425,6 +425,15 @@ void Level::CreateDefenseWall() {
             "Door", AnimationRenderer::BOUNCE
     });
     animator->Play();
+    auto* door_behaviour = new DefenseDoorBehaviour();
+    door_behaviour->Create(this, door);
+    auto* collider = new BoxCollider();
+    collider->Create(this, door,
+            6 * PIXELS_ZOOM, 20 * PIXELS_ZOOM,
+            24 * PIXELS_ZOOM, 24 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
+    collider->SetListener(door_behaviour);
+    door->AddComponent(collider);
+    door->AddComponent(door_behaviour);
     door->AddComponent(animator);
     door->position = Vector2D(3217, 136) * PIXELS_ZOOM;
     AddNotFoundEnemy(door, RENDERING_LAYER_ENEMIES);
@@ -443,7 +452,7 @@ void Level::CreateDefenseWall() {
     animator->Pause();
     auto* behaviour = new BlasterCanonBehaviour();
     behaviour->Create(this, canon, pool);
-    auto* collider = new BoxCollider();
+    collider = new BoxCollider();
     collider->Create(this, canon,
             PIXELS_ZOOM, PIXELS_ZOOM, 14 * PIXELS_ZOOM, 8 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
     collider->SetListener(behaviour);

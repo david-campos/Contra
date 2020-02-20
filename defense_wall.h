@@ -9,6 +9,9 @@
 #include "bullets.h"
 #include "Gravity.h"
 
+#define EXPLOSION_STEPS 4
+#define TIME_BETWEEN_EXPLOSIONS 0.6f
+
 class BlasterCanonBehaviour : public Component, public CollideComponentListener {
 private:
     float m_nextShootWait;
@@ -61,20 +64,20 @@ public:
 
                 m_lives--;
                 if (m_lives == 0) {
-                    auto* explosion = new GameObject();
+                    auto *explosion = new GameObject();
                     explosion->Create();
-                    auto* renderer = new AnimationRenderer();
+                    auto *renderer = new AnimationRenderer();
                     renderer->Create(level, explosion, level->GetEnemiesSpritesheet());
                     renderer->AddAnimation({
                             92, 611, 0.15, 3,
                             30, 30, 15, 15,
                             "Explosion", AnimationRenderer::BOUNCE_AND_STOP});
                     renderer->Play();
-                    auto* self_destroy = new DestroyOnAnimationStop();
+                    auto *self_destroy = new DestroyOnAnimationStop();
                     self_destroy->Create(level, explosion);
                     explosion->AddComponent(renderer);
                     explosion->AddComponent(self_destroy);
-                    explosion->position = go->position;
+                    explosion->position = go->position + Vector2D(3, 3) * PIXELS_ZOOM;
 
                     explosion->Init();
                     level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
@@ -87,6 +90,82 @@ public:
     void Destroy() override {
         m_bulletPool->Destroy();
         Component::Destroy();
+    }
+};
+
+class DefenseDoorBehaviour : public Component, public CollideComponentListener {
+private:
+    int m_lives, m_explosionSteps;
+    float m_nextExplosion;
+    AnimationRenderer *m_doorAnimator;
+    SimpleRenderer *m_background;
+public:
+    void Init() override {
+        Component::Init();
+        m_lives = 32;
+        if (!m_doorAnimator) {
+            m_doorAnimator = go->GetComponent<AnimationRenderer *>();
+        }
+        if (!m_background) {
+            m_background = go->GetComponent<SimpleRenderer *>();
+        }
+    }
+
+    void Update(float dt) override {
+        if (m_lives <= 0) {
+            m_nextExplosion -= dt;
+            if (m_nextExplosion <= 0.f) {
+                m_explosionSteps--;
+                int x = round(111 * (1 - m_explosionSteps / float(EXPLOSION_STEPS + 1)));
+                m_background->ChangeCoords(
+                        x, m_background->GetSrcY(), 111 - x, m_background->GetHeight(),
+                        -x, m_background->GetAnchorY());
+                CreateExplosion(go->position + Vector2D(x, 21) * PIXELS_ZOOM);
+                CreateExplosion(go->position + Vector2D(x, 43) * PIXELS_ZOOM);
+                m_nextExplosion = TIME_BETWEEN_EXPLOSIONS;
+
+                if (m_explosionSteps <= 0) {
+                    level->RemoveGameObject(go);
+                }
+            }
+        }
+    }
+
+    void OnCollision(const CollideComponent &collider) override {
+        if (m_lives > 0) {
+            auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
+            if (bullet && !bullet->IsKilled()) {
+                bullet->Kill();
+
+                m_lives--;
+                if (m_lives == 0) {
+                    CreateExplosion(go->position + Vector2D(18, 32) * PIXELS_ZOOM);
+                    m_nextExplosion = 2 * TIME_BETWEEN_EXPLOSIONS;
+                    m_explosionSteps = EXPLOSION_STEPS;
+                    m_doorAnimator->enabled = false;
+                }
+            }
+        }
+    }
+
+    void CreateExplosion(const Vector2D &pos) {
+        auto *explosion = new GameObject();
+        explosion->Create();
+        auto *renderer = new AnimationRenderer();
+        renderer->Create(level, explosion, level->GetEnemiesSpritesheet());
+        renderer->AddAnimation({
+                92, 611, 0.15, 3,
+                30, 30, 15, 15,
+                "Explosion", AnimationRenderer::BOUNCE_AND_STOP});
+        renderer->Play();
+        auto *self_destroy = new DestroyOnAnimationStop();
+        self_destroy->Create(level, explosion);
+        explosion->AddComponent(renderer);
+        explosion->AddComponent(self_destroy);
+        explosion->position = pos;
+
+        explosion->Init();
+        level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
     }
 };
 
