@@ -27,14 +27,12 @@ public:
 
 	void Deallocate()
 	{
-		SDL_Log("ObjectPool::Deallocating ");
 		for (auto it = pool.begin(); it != pool.end(); it++)
 			delete *it;
 	}
 
 	~ObjectPool()
 	{
-		SDL_Log("ObjectPool::~ObjectPool");
 		Deallocate();
 	}
 

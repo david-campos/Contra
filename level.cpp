@@ -12,6 +12,7 @@
 #include "bullets.h"
 #include "Player.h"
 #include "exploding_bridge.h"
+#include "defense_wall.h"
 
 void Level::Update(float dt) {
     AvancezLib::KeyStatus keys{};
@@ -31,11 +32,11 @@ void Level::Update(float dt) {
 
     // We progressively init the enemies in front of the camera
     while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
-        auto *enemy = not_found_enemies.top();
-        game_objects[RENDERING_LAYER_ENEMIES]->insert(enemy);
+        auto *enemy = not_found_enemies.top().first;
+        game_objects[not_found_enemies.top().second]->insert(enemy);
         enemy->Init();
         not_found_enemies.pop();
-        next_enemy_x = not_found_enemies.top()->position.x;
+        next_enemy_x = not_found_enemies.top().first->position.x;
     }
 
     // And eliminate the enemies behind the camera
@@ -74,20 +75,6 @@ void Level::Update(float dt) {
         for (auto *game_object : *layer)
             if (game_object->IsEnabled() && !game_object->IsMarkedToRemove())
                 game_object->Update(dt);
-    }
-
-    // Debug floor
-    SDL_Color floor{0, 255, 0};
-    SDL_Color water{0, 0, 255};
-    int top_x = std::floor(camera_x + WINDOW_WIDTH / PIXELS_ZOOM);
-    for (int y = 0; y < level_floor->getHeight(); y++) {
-        for (int x = std::floor(camera_x /  PIXELS_ZOOM); x < top_x; x++) {
-            if (level_floor->IsFloor(x, y)) {
-                engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, floor);
-            } else if (level_floor->IsWater(x, y)) {
-                engine->fillSquare(x * PIXELS_ZOOM - (int) round(camera_x), y * PIXELS_ZOOM, PIXELS_ZOOM, water);
-            }
-        }
     }
 
     // Delete objects marked to remove
@@ -140,13 +127,13 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
                     rc_node["burst_length"].as<int>());
             tank->AddReceiver(this);
-            not_found_enemies.push(tank);
+            AddNotFoundEnemy(tank, RENDERING_LAYER_ENEMIES);
         }
         for (const auto &rc_node: scene_root["gulcans"]) {
             auto *gulcan = new Gulcan();
             gulcan->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
             gulcan->AddReceiver(this);
-            not_found_enemies.push(gulcan);
+            AddNotFoundEnemy(gulcan, RENDERING_LAYER_ENEMIES);
         }
         for (const auto &rc_node: scene_root["ledders"]) {
             auto *ledder = new Ledder();
@@ -161,7 +148,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             );
             ledder->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
             ledder->AddReceiver(this);
-            not_found_enemies.push(ledder);
+            AddNotFoundEnemy(ledder, RENDERING_LAYER_ENEMIES);
         }
         for (const auto &rc_node: scene_root["greeders"]) {
             if (rc_node["chance_skip"]) {
@@ -174,14 +161,14 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             greeder_spawner->Create(this, spawner, m_random_dist(m_mt));
             spawner->AddComponent(greeder_spawner);
             spawner->AddReceiver(this);
-            not_found_enemies.push(spawner);
+            AddNotFoundEnemy(spawner, RENDERING_LAYER_ENEMIES);
         }
         for (const auto &rc_node: scene_root["covered_pickups"]) {
             AnimationRenderer *renderer;
             CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
                     new CoveredPickUpHolderBehaviour(),
-                    {-12, -15,10, 15},
+                    {-12, -15, 10, 15},
                     &renderer);
             renderer->AddAnimation({
                     1, 76, 0.15, 1,
@@ -208,7 +195,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             CreateAndAddPickUpHolder(rc_node["content"].as<PickUpType>(),
                     rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM,
                     new FlyingPickupHolderBehaviour(),
-                    {-9, -6,9, 6},
+                    {-9, -6, 9, 6},
                     &renderer);
             renderer->AddAnimation({
                     243, 120, 0.15, 1,
@@ -234,8 +221,10 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
             bridge->position = rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM;
 
             bridge->Init();
-            game_objects[RENDERING_LAYER_BRIDGES]->insert(bridge);
+            AddNotFoundEnemy(bridge, RENDERING_LAYER_BRIDGES);
         }
+
+        CreateDefenseWall();
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);
     }
@@ -248,7 +237,7 @@ void Level::Destroy() {
             game_object->Destroy();
     }
     while (!not_found_enemies.empty()) {
-        not_found_enemies.top()->Destroy();
+        not_found_enemies.top().first->Destroy();
         not_found_enemies.pop();
     }
     while (!game_objects_to_add.empty()) {
@@ -320,12 +309,12 @@ void Level::Init() {
     GameObject::Init();
     camera_x = 0;
 
-    next_enemy_x = not_found_enemies.top()->position.x;
-    while (next_enemy_x < WINDOW_WIDTH) {
-        if (!not_found_enemies.empty()) {
-            game_objects[RENDERING_LAYER_ENEMIES]->insert(not_found_enemies.top());
+    if (!not_found_enemies.empty()) {
+        next_enemy_x = not_found_enemies.top().first->position.x;
+        while (next_enemy_x < WINDOW_WIDTH && !not_found_enemies.empty()) {
+            game_objects[not_found_enemies.top().second]->insert(not_found_enemies.top().first);
             not_found_enemies.pop();
-            next_enemy_x = not_found_enemies.top()->position.x;
+            next_enemy_x = not_found_enemies.top().first->position.x;
         }
     }
 
@@ -354,12 +343,12 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         renderer->Create(this, bullet, spritesheet);
         renderer->AddAnimation(animation);
         renderer->AddAnimation({
-                104, 0, 0.2, 1,
+                104, 0, 0.1, 1,
                 7, 7, 3, 3,
                 "Kill", AnimationRenderer::STOP_AND_FIRST
         });
         renderer->Play();
-        auto* behaviour = new T();
+        auto *behaviour = new T();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
         box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
@@ -390,5 +379,117 @@ void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &pos
     pick_up_holder->AddComponent(*renderer);
     pick_up_holder->AddComponent(collider);
     pick_up_holder->AddReceiver(this);
-    not_found_enemies.push(pick_up_holder);
+    AddNotFoundEnemy(pick_up_holder, RENDERING_LAYER_ENEMIES);
+}
+
+void Level::CreateDefenseWall() {
+    auto sprite = std::shared_ptr<Sprite>(engine->createSprite("data/level1/defense_wall.png"));
+
+    // Wall front in player layer, between enemies and the bullets
+    auto *wallFront = new GameObject();
+    wallFront->Create();
+    auto *renderer = new SimpleRenderer();
+    renderer->Create(this, wallFront, sprite,
+            111, 0, 89, 96, 0, 0);
+    wallFront->AddComponent(renderer);
+
+    wallFront->position = Vector2D(3238, 41) * PIXELS_ZOOM;
+    wallFront->Init();
+    AddNotFoundEnemy(wallFront, RENDERING_LAYER_PLAYER);
+
+    // A second piece of front wall that covers the left blaster canon
+    wallFront = new GameObject();
+    wallFront->Create();
+    renderer = new SimpleRenderer();
+    renderer->Create(this, wallFront, sprite,
+            80, 72, 13, 40, 0, 0);
+    wallFront->AddComponent(renderer);
+
+    wallFront->position = Vector2D(3230, 95) * PIXELS_ZOOM;
+    wallFront->Init();
+    AddNotFoundEnemy(wallFront, RENDERING_LAYER_ENEMIES);
+
+
+    // Door in enemies layer
+    auto *door = new GameObject();
+    door->Create();
+    renderer = new SimpleRenderer();
+    renderer->Create(this, door, sprite,
+            0, 0, 111, 65, 0, 0);
+    door->AddComponent(renderer); // Important order! First the back, then the animated
+    auto *animator = new AnimationRenderer();
+    animator->Create(this, door, sprite);
+    animator->AddAnimation({
+            1, 82, 0.15, 3,
+            24, 32, -6, -16,
+            "Door", AnimationRenderer::BOUNCE
+    });
+    animator->Play();
+    door->AddComponent(animator);
+    door->position = Vector2D(3217, 136) * PIXELS_ZOOM;
+    AddNotFoundEnemy(door, RENDERING_LAYER_ENEMIES);
+
+    // Blaster canons
+    auto *pool = new ObjectPool<Bullet>();
+    pool->Create(MAX_BLASTER_CANON_BULLETS);
+    for (auto *bullet: pool->pool) {
+        bullet->Create();
+        auto *renderer = new AnimationRenderer();
+        renderer->Create(this, bullet, GetEnemiesSpritesheet());
+        renderer->AddAnimation({
+            204, 67, 0.2, 1,
+            8, 8, 4, 4,
+            "Bullet", AnimationRenderer::STOP_AND_FIRST
+        });
+        renderer->AddAnimation({
+                92, 611, 0.15, 3,
+                30, 30, 15, 15,
+                "Kill", AnimationRenderer::BOUNCE_AND_STOP});
+        renderer->Play();
+        auto *gravity = new Gravity();
+        gravity->Create(this, bullet);
+        auto *behaviour = new BlastBulletBehaviour();
+        behaviour->Create(this, bullet);
+        auto *box_collider = new BoxCollider();
+        Box box{-4, -4, 4, 4};
+        box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
+        bullet->AddComponent(gravity);
+        bullet->AddComponent(behaviour);
+        bullet->AddComponent(renderer);
+        bullet->AddComponent(box_collider);
+        bullet->AddReceiver(this);
+
+        bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
+    }
+
+    auto *canon = new GameObject();
+    canon->Create();
+    animator = new AnimationRenderer();
+    animator->Create(this, canon, sprite);
+    animator->AddAnimation({
+            1, 66, 0.2, 2,
+            25, 15, 0, 0,
+            "Shoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    animator->Pause();
+    auto* behaviour = new BlasterCanonBehaviour();
+    behaviour->Create(this, canon, pool);
+    canon->AddComponent(behaviour);
+    canon->AddComponent(animator);
+    canon->position = Vector2D(3217, 120) * PIXELS_ZOOM;
+    AddNotFoundEnemy(canon, RENDERING_LAYER_BRIDGES);
+
+    canon = new GameObject();
+    canon->Create();
+    animator = new AnimationRenderer();
+    animator->Create(this, canon, sprite);
+    animator->AddAnimation({
+            1, 66, 0.2, 2,
+            25, 15, 0, 0,
+            "Shoot", AnimationRenderer::STOP_AND_FIRST
+    });
+    animator->Pause();
+    canon->AddComponent(animator);
+    canon->position = Vector2D(3239, 120) * PIXELS_ZOOM;
+    AddNotFoundEnemy(canon, RENDERING_LAYER_PLAYER);
 }

@@ -273,7 +273,7 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 
     auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
     if (bullet) {
-        if (m_invincibleTime <= 0 && !m_diving && !m_godMode) {
+        if (!bullet->IsKilled() && m_invincibleTime <= 0 && !m_diving && !m_godMode) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
             bullet->Kill();

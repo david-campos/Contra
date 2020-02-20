@@ -194,7 +194,7 @@ void LedderBehaviour::Fire() {
 void LedderBehaviour::OnCollision(const CollideComponent &collider) {
     if (m_state == SHOWN || m_state == HIDING) {
         auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
-        if (bullet) {
+        if (bullet && !bullet->IsKilled()) {
             bullet->Kill();
 
             m_animator->PlayAnimation(m_animGoingToDie);
@@ -291,7 +291,7 @@ void GreederBehaviour::Update(float dt) {
 void GreederBehaviour::OnCollision(const CollideComponent &collider) {
     if (!m_isDeath) {
         auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
-        if (bullet) {
+        if (bullet && !bullet->IsKilled()) {
             bullet->Kill();
             m_animator->PlayAnimation(m_animJumping);
             m_gravity->SetVelocity(-3 * PLAYER_SPEED * PIXELS_ZOOM);

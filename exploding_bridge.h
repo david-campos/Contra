@@ -106,7 +106,7 @@ public:
             exp->Init();
             level->AddGameObject(exp, RENDERING_LAYER_BULLETS);
 
-            m_explodingTime = 0.9f;
+            m_explodingTime = 0.85f;
         }
     }
 private:

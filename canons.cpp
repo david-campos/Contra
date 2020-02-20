@@ -8,7 +8,7 @@
 void CanonBehaviour::OnCollision(const CollideComponent &collider) {
     if (m_life > 0 && m_state == SHOWN) {
         auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
-        if (bullet) {
+        if (bullet && !bullet->IsKilled()) {
             m_life -= bullet->GetDamage();
             bullet->Kill();
         }

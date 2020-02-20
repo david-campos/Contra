@@ -15,6 +15,7 @@ class GameObject {
 private:
     bool enabled;
     bool marked_to_remove;
+    bool destroyed = false;
 protected:
     std::vector<GameObject *> receivers;
     std::vector<Component *> components;

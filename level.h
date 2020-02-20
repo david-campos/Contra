@@ -26,8 +26,8 @@ class PickUpHolderBehaviour;
 
 class Level : public GameObject {
     struct game_objects_comp_x {
-        bool operator()(const GameObject *lhs, const GameObject *rhs) const {
-            return lhs->position.x > rhs->position.x;
+        bool operator()(const std::pair<GameObject *, short>lhs, const std::pair<GameObject *, short> rhs) const {
+            return lhs.first->position.x > rhs.first->position.x;
         }
     };
 
@@ -41,7 +41,7 @@ class Level : public GameObject {
     Player *player;
     PlayerControl *playerControl;
     std::set<GameObject *> *game_objects[RENDERING_LAYERS];
-    std::priority_queue<GameObject *, std::deque<GameObject *>, game_objects_comp_x> not_found_enemies;
+    std::priority_queue<std::pair<GameObject *, short>, std::deque<std::pair<GameObject *, short>>, game_objects_comp_x> not_found_enemies;
     std::queue<std::pair<GameObject*, int>> game_objects_to_add;
     float next_enemy_x;
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
@@ -86,6 +86,10 @@ public:
 
     void AddGameObject(GameObject* const game_object, const int layer) {
         game_objects_to_add.push(std::pair<GameObject*, int>(game_object, layer));
+    }
+
+    void AddNotFoundEnemy(GameObject* const game_object, const short layer) {
+        not_found_enemies.push(std::pair<GameObject*, short>(game_object, layer));
     }
 
     /**
@@ -181,6 +185,10 @@ private:
      */
     void CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position, PickUpHolderBehaviour *behaviour,
                                   const Box& box, AnimationRenderer **renderer_out);
+    /**
+     * Creates the defense wall of the end of stage 1
+     */
+    void CreateDefenseWall();
 };
 
 #endif //CONTRA_LEVEL_H

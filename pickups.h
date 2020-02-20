@@ -100,7 +100,7 @@ public:
     void OnCollision(const CollideComponent &collider) override {
         if (m_canBeHit && m_lives > 0) {
             auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
-            if (bullet) {
+            if (bullet && !bullet->IsKilled()) {
                 m_lives--;
                 bullet->Kill();
                 if (m_lives == 0) {

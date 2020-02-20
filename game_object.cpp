@@ -29,13 +29,15 @@ void GameObject::Update(float dt) {
 }
 
 void GameObject::Destroy() {
-    SDL_Log("GameObject(%d)::Destroy", id);
+    destroyed = true;
     for (auto it = components.begin(); it != components.end(); it++)
         (*it)->Destroy();
 }
 
 GameObject::~GameObject() {
-    SDL_Log("GameObject(%d)::~GameObject", id);
+    if (!destroyed) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GameObject(%d)::~GameObject but not destroyed", id);
+    }
 }
 
 void GameObject::AddReceiver(GameObject *go) {

@@ -26,10 +26,10 @@ private:
     AnimationRenderer *m_renderer;
     CollideComponent *m_collider;
     int m_animBullet, m_animKill;
-    float m_destroyIn;
 protected:
     Vector2D m_direction;
     int m_speed;
+    bool m_kill;
 public:
     void Create(Level *level, GameObject *go) override {
         Component::Create(level, go);
@@ -39,7 +39,7 @@ public:
         m_direction = direction.normalise();
         m_speed = speed;
         m_damage = damage;
-        m_destroyIn = -1;
+        m_kill = false;
         if (!m_renderer) {
             m_renderer = go->GetComponent<AnimationRenderer *>();
             m_animBullet = m_renderer->FindAnimation("Bullet");
@@ -50,10 +50,13 @@ public:
         m_collider->Enable();
     }
 
+    bool IsKilled() const {
+        return m_kill;
+    }
+
     void Update(float dt) override {
-        if (m_destroyIn > 0) {
-            m_destroyIn -= dt;
-            if (m_destroyIn < 0) {
+        if (m_kill) {
+            if (!m_renderer->IsPlaying()) {
                 go->Disable();
                 go->MarkToRemove();
             }
@@ -69,12 +72,11 @@ public:
 
     void Kill() {
         m_collider->Disable();
+        m_kill = true;
         if (m_animKill >= 0) {
             m_renderer->PlayAnimation(m_animKill);
-            m_destroyIn = 0.1f;
         } else {
-            go->Disable();
-            go->MarkToRemove();
+            m_renderer->Pause();
         }
     }
 
@@ -106,6 +108,26 @@ public:
         m_currentAngle += 4 * 6.28 * (m_direction.x >= 0 ? 1 : -1) * dt;
         go->position = m_theoricalPos + (m_direction *FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM).rotate(m_currentAngle)
                 + m_direction * FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM;
+    }
+};
+
+class BlastBulletBehaviour: public BulletBehaviour {
+private:
+    Gravity* m_gravity;
+public:
+    void Init(const Vector2D &direction, int speed, int damage) override {
+        BulletBehaviour::Init(direction, speed, damage);
+        if (!m_gravity) {
+            m_gravity = go->GetComponent<Gravity*>();
+        }
+    }
+
+    void UpdatePosition(float dt) override {
+        if (m_gravity->IsOnAir()) {
+            go->position = go->position + m_direction * m_speed * dt;
+        } else {
+            Kill();
+        }
     }
 };
 
