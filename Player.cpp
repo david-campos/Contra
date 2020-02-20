@@ -62,12 +62,12 @@ void PlayerControl::Update(float dt) {
             }
         }
     }
-    if (keyStatus.right || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
+    if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
         go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         m_hasInertia = true;
         m_facingRight = true;
     }
-    if (keyStatus.left || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
+    if ((keyStatus.left && !keyStatus.right) || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
         go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         // The player can't go back in Contra
         if (go->position.x - 12 < level->GetCameraX()) {
@@ -85,7 +85,7 @@ void PlayerControl::Update(float dt) {
     m_diving = false;
     // Animation
     if (m_gravity->IsOnFloor()) {
-        if (keyStatus.right || keyStatus.left) {
+        if (keyStatus.right != keyStatus.left) {
             if (keyStatus.up && !keyStatus.down) {
                 m_animator->PlayAnimation(m_runUpAnim);
             } else if (keyStatus.down && !keyStatus.up) {
@@ -97,7 +97,7 @@ void PlayerControl::Update(float dt) {
                     m_animator->PlayAnimation(m_runAnim);
                 }
             }
-        } else if (!keyStatus.right && !keyStatus.left) {
+        } else {
             if (keyStatus.up && !keyStatus.down) {
                 m_animator->CurrentAndPause(m_upAnim);
             } else if (keyStatus.down && !keyStatus.up) {
@@ -121,7 +121,7 @@ void PlayerControl::Update(float dt) {
                 m_diving = true;
             } else if (shooting) {
                 if (keyStatus.up) {
-                    if (keyStatus.right || keyStatus.left) {
+                    if (keyStatus.right != keyStatus.left) {
                         m_animator->PlayAnimation(m_swimShootDiagonalAnim);
                     } else {
                         m_animator->PlayAnimation(m_swimShootUpAnim);
@@ -226,13 +226,13 @@ void PlayerControl::Respawn() {
 bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D displacement(
             m_facingRight ? 15 : -15,
-            m_gravity->IsOnWater() ? 0 : -21
+            m_gravity->IsOnWater() ? -3 : -21
     );
     Vector2D direction(m_facingRight ? 1 : -1, 0);
     if (keyStatus.up && !keyStatus.down) {
         direction.y = -1;
         displacement.y = m_gravity->IsOnWater() ? -25 : -40;
-        if (!keyStatus.right && !keyStatus.left) {
+        if (keyStatus.right == keyStatus.left) {
             direction.x = 0;
             displacement.x = m_facingRight ? 4 : -4;
         } else if (m_gravity->IsOnWater()) {
@@ -250,9 +250,9 @@ bool PlayerControl::Fire(const AvancezLib::KeyStatus &keyStatus) {
         if (m_gravity->IsOnWater())
             return false; // Can't shoot down in water, since it is diving
         displacement.y = -9;
-        if (keyStatus.right or keyStatus.left or m_animator->IsCurrent(m_jumpAnim)) {
+        if (keyStatus.right != keyStatus.left or m_animator->IsCurrent(m_jumpAnim)) {
             direction.y = 1; // When jumping or moving you can indeed shoot down
-            if (!keyStatus.left && !keyStatus.right) {
+            if (keyStatus.left == keyStatus.right) {
                 displacement = Vector2D(0, 0);
                 direction.x = 0;
             } else {
