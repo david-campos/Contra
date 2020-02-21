@@ -47,6 +47,7 @@ class Level : public GameObject {
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     Grid grid;
+    bool complete;
     float camera_x;
     int level_width;
 
@@ -75,6 +76,10 @@ public:
 
     [[nodiscard]] AvancezLib *GetEngine() const {
         return engine;
+    }
+
+    [[nodiscard]] bool IsComplete() const {
+        return complete;
     }
 
     std::shared_ptr<Sprite> GetBridgeSprite() {
@@ -172,6 +177,8 @@ public:
     Grid* GetGrid() {
         return &grid;
     }
+
+    void Receive(Message m) override;
 
 private:
     void CreateBulletPools();

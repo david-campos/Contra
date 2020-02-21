@@ -45,6 +45,11 @@ public:
     void Update(float dt) override {
         AvancezLib::KeyStatus keyStatus;
         engine->getKeyStatus(keyStatus);
+        if (keyStatus.esc) {
+            Destroy();
+            engine->quit();
+        }
+
         if (keyStatus.pause && !pause_pressed_before) {
             paused = !paused;
         }
@@ -53,7 +58,8 @@ public:
         if (IsGameOver() || paused)
             dt = 0.f;
 
-        currentLevel->Update(dt);
+        if (currentLevel)
+            currentLevel->Update(dt);
     }
 
     virtual void Draw() {
@@ -62,9 +68,17 @@ public:
     }
 
     void Receive(Message m) override {
-        if (m == GAME_OVER) {
-            SDL_Log("GAME OVER");
-            game_over = true;
+        switch (m) {
+            case GAME_OVER:
+                SDL_Log("GAME OVER");
+                game_over = true;
+                break;
+            case LEVEL_END:
+                SDL_Log("LEVEL END");
+                currentLevel->Destroy();
+                delete currentLevel;
+                currentLevel = nullptr;
+                break;
         }
     }
 
@@ -73,6 +87,6 @@ public:
     }
 
     void Destroy() override {
-        currentLevel->Destroy();
+        if (currentLevel) currentLevel->Destroy();
     }
 };

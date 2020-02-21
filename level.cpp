@@ -15,13 +15,6 @@
 #include "defense_wall.h"
 
 void Level::Update(float dt) {
-    AvancezLib::KeyStatus keys{};
-    engine->getKeyStatus(keys);
-    if (keys.esc) {
-        Destroy();
-        engine->quit();
-    }
-
     if (player->position.x < level_width - WINDOW_WIDTH) {
         if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
             camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
@@ -29,6 +22,11 @@ void Level::Update(float dt) {
         camera_x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
     else
         camera_x = level_width - WINDOW_WIDTH;
+
+    if (complete && player->position.x >= level_width) {
+        Send(LEVEL_END);
+        return;
+    }
 
     // We progressively init the enemies in front of the camera
     while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
@@ -308,6 +306,7 @@ void Level::CreateBulletPools() {
 void Level::Init() {
     GameObject::Init();
     camera_x = 0;
+    complete = false;
 
     if (!not_found_enemies.empty()) {
         next_enemy_x = not_found_enemies.top().first->position.x;
@@ -436,6 +435,7 @@ void Level::CreateDefenseWall() {
     door->AddComponent(door_behaviour);
     door->AddComponent(animator);
     door->position = Vector2D(3217, 136) * PIXELS_ZOOM;
+    door->AddReceiver(this);
     AddNotFoundEnemy(door, RENDERING_LAYER_ENEMIES);
 
     // Blaster canons
@@ -520,4 +520,12 @@ ObjectPool<Bullet> *Level::CreateBlasterBulletPool() {
         bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
     }
     return pool;
+}
+
+void Level::Receive(Message m) {
+    if (m == LEVEL_END) {
+        complete = true;
+    } else {
+        Send(m);
+    }
 }

@@ -53,7 +53,7 @@ public:
 
     void Destroy() override;
 
-    std::weak_ptr<Sprite> GetSprite() { return sprite; }
+    std::shared_ptr<Sprite> GetSprite() { return sprite; }
 };
 
 class CollideComponentListener {

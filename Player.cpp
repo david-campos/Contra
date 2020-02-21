@@ -11,11 +11,16 @@
 
 void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
-    level->GetEngine()->getKeyStatus(keyStatus);
+    if (level->IsComplete()) keyStatus = {
+            false, true, false, true, false, false, false,
+            false, false
+    };
+    else level->GetEngine()->getKeyStatus(keyStatus);
 
     if (keyStatus.debug && !m_previousKeyStatus.debug) {
         m_godMode = !m_godMode;
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "God mode: %s", m_godMode ? "ON" : "OFF");
+        if (!m_godMode) m_invincibleTime = dt;
     }
 
     if (m_godMode && m_invincibleTime < 1.0f) {
@@ -67,9 +72,11 @@ void PlayerControl::Update(float dt) {
         }
     }
     if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
-        go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
-        if (m_godMode) {
+        if (go->position.x < level->GetCameraX() + WINDOW_WIDTH - 112 * PIXELS_ZOOM || level->IsComplete()) {
             go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+            if (m_godMode) {
+                go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+            }
         }
         m_hasInertia = true;
         m_facingRight = true;

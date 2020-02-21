@@ -126,6 +126,17 @@ public:
 
                 if (m_explosionSteps <= 0) {
                     level->RemoveGameObject(go);
+                    go->Send(LEVEL_END);
+
+                    auto* broken_wall = new GameObject();
+                    broken_wall->Create();
+                    auto* renderer = new SimpleRenderer();
+                    renderer->Create(level, broken_wall, m_background->GetSprite(),
+                            2, 116, 110, 120, 0, 0);
+                    broken_wall->AddComponent(renderer);
+                    broken_wall->position = Vector2D(3217, 104) * PIXELS_ZOOM;
+                    broken_wall->Init();
+                    level->AddGameObject(broken_wall, RENDERING_LAYER_BULLETS);
                 }
             }
         }
