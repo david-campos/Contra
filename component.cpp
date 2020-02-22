@@ -80,14 +80,6 @@ void CollideComponent::Enable() {
     m_disabled = false;
 }
 
-void BoxCollider::Update(float dt) {
-    CollideComponent::Update(dt);
-    if (m_disabled) return;
-    scene->GetEngine()->strokeSquare(AbsoluteTopLeftX() - scene->GetCameraX(),
-            AbsoluteTopLeftY(), AbsoluteBottomRightX() - scene->GetCameraX(), AbsoluteBottomRightY(),
-            {0, 0, 255});
-}
-
 void BoxCollider::GetOccupiedCells(Grid::CellsSquare &square) {
     auto* grid = scene->GetGrid();
     int cell_size = grid->getCellSize();

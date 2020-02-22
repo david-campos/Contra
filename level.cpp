@@ -17,22 +17,13 @@
 void Level::Update(float dt) {
     BaseScene::Update(dt);
     if (complete && player->position.x >= level_width) {
-        Send(NEXT_SCENE);
+        Send(NEXT_LEVEL);
         return;
     }
 
-    // Debug floor
-    SDL_Color floor{0, 255, 0};
-    SDL_Color water{0, 0, 255};
-    int top_x = std::floor(m_camera.x + WINDOW_WIDTH / PIXELS_ZOOM);
-    for (int y = 0; y < level_floor->getHeight(); y++) {
-        for (int x = std::floor(m_camera.x / PIXELS_ZOOM); x < top_x; x++) {
-            if (level_floor->IsFloor(x, y)) {
-                m_engine->fillSquare(x * PIXELS_ZOOM - (int) round(m_camera.x), y * PIXELS_ZOOM, PIXELS_ZOOM, floor);
-            } else if (level_floor->IsWater(x, y)) {
-                m_engine->fillSquare(x * PIXELS_ZOOM - (int) round(m_camera.x), y * PIXELS_ZOOM, PIXELS_ZOOM, water);
-            }
-        }
+    if (playerControl->getRemainingLives() < 0) {
+        Send(GAME_OVER);
+        return;
     }
 
     // Print life sprites
@@ -89,7 +80,13 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
     try {
         YAML::Node scene_root = YAML::LoadFile(folder + "/level.yaml");
 
-        BaseScene::Create(avancezLib, folder + scene_root["background"].as<std::string>());
+        levelName = scene_root["name"].as<std::string>();
+        levelIndex = scene_root["number"].as<int>();
+
+        {
+            std::string bg = folder + scene_root["background"].as<std::string>();
+            BaseScene::Create(avancezLib, bg.data());
+        }
 
         level_width = m_background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>((folder + scene_root["floor_mask"].as<std::string>()).data());
@@ -214,6 +211,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 
 void Level::Destroy() {
     BaseScene::Destroy();
+    SDL_Log("Level::Destroy");
     while (!not_found_enemies.empty()) {
         not_found_enemies.top().first->Destroy();
         not_found_enemies.pop();
@@ -521,4 +519,12 @@ void Level::Receive(Message m) {
     } else {
         BaseScene::Receive(m);
     }
+}
+
+const std::string &Level::GetLevelName() const {
+    return levelName;
+}
+
+int Level::GetLevelIndex() const {
+    return levelIndex;
 }

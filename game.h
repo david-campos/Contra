@@ -8,12 +8,14 @@
 #include "bullets.h"
 #include "canons.h"
 #include "enemies.h"
-#include "level.h"
-#include "main_menu.h"
 
 class Game : public GameObject {
+public:
+    struct PlayerStats {
+        int score;
+    };
 private:
-    BaseScene *currentScene;
+    GameObject *currentScene;
     AvancezLib *engine;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
@@ -22,18 +24,22 @@ private:
     bool game_over;
     bool paused;
     bool pause_pressed_before;
+    bool can_continue;
+    PlayerStats stats[2];
+    unsigned short players;
 public:
-    virtual void Create(AvancezLib *avancezLib) {
-        SDL_Log("Game::Create");
-        this->engine = avancezLib;
-        spritesheet.reset(engine->createSprite("data/spritesheet.png"));
-        enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
-        pickups_spritesheet.reset(engine->createSprite("data/pickups.png"));
+    virtual void Create(AvancezLib *avancezLib);
 
-        auto* menu = new MainMenu();
-        menu->Create(engine);
-        menu->AddReceiver(this);
-        currentScene = menu;
+    void SetPlayers(unsigned short value) {
+        if (value > 2) value = 2;
+        if (value < 1) value = 1;
+        players = value;
+    }
+
+    [[nodiscard]] int GetPlayers() const { return players; }
+
+    [[nodiscard]] const PlayerStats *GetPlayerStats() const {
+        return stats;
     }
 
     void Init() override {
@@ -41,6 +47,9 @@ public:
         game_over = false;
         pause_pressed_before = false;
         currentScene->Init();
+        players = 1;
+        can_continue = true;
+        memset(stats, 0, 2 * sizeof(PlayerStats));
     }
 
 
@@ -57,11 +66,19 @@ public:
         }
         pause_pressed_before = keyStatus.pause;
 
-        if (IsGameOver() || paused)
+        if (paused)
             dt = 0.f;
 
         if (currentScene)
             currentScene->Update(dt);
+    }
+
+    void Start(BaseScene *scene) {
+        if (currentScene) {
+            currentScene->Destroy();
+            delete currentScene;
+        }
+        currentScene = scene;
     }
 
     virtual void Draw() {
@@ -69,31 +86,10 @@ public:
         engine->clearWindow();
     }
 
-    void Receive(Message m) override {
-        switch (m) {
-            case GAME_OVER:
-                SDL_Log("GAME OVER");
-                game_over = true;
-                break;
-            case NEXT_SCENE:
-                SDL_Log("NEXT_SCENE");
-                currentScene->Destroy();
-                delete currentScene;
-
-                auto level = new Level();
-                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
-                level->AddReceiver(this);
-                level->Init();
-                currentScene = level;
-                break;
-        }
-    }
-
-    bool IsGameOver() {
-        return game_over;
-    }
+    void Receive(Message m) override;
 
     void Destroy() override {
+        SDL_Log("Game::Destroy");
         if (currentScene) currentScene->Destroy();
     }
 };

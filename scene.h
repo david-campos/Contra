@@ -33,27 +33,32 @@ public:
         }
     }
 
-    void Create(AvancezLib *engine, const std::string &background_path) {
+    void Create(AvancezLib *engine, const char* background_path) {
         GameObject::Create();
         m_engine = engine;
-        m_background.reset(m_engine->createSprite(&background_path[0]));
+        if (background_path != nullptr) {
+            m_background.reset(m_engine->createSprite(background_path));
+        }
         m_camera = Vector2D(0, 0);
     }
 
     void Update(float dt) override {
         GameObject::Update(dt);
-        // Draw background (smoothing the zoom)
-        int camera_without_zoom_x = int(floorf(m_camera.x / PIXELS_ZOOM));
-        int shift_x = -int(floorf(m_camera.x - camera_without_zoom_x * PIXELS_ZOOM));
-        if (camera_without_zoom_x < 0) {
-            shift_x -= camera_without_zoom_x * PIXELS_ZOOM;
-            camera_without_zoom_x = 0;
-        }
-        int camera_without_zoom_y = int(floorf(m_camera.y / PIXELS_ZOOM));
-        int shift_y = -int(floorf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
 
-        m_background->draw(shift_x, shift_y, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT + PIXELS_ZOOM,
-                camera_without_zoom_x, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1, WINDOW_HEIGHT / PIXELS_ZOOM);
+        if (m_background) {
+            // Draw background (smoothing the zoom)
+            int camera_without_zoom_x = int(floorf(m_camera.x / PIXELS_ZOOM));
+            int shift_x = -int(floorf(m_camera.x - camera_without_zoom_x * PIXELS_ZOOM));
+            if (camera_without_zoom_x < 0) {
+                shift_x -= camera_without_zoom_x * PIXELS_ZOOM;
+                camera_without_zoom_x = 0;
+            }
+            int camera_without_zoom_y = int(floorf(m_camera.y / PIXELS_ZOOM));
+            int shift_y = -int(floorf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
+
+            m_background->draw(shift_x, shift_y, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT + PIXELS_ZOOM,
+                    camera_without_zoom_x, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1, WINDOW_HEIGHT / PIXELS_ZOOM);
+        }
 
         grid.ClearCollisionCache(); // Clear collision cache
         for (const auto &layer: game_objects) {

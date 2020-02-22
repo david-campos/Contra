@@ -173,8 +173,6 @@ public:
         m_box = box;
     }
 
-    void Update(float dt) override;
-
     void ChangeBox(const Box &box) {
         m_box = box;
     }

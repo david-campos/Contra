@@ -1,3 +1,5 @@
+number: 1
+name: Jungle
 background: background_no_labels.png
 floor_mask: mask.bmp
 rotating_canons:
@@ -113,9 +115,9 @@ covered_pickups:
 flying_pickups:
   - pos: [257, 56]
     content: R
-  - pos: [1137, 75]
+  - pos: [1137, 70]
     content: S
-  - pos: [2337, 75]
+  - pos: [2337, 70]
     content: R
   - pos: [2337, 190]
     content: L

@@ -45,6 +45,8 @@ class Level : public BaseScene {
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     bool complete;
     int level_width;
+    std::string levelName;
+    int levelIndex;
 
     std::random_device rd;
     std::mt19937 m_mt = std::mt19937(rd());
@@ -123,6 +125,11 @@ public:
     }
 
     void Receive(Message m) override;
+
+    const std::string &GetLevelName() const;
+
+    int GetLevelIndex() const;
+
 private:
     void CreateBulletPools();
 

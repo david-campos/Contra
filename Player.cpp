@@ -10,6 +10,8 @@
 #include "pickups.h"
 
 void PlayerControl::Update(float dt) {
+    if (dt == 0) return;
+
     AvancezLib::KeyStatus keyStatus{};
     if (level->IsComplete()) keyStatus = {
             false, true, false, true, false, false, false,
@@ -37,11 +39,11 @@ void PlayerControl::Update(float dt) {
     // If it is death, wait for death animation to end and then decide
     if (m_isDeath) {
         if (m_waitDead <= 0) {
-            if (m_remainingLives > 0) {
+            if (m_remainingLives > -1) {
                 m_remainingLives--;
-                Respawn();
-            } else {
-                go->Send(GAME_OVER);
+                if (m_remainingLives >= 0) {
+                    Respawn();
+                }
             }
         } else {
             m_waitDead -= dt;
