@@ -46,18 +46,35 @@ void Game::Receive(Message m) {
         }
         case NEXT_LEVEL: {
             SDL_Log("NEXT_LEVEL");
+            current_level++;
 
             // We only have level 1 by now ^^'
-            auto level = new Level();
-            level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players, engine);
-            level->AddReceiver(this);
+            switch (current_level) {
+                case 0: {
+                    auto level = new Level();
+                    level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players,
+                            engine);
 
-            auto introduction = new PreLevel();
-            introduction->Create(engine, this);
-            introduction->Init(level);
-            introduction->AddReceiver(this);
+                    level->AddReceiver(this);
 
-            Start(introduction);
+                    auto introduction = new PreLevel();
+                    introduction->Create(engine, this);
+                    introduction->Init(level);
+                    introduction->AddReceiver(this);
+
+                    Start(introduction);
+                    break;
+                }
+                case 1: {
+                    auto* credits = new Credits();
+                    credits->Create(engine, this);
+                    credits->Init();
+                    credits->AddReceiver(this);
+
+                    Start(credits);
+                    break;
+                }
+            }
             break;
         }
         case SCORE1_100:
@@ -70,7 +87,7 @@ void Game::Receive(Message m) {
         case SCORE2_500:
         case SCORE2_1000:
         case SCORE2_10000: {
-            int array[] {100, 300, 500, 1000, 10000};
+            int array[]{100, 300, 500, 1000, 10000};
             stats[(m - SCORE1_100) / 5].score += array[(m - SCORE1_100) % 5];
             break;
         }

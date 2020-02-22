@@ -26,6 +26,7 @@ private:
     bool can_continue;
     int current_level;
     PlayerStats stats[2];
+    PlayerStats lastSavedStats[2];
     unsigned short players;
 public:
     virtual void Create(AvancezLib *avancezLib);

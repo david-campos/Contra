@@ -104,4 +104,15 @@ public:
     void Update(float dt) override;
 };
 
+class Credits: public MenuWithStats {
+private:
+    float m_time;
+public:
+    void Init() override {
+        MenuWithStats::Init();
+        m_time = 0;
+    }
+    void Update(float dt) override;
+};
+
 #endif //CONTRA_MENUS_H

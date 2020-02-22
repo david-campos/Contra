@@ -21,7 +21,7 @@ void MainMenu::Update(float dt) {
     } else {
         if (!previousKeys.start && keyStatus.start) {
             game->SetPlayers(selected + 1);
-            game->SetCurrentLevel(0);
+            game->SetCurrentLevel(-1);
             game->Reset();
             Send(NEXT_LEVEL);
         }
@@ -117,4 +117,37 @@ void ContinueLevel::Update(float dt) {
     selector->position = options[selected];
 
     previousKeys = keyStatus;
+}
+
+void Credits::Update(float dt) {
+    MenuWithStats::Update(dt);
+
+    AvancezLib::KeyStatus keyStatus;
+    m_engine->getKeyStatus(keyStatus);
+    char msg[200];
+    sprintf(reinterpret_cast<char *>(&msg), "CONGRATULATIONS, YOU HAVE WON!");
+    m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 140,
+            msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
+    sprintf(reinterpret_cast<char *>(&msg),"VERSION AUTHOR:");
+    m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 70,
+            msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
+    sprintf(reinterpret_cast<char *>(&msg)," DAVID CAMPOS RODRIGUEZ");
+    m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 35,
+            msg, {255, 255, 255}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
+    sprintf(reinterpret_cast<char *>(&msg),"ORIGINAL GAME BY KONAMI");
+    m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 + 35,
+            msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
+    sprintf(reinterpret_cast<char *>(&msg), "THANKS FOR PLAYING");
+    m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 + 105,
+            msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
+    m_time += dt;
+
+    if (keyStatus.start && m_time > 0.5f) {
+        // Go to main menu
+        auto* menu = new MainMenu();
+        menu->Create(m_engine, m_game);
+        menu->Init();
+        menu->AddReceiver(m_game);
+        m_game->Start(menu);
+    }
 }
