@@ -1,6 +1,7 @@
 number: 1
 name: Jungle
 background: background_no_labels.png
+background_animation_shift: [0, 224]
 floor_mask: mask.bmp
 rotating_canons:
   - pos: [1264, 152]

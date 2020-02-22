@@ -102,12 +102,16 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 
         {
             std::string bg = folder + scene_root["background"].as<std::string>();
-            BaseScene::Create(avancezLib, bg.data());
+            Vector2D animation_shift(0, 0);
+            if (scene_root["background_animation_shift"]) {
+                animation_shift = scene_root["background_animation_shift"].as<Vector2D>();
+            }
+            BaseScene::Create(avancezLib, bg.data(), animation_shift);
         }
 
         level_width = m_background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>((folder + scene_root["floor_mask"].as<std::string>()).data());
-        grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
+        m_grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
         CreateBulletPools();
         CreatePlayers(num_players);
@@ -378,7 +382,7 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
 void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &position,
                                      PickUpHolderBehaviour *behaviour, const Box &box, AnimationRenderer **renderer) {
     auto *pickup = new PickUp();
-    pickup->Create(this, pickups_spritesheet, &grid, level_floor, type);
+    pickup->Create(this, pickups_spritesheet, &m_grid, level_floor, type);
     auto *pick_up_holder = new GameObject();
     pick_up_holder->position = position;
     behaviour->Create(this, pick_up_holder, pickup);

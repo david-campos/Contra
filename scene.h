@@ -19,7 +19,9 @@ protected:
     AvancezLib *m_engine;
     Vector2D m_camera;
     std::set<GameObject *> *game_objects[RENDERING_LAYERS];
-    Grid grid;
+    Grid m_grid;
+    Vector2D m_animationShift;
+    float m_time = 0.f;
 public:
     BaseScene() {
         for (int i = 0; i < RENDERING_LAYERS; i++) {
@@ -33,9 +35,10 @@ public:
         }
     }
 
-    void Create(AvancezLib *engine, const char* background_path) {
+    void Create(AvancezLib *engine, const char* background_path, const  Vector2D anim_shift = Vector2D(0, 0)) {
         GameObject::Create();
         m_engine = engine;
+        m_animationShift = anim_shift;
         if (background_path != nullptr) {
             m_background.reset(m_engine->createSprite(background_path));
         }
@@ -44,6 +47,8 @@ public:
 
     void Update(float dt) override {
         GameObject::Update(dt);
+
+        m_time += dt;
 
         if (m_background) {
             // Draw background (smoothing the zoom)
@@ -56,6 +61,8 @@ public:
             int camera_without_zoom_y = int(floorf(m_camera.y / PIXELS_ZOOM));
             int shift_y = -int(roundf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
 
+            bool use_animation_shift = fmod(m_time, 0.4f) < 0.2f;
+
             // We need to add an extra pixel if we shift slightly bc if not we will have black pixels
             // the reason why we don't do it ALWAYS is because if the background image has
             // the exact same height as the window (scaled by PIXELS_ZOOM), trying to get 1px more
@@ -63,12 +70,13 @@ public:
             m_background->draw(shift_x, shift_y,
                     WINDOW_WIDTH + (shift_x == 0 ? 0 : PIXELS_ZOOM),
                     WINDOW_HEIGHT + (shift_y == 0 ? 0 : PIXELS_ZOOM),
-                    camera_without_zoom_x, camera_without_zoom_y,
+                    camera_without_zoom_x + (use_animation_shift ? m_animationShift.x : 0),
+                    camera_without_zoom_y + (use_animation_shift ? m_animationShift.y : 0),
                     WINDOW_WIDTH / PIXELS_ZOOM + (shift_x == 0 ? 0 : 1),
                     WINDOW_HEIGHT / PIXELS_ZOOM + (shift_y == 0 ? 0 : 1));
         }
 
-        grid.ClearCollisionCache(); // Clear collision cache
+        m_grid.ClearCollisionCache(); // Clear collision cache
         for (const auto &layer: game_objects) {
             // Update objects which are enabled and not to be removed
             for (auto *game_object : *layer)
@@ -158,7 +166,7 @@ public:
     }
 
     Grid* GetGrid() {
-        return &grid;
+        return &m_grid;
     }
 
     [[nodiscard]] AvancezLib *GetEngine() const {
