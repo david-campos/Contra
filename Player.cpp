@@ -328,8 +328,10 @@ void PlayerControl::PickUp(PickUpType type) {
             m_currentWeapon.reset(new FireGun(level));
             break;
         case PICKUP_LASER:
+            m_currentWeapon.reset(new LaserGun(level));
+            break;
         case PICKUP_BARRIER:
-            // TODO: Do these pickups
+            // TODO: Do barrier
             break;
     }
 }

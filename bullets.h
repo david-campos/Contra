@@ -23,10 +23,10 @@ public:
     };
 private:
     int m_damage;
-    AnimationRenderer *m_renderer;
     CollideComponent *m_collider;
     int m_animBullet, m_animKill;
 protected:
+    AnimationRenderer *m_renderer;
     Vector2D m_direction;
     int m_speed;
     bool m_kill;
@@ -107,19 +107,34 @@ public:
     void UpdatePosition(float dt) override {
         m_theoricalPos = m_theoricalPos + m_direction * m_speed * dt;
         m_currentAngle += 4 * 6.28 * (m_direction.x >= 0 ? 1 : -1) * dt;
-        go->position = m_theoricalPos + (m_direction *FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM).rotate(m_currentAngle)
-                + m_direction * FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM;
+        go->position = m_theoricalPos + (m_direction * FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM).rotate(m_currentAngle)
+                       + m_direction * FIRE_BULLET_MOVEMENT_RADIUS * PIXELS_ZOOM;
     }
 };
 
-class BlastBulletBehaviour: public BulletBehaviour {
+class LaserBulletBehaviour : public BulletStraightMovement {
+public:
+    void Init(const Vector2D &direction, int speed, int damage) override {
+        BulletBehaviour::Init(direction, speed, damage);
+        if (abs(direction.x) <= 0.0001) {
+            m_renderer->CurrentAndPause(0); // 0 = vertical
+        } else if (abs(direction.y) <= 0.0001) {
+            m_renderer->CurrentAndPause(3); // 3 = horizontal
+        } else {
+            m_renderer->CurrentAndPause(2); // 2 = diagonal
+            m_renderer->mirrorHorizontal = (direction.x * direction.y > 0);
+        }
+    }
+};
+
+class BlastBulletBehaviour : public BulletBehaviour {
 private:
-    Gravity* m_gravity;
+    Gravity *m_gravity;
 public:
     void Init(const Vector2D &direction, int speed, int damage) override {
         BulletBehaviour::Init(direction, speed, damage);
         if (!m_gravity) {
-            m_gravity = go->GetComponent<Gravity*>();
+            m_gravity = go->GetComponent<Gravity *>();
         }
     }
 

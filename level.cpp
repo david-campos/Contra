@@ -250,6 +250,24 @@ void Level::CreateBulletPools() {
             8, 8, 4, 4,
             "Bullet", AnimationRenderer::STOP_AND_LAST
     }, {-2, -2, 2, 2});
+    laser_bullets = CreatePlayerBulletPool<LaserBulletBehaviour>(MAX_FIRE_BULLETS, {
+            121, 0, 0.2, 1,
+            6, 16, 3, 8,
+            "Bullet", AnimationRenderer::STOP_AND_LAST
+    }, {-3, -3, 3, 3});
+    for (auto *bullet: laser_bullets->pool) {
+        auto *renderer = bullet->GetComponent<AnimationRenderer *>();
+        renderer->AddAnimation({
+                128, 3, 0.2, 1,
+                8, 13, 4, 6,
+                "BulletDiag", AnimationRenderer::STOP_AND_LAST
+        });
+        renderer->AddAnimation({
+                136, 9, 0.2, 1,
+                16, 6, 8, 3,
+                "BulletHorizontal", AnimationRenderer::STOP_AND_LAST
+        });
+    }
 
     // Create bullet pool for the npcs
     enemy_bullets = new ObjectPool<Bullet>();

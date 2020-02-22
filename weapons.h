@@ -47,10 +47,9 @@ public:
 };
 
 class DefaultWeapon : public Weapon {
-private:
-    float m_shootDowntime = 0;
-    bool m_hasShot = false;
 protected:
+    bool m_hasShot = false;
+    float m_shootDowntime = 0;
     int m_bulletSpeed = BULLET_SPEED;
 public:
     DefaultWeapon(Level *level) : Weapon(level) {}
@@ -76,7 +75,7 @@ public:
         return false;
     }
 
-    virtual ObjectPool<Bullet>* GetBulletPool() const {
+    virtual ObjectPool<Bullet> *GetBulletPool() const {
         return m_level->GetDefaultBullets();
     }
 
@@ -85,7 +84,7 @@ public:
     }
 };
 
-class FireGun: public DefaultWeapon {
+class FireGun : public DefaultWeapon {
 public:
     FireGun(Level *level) : DefaultWeapon(level) {
         m_bulletSpeed = FIRE_BULLET_SPEED;
@@ -93,6 +92,54 @@ public:
 
     ObjectPool<Bullet> *GetBulletPool() const override {
         return m_level->GetFireBullets();
+    }
+};
+
+class LaserGun : public Weapon {
+protected:
+    bool m_hasShot = false;
+    float m_shootDowntime = 0;
+    int m_nextBullet;
+    Vector2D m_position, m_direction;
+public:
+    LaserGun(Level *level) : Weapon(level) {}
+
+    bool IsAutomatic() override {
+        return false;
+    }
+
+    bool ShouldFire(bool fireKey, float dt) override {
+        if (!fireKey) {
+            m_hasShot = false;
+        }
+        if (m_nextBullet < m_level->GetLaserBullets()->pool.size()) {
+            m_shootDowntime -= dt;
+            if (m_shootDowntime <= 0) {
+                ResetNext();
+            }
+            return false;
+        }
+        return fireKey && !m_hasShot;
+    }
+
+    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+        // All bullets are fired and they reset
+        m_nextBullet = 0;
+        m_position = position;
+        m_direction = direction;
+        m_hasShot = true;
+        ResetNext();
+        return true;
+    }
+
+    void ResetNext() {
+        auto *bullet = m_level->GetLaserBullets()->pool[m_nextBullet];
+        bullet->Disable();
+        m_level->RemoveImmediately(bullet, RENDERING_LAYER_BULLETS);
+        bullet->Init(m_position, m_direction.normalise(), BULLET_SPEED * PIXELS_ZOOM);
+        m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
+        m_nextBullet++;
+        m_shootDowntime = 0.02;
     }
 };
 
@@ -141,7 +188,7 @@ public:
 
     bool Fire(const Vector2D &position, const Vector2D &direction) override {
         m_hasShot = false;
-        std::vector<Bullet*> bullets  = m_level->GetSpreadBullets()->FirstAvailableN(5);
+        std::vector<Bullet *> bullets = m_level->GetSpreadBullets()->FirstAvailableN(5);
         if (bullets.size() >= 3) {
             for (int i = 0; i < bullets.size(); i++) {
                 float angle = 0.2618f - i * 0.5236f / (bullets.size() - 1); // 15deg - (30deg / (num bullets + 1)) * i

@@ -71,13 +71,17 @@ public:
     void Send(Message m);
 
     void Disable() {
-        enabled = false;
-        OnDisabled();
+        if (enabled) {
+            enabled = false;
+            OnDisabled();
+        }
     }
 
     void Enable() {
-        enabled = true;
-        OnEnabled();
+        if (!enabled) {
+            enabled = true;
+            OnEnabled();
+        }
     }
 
     [[nodiscard]] bool IsEnabled() const { return enabled; }
