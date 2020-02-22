@@ -160,12 +160,12 @@ void LedderBehaviour::Fire() {
             // like in the original game cause it seems to cause interesting gameplay.
             auto player_y = (float) player->position.y;
             if (player_y - 33 * PIXELS_ZOOM > go->position.y) {
-                m_animator->PlayAnimation(m_animShootDown, true, 1);
-                direction = player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
                 shift = Vector2D(mirrored ? 16 : -16, -12) * PIXELS_ZOOM;
+                direction = player->position - (go->position + shift);
+                m_animator->PlayAnimation(m_animShootDown, true, 1);
             } else if (player_y < go->position.y - 33 * PIXELS_ZOOM) {
                 shift = Vector2D(mirrored ? 11 : -11, -36) * PIXELS_ZOOM;
-                direction = player->position - Vector2D(0, 16 * PIXELS_ZOOM) - go->position - shift;
+                direction = player->position - (go->position + shift);
                 m_animator->PlayAnimation(m_animShootUp, true, 1);
             } else {
                 shift = Vector2D(mirrored ? 16 : -16, -25) * PIXELS_ZOOM;

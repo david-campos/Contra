@@ -10,14 +10,14 @@
 #include "game_object.h"
 #include "Player.h"
 
-class DestroyOnAnimationStop: public Component {
+class DestroyOnAnimationStop : public Component {
 private:
-    AnimationRenderer* m_renderer;
+    AnimationRenderer *m_renderer;
 public:
     void Init() override {
         Component::Init();
         if (!m_renderer) {
-            m_renderer = go->GetComponent<AnimationRenderer*>();
+            m_renderer = go->GetComponent<AnimationRenderer *>();
         }
     }
 
@@ -29,15 +29,15 @@ public:
     }
 };
 
-class BridgeExplosion: public GameObject {
+class BridgeExplosion : public GameObject {
 public:
-    void Create(Level* level) {
+    void Create(Level *level) {
         GameObject::Create();
         AnimationRenderer::Animation animation = {
                 92, 611, 0.15, 3,
                 30, 30, 15, -5,
                 "Dying", AnimationRenderer::BOUNCE_AND_STOP};
-        auto* renderer = new AnimationRenderer();
+        auto *renderer = new AnimationRenderer();
         renderer->Create(level, this, level->GetEnemiesSpritesheet());
         renderer->AddAnimation(animation);
         renderer->Play();
@@ -65,7 +65,7 @@ public:
         renderer->Play();
         AddComponent(renderer);
 
-        auto* self_destroy = new DestroyOnAnimationStop();
+        auto *self_destroy = new DestroyOnAnimationStop();
         self_destroy->Create(level, this);
         AddComponent(self_destroy);
     }
@@ -75,15 +75,18 @@ class ExplodingBridgeBehaviour : public LevelComponent {
 private:
     float m_explodingTime;
     bool m_exploding;
-    SimpleRenderer *m_renderer;
+    AnimationRenderer *m_renderer;
+    int m_animState0, current;
 public:
     void Init() override {
         Component::Init();
         m_exploding = false;
         m_explodingTime = 0;
         if (!m_renderer) {
-            m_renderer = go->GetComponent<SimpleRenderer *>();
+            m_renderer = go->GetComponent<AnimationRenderer *>();
+            m_animState0 = m_renderer->FindAnimation("BridgeState0");
         }
+        m_renderer->PlayAnimation(current = m_animState0, true);
     }
 
     void Update(float dt) override {
@@ -92,32 +95,31 @@ public:
         }
         if (!m_exploding) return;
         m_explodingTime -= dt;
-        if (m_explodingTime <= 0 && m_renderer->GetSrcY() < 124) {
+        if (m_explodingTime <= 0 && current < m_animState0 + 4) {
             DeleteFloor();
+            current++;
+            m_renderer->PlayAnimation(current);
 
-            m_renderer->ChangeCoords(
-                    0, m_renderer->GetSrcY() + m_renderer->GetHeight(),
-                    m_renderer->GetWidth(), m_renderer->GetHeight(),
-                    m_renderer->GetAnchorX(), m_renderer->GetAnchorY());
-
-            auto* exp = new BridgeExplosion();
+            auto *exp = new BridgeExplosion();
             exp->Create(level);
-            exp->position = go->position + Vector2D(m_renderer->GetSrcY() * PIXELS_ZOOM, 0);
+            exp->position = go->position + Vector2D(current * m_renderer->GetCurrentAnimation().frame_h * PIXELS_ZOOM, 0);
             exp->Init();
             level->AddGameObject(exp, RENDERING_LAYER_BULLETS);
 
             m_explodingTime = 0.85f;
         }
     }
+
 private:
     void DeleteFloor() {
         auto level_floor = level->GetLevelFloor().lock();
         if (!level_floor) return;
+        int height = m_renderer->GetCurrentAnimation().frame_h;
         // Not a mistake to have height two times, it is an square of height*height
         level_floor->SetAir(
-                floor(go->position.x / PIXELS_ZOOM + m_renderer->GetSrcY()),
+                floor(go->position.x / PIXELS_ZOOM + current * height),
                 floor(go->position.y / PIXELS_ZOOM),
-                m_renderer->GetHeight(), m_renderer->GetHeight());
+                height, height);
     }
 };
 

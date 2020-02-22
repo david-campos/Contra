@@ -21,6 +21,20 @@ void Level::Update(float dt) {
         return;
     }
 
+    // Debug floor
+    SDL_Color floor{0, 255, 0};
+    SDL_Color water{0, 0, 255};
+    int top_x = std::floor(m_camera.x + WINDOW_WIDTH / PIXELS_ZOOM);
+    for (int y = 0; y < level_floor->getHeight(); y++) {
+        for (int x = std::floor(m_camera.x / PIXELS_ZOOM); x < top_x; x++) {
+            if (level_floor->IsFloor(x, y)) {
+                m_engine->fillSquare(x * PIXELS_ZOOM - (int) round(m_camera.x), y * PIXELS_ZOOM, PIXELS_ZOOM, floor);
+            } else if (level_floor->IsWater(x, y)) {
+                m_engine->fillSquare(x * PIXELS_ZOOM - (int) round(m_camera.x), y * PIXELS_ZOOM, PIXELS_ZOOM, water);
+            }
+        }
+    }
+
     // Print life sprites
     for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
         spritesheet->draw(
@@ -173,9 +187,14 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         for (const auto &rc_node: scene_root["exploding_bridges"]) {
             auto *bridge = new GameObject();
             bridge->Create();
-            auto *renderer = new SimpleRenderer();
-            renderer->Create(this, bridge, GetBridgeSprite(),
-                    0, 0, 128, 31, 0, 0);
+            auto *renderer = new AnimationRenderer();
+            renderer->Create(this, bridge, GetBridgeSprite());
+            for (int i = 0; i < 5; i++) {
+                std::string anim = "BridgeState" + std::to_string(i);
+                renderer->AddAnimation({0, i * 31, 0.15, 3,
+                                        128, 31, 0, 0,
+                                        anim, AnimationRenderer::BOUNCE});
+            }
             auto *behaviour = new ExplodingBridgeBehaviour();
             behaviour->Create(this, bridge);
             bridge->AddComponent(renderer);
@@ -380,9 +399,9 @@ void Level::CreateDefenseWall() {
             "Door", AnimationRenderer::BOUNCE
     });
     animator->Play();
-    auto* door_behaviour = new DefenseDoorBehaviour();
+    auto *door_behaviour = new DefenseDoorBehaviour();
     door_behaviour->Create(this, door);
-    auto* collider = new BoxCollider();
+    auto *collider = new BoxCollider();
     collider->Create(this, door,
             6 * PIXELS_ZOOM, 20 * PIXELS_ZOOM,
             24 * PIXELS_ZOOM, 24 * PIXELS_ZOOM, -1, NPCS_COLLISION_LAYER);
@@ -406,7 +425,7 @@ void Level::CreateDefenseWall() {
             "Shoot", AnimationRenderer::STOP_AND_FIRST
     });
     animator->Pause();
-    auto* behaviour = new BlasterCanonBehaviour();
+    auto *behaviour = new BlasterCanonBehaviour();
     behaviour->Create(this, canon, pool);
     collider = new BoxCollider();
     collider->Create(this, canon,
