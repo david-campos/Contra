@@ -26,7 +26,7 @@ void Game::Receive(Message m) {
                 can_continue = false;
 
                 auto level = new Level();
-                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
+                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players, engine);
                 level->AddReceiver(this);
                 auto continue_menu = new ContinueLevel();
                 continue_menu->Create(engine, this);
@@ -49,7 +49,7 @@ void Game::Receive(Message m) {
 
             // We only have level 1 by now ^^'
             auto level = new Level();
-            level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
+            level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players, engine);
             level->AddReceiver(this);
 
             auto introduction = new PreLevel();

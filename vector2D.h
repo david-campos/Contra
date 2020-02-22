@@ -44,6 +44,10 @@ public:
         return sqrt(x * x + y * y);
     }
 
+    [[nodiscard]] double magnitudeSqr() const {
+        return x * x + y * y;
+    }
+
     [[nodiscard]] Vector2D normalise() const {
         auto len = magnitude();
         return Vector2D(x / len, y / len);

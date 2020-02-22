@@ -48,16 +48,24 @@ public:
         if (m_background) {
             // Draw background (smoothing the zoom)
             int camera_without_zoom_x = int(floorf(m_camera.x / PIXELS_ZOOM));
-            int shift_x = -int(floorf(m_camera.x - camera_without_zoom_x * PIXELS_ZOOM));
+            int shift_x = -int(roundf(m_camera.x - camera_without_zoom_x * PIXELS_ZOOM));
             if (camera_without_zoom_x < 0) {
                 shift_x -= camera_without_zoom_x * PIXELS_ZOOM;
                 camera_without_zoom_x = 0;
             }
             int camera_without_zoom_y = int(floorf(m_camera.y / PIXELS_ZOOM));
-            int shift_y = -int(floorf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
+            int shift_y = -int(roundf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
 
-            m_background->draw(shift_x, shift_y, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT + PIXELS_ZOOM,
-                    camera_without_zoom_x, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1, WINDOW_HEIGHT / PIXELS_ZOOM);
+            // We need to add an extra pixel if we shift slightly bc if not we will have black pixels
+            // the reason why we don't do it ALWAYS is because if the background image has
+            // the exact same height as the window (scaled by PIXELS_ZOOM), trying to get 1px more
+            // will deform the image, this is not necessary if there is no shifting so we just avoid it.
+            m_background->draw(shift_x, shift_y,
+                    WINDOW_WIDTH + (shift_x == 0 ? 0 : PIXELS_ZOOM),
+                    WINDOW_HEIGHT + (shift_y == 0 ? 0 : PIXELS_ZOOM),
+                    camera_without_zoom_x, camera_without_zoom_y,
+                    WINDOW_WIDTH / PIXELS_ZOOM + (shift_x == 0 ? 0 : 1),
+                    WINDOW_HEIGHT / PIXELS_ZOOM + (shift_y == 0 ? 0 : 1));
         }
 
         grid.ClearCollisionCache(); // Clear collision cache
@@ -140,6 +148,13 @@ public:
      */
     float GetCameraX() const {
         return m_camera.x;
+    }
+
+    /**
+     * @return The y position of the camera, this corresponds to the exact top side of the same
+     */
+    float GetCameraY() const {
+        return m_camera.y;
     }
 
     Grid* GetGrid() {

@@ -40,24 +40,25 @@ void CanonBehaviour::Update(float dt) {
         }
         return;
     }
-    Vector2D player_dir = GetPlayerDir();
+    auto *closestPlayer = GetClosestPlayer();
+    Vector2D player_dir = GetPlayerDir(closestPlayer);
     switch (m_state) {
         case HIDDEN:
-            UpdateHidden(player_dir, dt);
+            UpdateHidden(closestPlayer, player_dir, dt);
             break;
         case SHOWING:
-            UpdateShowing(player_dir, dt);
+            UpdateShowing(closestPlayer, player_dir, dt);
             break;
         case SHOWN:
-            UpdateShown(player_dir, dt);
+            UpdateShown(closestPlayer, player_dir, dt);
             break;
         case HIDING:
-            UpdateHiding(player_dir, dt);
+            UpdateHiding(closestPlayer, player_dir, dt);
             break;
     }
 }
 
-void CanonBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
+void CanonBehaviour::UpdateHidden(const PlayerControl *playerControl, const Vector2D &player_dir, float dt) {
     m_animator->PlayAnimation(animHidden);
     if (player_dir.x > -WINDOW_WIDTH / 2 + 16 * PIXELS_ZOOM && player_dir.x < 0) {
         m_animator->PlayAnimation(animShowing);
@@ -65,7 +66,7 @@ void CanonBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
     }
 }
 
-void CanonBehaviour::UpdateShowing(const Vector2D &player_dir, float dt) {
+void CanonBehaviour::UpdateShowing(const PlayerControl *playerControl, const Vector2D &player_dir, float dt) {
     if (!m_animator->IsPlaying()) {
         m_dir = std::max(std::min(DirToInt(player_dir), m_maxDir), m_minDir);
         m_animator->PlayAnimation(animDirsFirst + m_dir - m_minDir);
@@ -74,8 +75,8 @@ void CanonBehaviour::UpdateShowing(const Vector2D &player_dir, float dt) {
     }
 }
 
-void CanonBehaviour::UpdateShown(const Vector2D &player_dir, float dt) {
-    if (player_dir.x > WINDOW_WIDTH / 2 - 17 * PIXELS_ZOOM) {
+void CanonBehaviour::UpdateShown(const PlayerControl *playerControl, const Vector2D &player_dir, float dt) {
+    if (player_dir.x > WINDOW_WIDTH / 2 - 25 * PIXELS_ZOOM) {
         m_animator->PlayAnimation(animShowing, false);
         m_state = HIDING;
         return;
@@ -108,7 +109,7 @@ void CanonBehaviour::UpdateShown(const Vector2D &player_dir, float dt) {
     if (m_fireRemainingCooldown > 0) {
         m_fireRemainingCooldown -= dt;
     } else if ((m_shotBulletsInBurst < m_burstLength || m_burstRemainingCooldown <= 0)
-               && m_dir == target_dir && level->GetPlayerControl()->IsAlive() && !is_default) {
+               && m_dir == target_dir && playerControl->IsAlive() && !is_default) {
         if (m_burstRemainingCooldown <= 0) {
             m_shotBulletsInBurst = 0; // New burst
             m_burstRemainingCooldown = m_burstCooldown;
@@ -119,7 +120,7 @@ void CanonBehaviour::UpdateShown(const Vector2D &player_dir, float dt) {
     }
 }
 
-void CanonBehaviour::UpdateHiding(const Vector2D &player_dir, float dt) {
+void CanonBehaviour::UpdateHiding(const PlayerControl *playerControl, const Vector2D &player_dir, float dt) {
     if (!m_animator->IsPlaying()) m_state = HIDDEN;
 }
 
@@ -135,7 +136,7 @@ void CanonBehaviour::Create(Level *level, GameObject *go, int min_dir, int max_d
     m_burstLength = burst_length;
 }
 
-void GulcanBehaviour::UpdateHidden(const Vector2D &player_dir, float dt) {
+void GulcanBehaviour::UpdateHidden(const PlayerControl *playerControl, const Vector2D &player_dir, float dt) {
     m_animator->enabled = false;
     if (player_dir.x > -WINDOW_WIDTH / 2 + 16 * PIXELS_ZOOM && player_dir.x < 0) {
         m_animator->enabled = true;
@@ -170,7 +171,7 @@ void RotatingCanon::Create(Level *level, const Vector2D &pos, int burst_length) 
     renderer->AddAnimation({
             1 + anim_len * frame_side, 110, anim_speed, anim_len,
             frame_side, frame_side, frame_side / 2, frame_side / 2,
-            "Opening", AnimationRenderer::STOP_AND_FIRST});
+            "Opening", AnimationRenderer::STOP_AND_LAST});
     renderer->AddAnimation({
             92, 611, anim_speed, anim_len,
             30, 30, 15, 15,
@@ -215,7 +216,7 @@ void Gulcan::Create(Level *level, const Vector2D &pos) {
     renderer->AddAnimation({
             205, 314, anim_speed, anim_len,
             frame_side, frame_side, frame_side / 2, frame_side / 2,
-            "Opening", AnimationRenderer::STOP_AND_FIRST});
+            "Opening", AnimationRenderer::STOP_AND_LAST});
     renderer->AddAnimation({
             92, 611, 0.15, 3,
             30, 30, 15, 15,

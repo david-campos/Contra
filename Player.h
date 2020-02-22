@@ -18,11 +18,13 @@
 
 class Player : public GameObject {
 public:
-    void Create(Level* level);
+    void Create(Level* level, short index);
 };
 
 class PlayerControl : public LevelComponent, public CollideComponentListener {
 public:
+    void Create(Level* level, GameObject* go, short index);
+
     void Init() override;
 
     void Update(float dt) override;
@@ -45,6 +47,7 @@ private:
     Gravity *m_gravity;
     bool m_hasInertia;
     bool m_godMode;
+    short m_index;
     float m_waitDead, m_invincibleTime;
     bool m_isDeath;
     bool m_facingRight;
@@ -61,6 +64,14 @@ private:
     std::unique_ptr<Weapon> m_currentWeapon;
 
     bool Fire(const AvancezLib::KeyStatus &keyStatus);
+
+    /**
+     * Normalises the key status depending on the player index so
+     * all players can check the key status as if they were the
+     * player 1
+     * @param status
+     */
+    void NormaliseKeyStatus(AvancezLib::KeyStatus &status);
 };
 
 #endif //CONTRA_PLAYER_H

@@ -88,24 +88,48 @@ void AvancezLib::processInput() {
                     key.esc = true;
                     break;
                 case SDLK_z:
+                case SDLK_COMMA:
                     key.fire = true;
                     break;
                 case SDLK_x:
+                case SDLK_PERIOD:
                     key.jump = true;
                     break;
                 case SDLK_LEFT:
+                case SDLK_KP_4:
                     key.left = true;
                     break;
                 case SDLK_RIGHT:
+                case SDLK_KP_6:
                     key.right = true;
                     break;
                 case SDLK_DOWN:
+                case SDLK_KP_5:
                     key.down = true;
                     break;
                 case SDLK_UP:
+                case SDLK_KP_8:
                     key.up = true;
                     break;
+                case SDLK_f:
+                    key.fire2 = true;
+                    break;
                 case SDLK_g:
+                    key.jump2 = true;
+                    break;
+                case SDLK_a:
+                    key.left2 = true;
+                    break;
+                case SDLK_d:
+                    key.right2 = true;
+                    break;
+                case SDLK_w:
+                    key.up2 = true;
+                    break;
+                case SDLK_s:
+                    key.down2 = true;
+                    break;
+                case SDLK_0:
                     key.debug = true;
                     break;
                 case SDLK_p:
@@ -120,24 +144,48 @@ void AvancezLib::processInput() {
         if (event.type == SDL_KEYUP) {
             switch (event.key.keysym.sym) {
                 case SDLK_z:
+                case SDLK_COMMA:
                     key.fire = false;
                     break;
                 case SDLK_x:
+                case SDLK_PERIOD:
                     key.jump = false;
                     break;
                 case SDLK_LEFT:
+                case SDLK_KP_4:
                     key.left = false;
                     break;
                 case SDLK_RIGHT:
+                case SDLK_KP_6:
                     key.right = false;
                     break;
                 case SDLK_DOWN:
+                case SDLK_KP_5:
                     key.down = false;
                     break;
                 case SDLK_UP:
+                case SDLK_KP_8:
                     key.up = false;
                     break;
+                case SDLK_f:
+                    key.fire2 = false;
+                    break;
                 case SDLK_g:
+                    key.jump2 = false;
+                    break;
+                case SDLK_a:
+                    key.left2 = false;
+                    break;
+                case SDLK_d:
+                    key.right2 = false;
+                    break;
+                case SDLK_w:
+                    key.up2 = false;
+                    break;
+                case SDLK_s:
+                    key.down2 = false;
+                    break;
+                case SDLK_0:
                     key.debug = false;
                     break;
                 case SDLK_p:
@@ -253,16 +301,7 @@ float AvancezLib::getElapsedTime() {
 }
 
 void AvancezLib::getKeyStatus(KeyStatus &keys) {
-    keys.fire = key.fire;
-    keys.jump = key.jump;
-    keys.left = key.left;
-    keys.right = key.right;
-    keys.up = key.up;
-    keys.down = key.down;
-    keys.esc = key.esc;
-    keys.debug = key.debug;
-    keys.pause = key.pause;
-    keys.start = key.start;
+    memcpy(&keys, &key, sizeof(KeyStatus));
 }
 
 

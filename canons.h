@@ -40,8 +40,8 @@ protected:
     int animHidden, animShowing, animDirsFirst, animDie;
     int m_life;
 
-    [[nodiscard]] Vector2D GetPlayerDir() const {
-        return level->GetPlayer()->position
+    [[nodiscard]] Vector2D GetPlayerDir(PlayerControl* playerControl) const {
+        return playerControl->GetGameObject()->position
                - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     }
 
@@ -85,10 +85,13 @@ public:
         m_state = HIDDEN;
     }
     void Update(float dt) final;
-    virtual void UpdateHidden(const Vector2D& player_dir, float dt);
-    void UpdateShowing(const Vector2D& player_dir, float dt);
-    void UpdateShown(const Vector2D& player_dir, float dt);
-    void UpdateHiding(const Vector2D& player_dir, float dt);
+    virtual void UpdateHidden(const PlayerControl* playerControl, const Vector2D& player_dir, float dt);
+    virtual PlayerControl* GetClosestPlayer() {
+        return level->GetClosestPlayerControl(go->position);
+    }
+    void UpdateShowing(const PlayerControl* playerControl, const Vector2D& player_dir, float dt);
+    void UpdateShown(const PlayerControl* playerControl, const Vector2D& player_dir, float dt);
+    void UpdateHiding(const PlayerControl* playerControl, const Vector2D& player_dir, float dt);
     void OnCollision(const CollideComponent &collider) override;
 };
 
@@ -98,7 +101,11 @@ public:
         m_scoreGiven = 500;
     }
 
-    void UpdateHidden(const Vector2D &player_dir, float dt) override;
+    PlayerControl *GetClosestPlayer() override {
+        level->GetClosestPlayerControl(go->position, true);
+    }
+
+    void UpdateHidden(const PlayerControl* playerControl, const Vector2D &player_dir, float dt) override;
 };
 
 #endif //CONTRA_CANONS_H

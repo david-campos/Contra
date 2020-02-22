@@ -19,7 +19,7 @@ public:
             return;
 
         sprite->draw((int) round(go->position.x - scene->GetCameraX()) - m_anchorX * PIXELS_ZOOM,
-                (int) round(go->position.y) - m_anchorY * PIXELS_ZOOM,
+                (int) round(go->position.y - scene->GetCameraY()) - m_anchorY * PIXELS_ZOOM,
                 m_width * PIXELS_ZOOM, m_height * PIXELS_ZOOM,
                 m_srcX, m_srcY, m_width, m_height);
     }

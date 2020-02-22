@@ -13,11 +13,15 @@ void PlayerControl::Update(float dt) {
     if (dt == 0) return;
 
     AvancezLib::KeyStatus keyStatus{};
-    if (level->IsComplete()) keyStatus = {
-            false, true, false, true, false, false, false,
-            false, false
-    };
-    else level->GetEngine()->getKeyStatus(keyStatus);
+    if (level->IsComplete())
+        keyStatus = {
+                false, true, false, true, false, false, false,
+                false, false
+        };
+    else {
+        level->GetEngine()->getKeyStatus(keyStatus);
+        NormaliseKeyStatus(keyStatus);
+    }
 
     if (keyStatus.debug && !m_previousKeyStatus.debug) {
         m_godMode = !m_godMode;
@@ -74,9 +78,11 @@ void PlayerControl::Update(float dt) {
         }
     }
     if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
-        if (go->position.x < level->GetCameraX() + WINDOW_WIDTH - 112 * PIXELS_ZOOM || level->IsComplete()) {
+        if ((go->position.x <= level->GetCameraX() + WINDOW_WIDTH * 0.7 + 1
+             && go->position.x < level->GetLevelWidth() - 112 * PIXELS_ZOOM)
+            || level->IsComplete()) {
             go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
-            if (m_godMode) {
+            if (m_godMode) { // Double speed in god mode
                 go->position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
             }
         }
@@ -87,6 +93,9 @@ void PlayerControl::Update(float dt) {
         go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
         if (m_godMode) {
             go->position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0);
+        }
+        if (go->position.x < level->GetCameraX() + SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM) {
+            go->position.x = level->GetCameraX() + SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM;
         }
         // The player can't go back in Contra
         if (go->position.x - 12 < level->GetCameraX()) {
@@ -339,88 +348,105 @@ void PlayerControl::PickUp(PickUpType type) {
     }
 }
 
+void PlayerControl::Create(Level *level, GameObject *go, short index) {
+    LevelComponent::Create(level, go);
+    m_index = index;
+}
+
+void PlayerControl::NormaliseKeyStatus(AvancezLib::KeyStatus &status) {
+    if (m_index == 1) {
+        status.fire = status.fire2;
+        status.right = status.right2;
+        status.jump = status.jump2;
+        status.up = status.up2;
+        status.left = status.left2;
+        status.down = status.down2;
+    }
+}
+
 void
-Player::Create(Level *level) {
+Player::Create(Level *level, short index) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
+    int shift = index == 0 ? 0 : SECOND_PLAYER_SHIFT;
     renderer->Create(level, this, level->GetSpritesheet());
     renderer->AddAnimation({
-            0, 8, 0.1, 2,
+            0 + shift, 8, 0.1, 2,
             24, 34, 8, 33,
             "Idle", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            49, 0, 0.1, 2,
+            49 + shift, 0, 0.1, 2,
             15, 42, 7, 42,
             "Up", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            79, 25, 0.1, 2,
+            79 + shift, 25, 0.1, 2,
             33, 17, 16, 17,
             "Crawl", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            0, 43, 0.1, 6,
+            0 + shift, 43, 0.1, 6,
             20, 35, 10, 35,
             "Run", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            80, 43, 1, 1,
+            80 + shift, 43, 1, 1,
             20, 35, 10, 35,
             "Fall", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            0, 79, 0.1, 3,
+            0 + shift, 79, 0.1, 3,
             25, 34, 12, 34,
             "RunShoot", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            0, 149, 0.1, 3,
+            0 + shift, 149, 0.1, 3,
             20, 35, 10, 35,
             "RunUp", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            0, 221, 0.1, 3,
+            0 + shift, 221, 0.1, 3,
             22, 35, 11, 35,
             "RunDown", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            122, 52, 0.1, 4,
+            122 + shift, 52, 0.1, 4,
             20, 20, 10, 26,
             "Jump", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            0, 307, 0.2, 1,
+            0 + shift, 307, 0.2, 1,
             18, 16, 9, 13,
             "Splash", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            18, 303, 0.2, 2,
+            18 + shift, 303, 0.2, 2,
             17, 16, 8, 12,
             "Dive", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            52, 303, 0.2, 2,
+            52 + shift, 303, 0.2, 2,
             17, 16, 8, 12,
             "Swim", AnimationRenderer::DONT_STOP
     });
     renderer->AddAnimation({
-            60, 328, 0.2, 2,
+            60 + shift, 328, 0.2, 2,
             26, 18, 8, 14,
             "SwimShoot", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            90, 299, 0.2, 2,
+            90 + shift, 299, 0.2, 2,
             20, 20, 10, 15,
             "SwimShootDiagonal", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            130, 290, 0.2, 2,
+            130 + shift, 290, 0.2, 2,
             18, 29, 9, 25,
             "SwimShootUp", AnimationRenderer::STOP_AND_FIRST
     });
     renderer->AddAnimation({
-            61, 161, 0.1, 5,
+            61 + shift, 161, 0.1, 5,
             32, 23, 16, 23,
             "Die", AnimationRenderer::STOP_AND_LAST
     });
@@ -428,7 +454,7 @@ Player::Create(Level *level) {
     auto *gravity = new Gravity();
     gravity->Create(level, this);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(level, this);
+    playerControl->Create(level, this, index);
     auto *collider = new BoxCollider();
     collider->Create(level, this,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,

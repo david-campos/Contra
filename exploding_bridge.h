@@ -90,7 +90,7 @@ public:
     }
 
     void Update(float dt) override {
-        if (level->GetPlayer()->position.x > go->position.x) {
+        if (level->GetClosestPlayer(go->position)->position.x > go->position.x) {
             m_exploding = true;
         }
         if (!m_exploding) return;

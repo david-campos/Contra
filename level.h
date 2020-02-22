@@ -37,8 +37,8 @@ class Level : public BaseScene {
     std::shared_ptr<Sprite> pickups_spritesheet;
     std::shared_ptr<Sprite> bridge_sprite; // Loaded on demand
     std::shared_ptr<Floor> level_floor;
-    Player *player;
-    PlayerControl *playerControl;
+    std::vector<Player *> players;
+    std::vector<PlayerControl*> playerControls;
     std::priority_queue<std::pair<GameObject *, short>, std::deque<std::pair<GameObject *, short>>, game_objects_comp_x> not_found_enemies;
     float next_enemy_x;
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
@@ -54,7 +54,7 @@ class Level : public BaseScene {
 public:
     void Create(const std::string &folder, const std::shared_ptr<Sprite> &sprite_sheet,
                 const std::shared_ptr<Sprite> &enemies_spritesheet, const std::shared_ptr<Sprite> &pickups_spritesheet,
-                AvancezLib *engine);
+                short num_players, AvancezLib *engine);
 
     void Init() override;
     void Update(float dt) override;
@@ -92,13 +92,19 @@ public:
         return level_floor;
     }
 
-    Player *GetPlayer() const {
-        return player;
-    }
-
-    PlayerControl *GetPlayerControl() const {
-        return playerControl;
-    }
+    Player *GetClosestPlayer(const Vector2D& position) const;
+    /**
+     * Gets the player control of the closest player to the given point
+     * @param position Point for which to look for the closest player
+     * @param only_before If set to true, any position with lower x than the given
+     * position has preference over a position with higher x value than the given one
+     * (prefers to select a player "in front"/"before" the given point).
+     * @return
+     */
+    PlayerControl *GetClosestPlayerControl(const Vector2D& position, bool only_before = false) const;
+    short PlayersAlive() const;
+    float PlayersTopX() const;
+    float PlayersMinX() const;
 
     ObjectPool<Bullet> *GetDefaultBullets() const {
         return default_bullets;
@@ -124,6 +130,10 @@ public:
         return enemy_bullets;
     }
 
+    [[nodiscard]] int GetLevelWidth() const {
+        return level_width;
+    }
+
     void Receive(Message m) override;
 
     const std::string &GetLevelName() const;
@@ -136,7 +146,7 @@ private:
     template<typename T>
     ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
                                                const Box &box);
-    void CreatePlayer();
+    void CreatePlayers(short num_players);
     /**
      * @param behaviour Create will be called, no need to create it first
      */

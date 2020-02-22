@@ -74,16 +74,24 @@ public:
     float getElapsedTime();
 
     struct KeyStatus {
-        bool fire; // Z
-        bool jump; // X
-        bool left; // left arrow
-        bool right; // right arrow
-        bool up; // up arrow
-        bool down; // down arrow
+        bool fire; // Z || ,
+        bool jump; // X || .
+        bool left; // left arrow || num pad 4
+        bool right; // right arrow || num pad 6
+        bool up; // up arrow || num pad 8
+        bool down; // down arrow || num pad 5
+
+        bool fire2; // F
+        bool jump2; // G
+        bool left2; // A
+        bool right2; // D
+        bool up2; // W
+        bool down2; // S
+
         bool esc; // escape button
         bool pause; // pause button
         bool start; // enter
-        bool debug; // godmode
+        bool debug; // godmode (0)
     };
 
     // Returns the keyboard status. If a flag is set, the corresponding key is being held down.

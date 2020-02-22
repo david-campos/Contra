@@ -117,9 +117,9 @@ flying_pickups:
     content: R
   - pos: [1137, 70]
     content: S
-  - pos: [2337, 70]
+  - pos: [2337, 65]
     content: R
-  - pos: [2337, 190]
+  - pos: [2337, 185]
     content: L
 exploding_bridges:
   - pos: [767, 105]

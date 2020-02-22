@@ -16,18 +16,19 @@
 
 void Level::Update(float dt) {
     BaseScene::Update(dt);
-    if (complete && player->position.x >= level_width) {
+    float players_top_x = PlayersTopX();
+    if (complete && players_top_x >= level_width) {
         Send(NEXT_LEVEL);
         return;
     }
 
-    if (playerControl->getRemainingLives() < 0) {
+    if (PlayersAlive() <= 0) {
         Send(GAME_OVER);
         return;
     }
 
     // Print life sprites
-    for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
+    for (int i = 1; i <= playerControls[0]->getRemainingLives(); i++) {
         spritesheet->draw(
                 ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
                 9 * PIXELS_ZOOM,
@@ -35,11 +36,27 @@ void Level::Update(float dt) {
                 LIFE_SPRITE_X, LIFE_SPRITE_Y, LIFE_SPRITE_WIDTH, LIFE_SPRITE_HEIGHT
         );
     }
+    if (playerControls.size() > 1) {
+        for (int i = 1; i <= playerControls[1]->getRemainingLives(); i++) {
+            spritesheet->draw(
+                    WINDOW_WIDTH -
+                    ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
+                    9 * PIXELS_ZOOM,
+                    LIFE_SPRITE_WIDTH * PIXELS_ZOOM, LIFE_SPRITE_HEIGHT * PIXELS_ZOOM,
+                    LIFE_SPRITE_X + SECOND_PLAYER_SHIFT, LIFE_SPRITE_Y, LIFE_SPRITE_WIDTH, LIFE_SPRITE_HEIGHT
+            );
+        }
+    }
 
     // Adjust camera
-    if (player->position.x < level_width - WINDOW_WIDTH) {
-        if (player->position.x > m_camera.x + WINDOW_WIDTH / 2.)
-            m_camera.x = (float) player->position.x - WINDOW_WIDTH / 2.;
+    float players_min_x = PlayersMinX();
+    if (players_min_x < level_width - WINDOW_WIDTH) {
+        int top_x = WINDOW_WIDTH * (players.size() > 1 ? 0.7f : 0.5f);
+        if (players_top_x > m_camera.x + top_x) {
+            float center_on_top = players_top_x - top_x;
+            m_camera.x = (float) center_on_top > players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM ?
+                    players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM : center_on_top;
+        }
     } else if (m_camera.x < level_width - WINDOW_WIDTH)
         m_camera.x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
     else
@@ -72,7 +89,7 @@ void Level::Update(float dt) {
 
 void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &player_spritesheet,
                    const std::shared_ptr<Sprite> &enemy_spritesheet, const std::shared_ptr<Sprite> &pickup_spritesheet,
-                   AvancezLib *avancezLib) {
+                   short num_players, AvancezLib *avancezLib) {
     SDL_Log("Level::Create");
     spritesheet = player_spritesheet;
     enemies_spritesheet = enemy_spritesheet;
@@ -93,7 +110,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
         CreateBulletPools();
-        CreatePlayer();
+        CreatePlayers(num_players);
 
         for (const auto &rc_node: scene_root["rotating_canons"]) {
             auto *tank = new RotatingCanon();
@@ -222,8 +239,10 @@ void Level::Destroy() {
     enemy_bullets->Destroy();
     delete enemy_bullets;
     enemy_bullets = nullptr;
-    delete player;
-    player = nullptr;
+    for (auto *player: players) {
+        delete player;
+        player = nullptr;
+    }
 }
 
 void Level::CreateBulletPools() {
@@ -248,7 +267,7 @@ void Level::CreateBulletPools() {
             8, 8, 4, 4,
             "Bullet", AnimationRenderer::STOP_AND_LAST
     }, {-2, -2, 2, 2});
-    laser_bullets = CreatePlayerBulletPool<LaserBulletBehaviour>(MAX_FIRE_BULLETS, {
+    laser_bullets = CreatePlayerBulletPool<LaserBulletBehaviour>(MAX_LASER_BULLETS, {
             121, 0, 0.2, 1,
             6, 16, 3, 8,
             "Bullet", AnimationRenderer::STOP_AND_LAST
@@ -314,12 +333,16 @@ void Level::Init() {
     }
 }
 
-void Level::CreatePlayer() {
-    player = new Player();
-    player->Create(this);
-    playerControl = player->GetComponent<PlayerControl *>();
-    player->AddReceiver(this);
-    game_objects[RENDERING_LAYER_PLAYER]->insert(player);
+void Level::CreatePlayers(short num_players) {
+    for (short i = 0; i < num_players; i++) {
+        auto *player = new Player();
+        player->Create(this, i);
+        auto *playerControl = player->GetComponent<PlayerControl *>();
+        player->AddReceiver(this);
+        game_objects[RENDERING_LAYER_PLAYER]->insert(player);
+        players.push_back(player);
+        playerControls.push_back(playerControl);
+    }
 }
 
 template<typename T>
@@ -527,4 +550,51 @@ const std::string &Level::GetLevelName() const {
 
 int Level::GetLevelIndex() const {
     return levelIndex;
+}
+
+Player *Level::GetClosestPlayer(const Vector2D &position) const {
+    return dynamic_cast<Player *>(GetClosestPlayerControl(position)->GetGameObject());
+}
+
+PlayerControl *Level::GetClosestPlayerControl(const Vector2D &position, bool prefer_before) const {
+    auto *closest = playerControls[0];
+    float closestDist = (players[0]->position - position).magnitudeSqr();
+    bool closestBefore = players[0]->position.x < position.x;
+    for (int i = 1; i < playerControls.size(); i++) {
+        float dist = (players[i]->position - position).magnitudeSqr();
+        bool is_before = players[i]->position.x < position.x;
+        if (dist < closestDist || (prefer_before && !closestBefore && is_before)) {
+            closestDist = dist;
+            closestBefore = is_before;
+            closest = playerControls[i];
+        }
+    }
+    return closest;
+}
+
+short Level::PlayersAlive() const {
+    short alive = 0;
+    for (auto *playerControl: playerControls) {
+        if (playerControl->getRemainingLives() >= 0)
+            alive++;
+    }
+    return alive;
+}
+
+float Level::PlayersMinX() const {
+    float min_x = players[0]->position.x;
+    for (auto* player = &players[1]; player < &players[0] + players.size(); player++) {
+        if ((*player)->position.x < min_x)
+            min_x = (*player)->position.x;
+    }
+    return min_x;
+}
+
+float Level::PlayersTopX() const {
+    float max_x = players[0]->position.x;
+    for (auto* player = &players[1]; player < &players[0] + players.size(); player++) {
+        if ((*player)->position.x > max_x)
+            max_x = (*player)->position.x;
+    }
+    return max_x;
 }
