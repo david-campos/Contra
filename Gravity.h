@@ -10,7 +10,7 @@
 #include "floor.h"
 #include "consts.h"
 
-class Gravity: public Component {
+class Gravity: public LevelComponent {
 private:
     float m_velocity;
     float m_acceleration = 350 * PIXELS_ZOOM;

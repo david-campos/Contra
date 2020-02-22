@@ -12,7 +12,7 @@
 #define EXPLOSION_STEPS 4
 #define TIME_BETWEEN_EXPLOSIONS 0.6f
 
-class BlasterCanonBehaviour : public Component, public CollideComponentListener {
+class BlasterCanonBehaviour : public LevelComponent, public CollideComponentListener {
 private:
     float m_nextShootWait;
     ObjectPool<Bullet> *m_bulletPool;
@@ -24,7 +24,7 @@ private:
     std::uniform_real_distribution<float> m_random_dist = std::uniform_real_distribution<float>(0.f, 1.f);
 public:
     void Create(Level *level, GameObject *go, ObjectPool<Bullet> *bullet_pool) {
-        Component::Create(level, go);
+        LevelComponent::Create(level, go);
         m_bulletPool = bullet_pool;
     }
 
@@ -93,7 +93,7 @@ public:
     }
 };
 
-class DefenseDoorBehaviour : public Component, public CollideComponentListener {
+class DefenseDoorBehaviour : public LevelComponent, public CollideComponentListener {
 private:
     int m_lives, m_explosionSteps;
     float m_nextExplosion;

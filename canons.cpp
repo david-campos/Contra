@@ -121,7 +121,7 @@ void CanonBehaviour::UpdateHiding(const Vector2D &player_dir, float dt) {
 
 void CanonBehaviour::Create(Level *level, GameObject *go, int min_dir, int max_dir, int default_dir,
                             float rotation_interval, int burst_length, float burst_cooldown, float shoot_cooldown) {
-    Component::Create(level, go);
+    LevelComponent::Create(level, go);
     m_rotationInterval = rotation_interval;
     m_minDir = min_dir;
     m_maxDir = max_dir;

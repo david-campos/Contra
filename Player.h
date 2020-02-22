@@ -21,15 +21,11 @@ public:
     void Create(Level* level);
 };
 
-class PlayerControl : public Component, public CollideComponentListener {
+class PlayerControl : public LevelComponent, public CollideComponentListener {
 public:
     void Init() override;
 
     void Update(float dt) override;
-
-    void Create(Level* level, GameObject* go) {
-        Component::Create(level, go);
-    }
 
     void PickUp(PickUpType type);
 

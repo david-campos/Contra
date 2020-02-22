@@ -34,7 +34,7 @@ public:
     void Destroy() override;
 };
 
-class LedderBehaviour : public Component, public CollideComponentListener {
+class LedderBehaviour : public LevelComponent, public CollideComponentListener {
 private:
     enum State {
         HIDDEN,
@@ -91,7 +91,7 @@ private:
     void ChangeToState(State state);
 };
 
-class GreederBehaviour : public Component, public CollideComponentListener {
+class GreederBehaviour : public LevelComponent, public CollideComponentListener {
 private:
     int m_animRunning, m_animJumping, m_animDying, m_animDrowning;
     AnimationRenderer *m_animator;

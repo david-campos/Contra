@@ -128,7 +128,7 @@ void LedderBehaviour::Update(float dt) {
 void LedderBehaviour::Create(Level *level, GameObject *go, float time_hidden,
                              float time_shown, float cooldown_time, bool show_standing,
                              int burst_length, float burst_cooldown, bool horizontally_precise) {
-    Component::Create(level, go);
+    LevelComponent::Create(level, go);
     m_timeHidden = time_hidden;
     m_timeShown = time_shown;
     m_coolDownTime = cooldown_time;
@@ -302,7 +302,7 @@ void GreederBehaviour::OnCollision(const CollideComponent &collider) {
 }
 
 void GreederBehaviour::Create(Level *level, GameObject *go) {
-    Component::Create(level, go);
+    LevelComponent::Create(level, go);
 }
 
 void GreederSpawner::Create(Level *level, GameObject *go, float random_interval) {
@@ -321,11 +321,11 @@ void GreederSpawner::Update(float dt) {
     m_intervalCount = m_randomInterval;
 
     if (go->IsEnabled()) {
-        if (level->GetCameraX() + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
+        if (scene->GetCameraX() + WINDOW_WIDTH + 8 * PIXELS_ZOOM <= go->position.x) { // If the spawn is visible, avoid spawning
             if (!m_greeder->IsEnabled()) {
                 m_greeder->position = go->position;
                 m_greeder->Init();
-                level->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES);
+                scene->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES);
             }
         } else {
             go->Disable();
@@ -336,7 +336,7 @@ void GreederSpawner::Update(float dt) {
 void GreederSpawner::Destroy() {
     m_greeder->onRemoval = GameObject::DESTROY;
     m_greeder->MarkToRemove();
-    level->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES); // Just let the level remove it, to avoid problems
+    scene->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES); // Just let the level remove it, to avoid problems
     Component::Destroy();
 }
 

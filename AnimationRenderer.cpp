@@ -55,7 +55,7 @@ void AnimationRenderer::Update(float dt) {
                    : m_currentAnimation->anchor_x
                   ) * PIXELS_ZOOM;
     sprite->draw(
-            int(round(go->position.x - level->GetCameraX())) - x_shift,
+            int(round(go->position.x - scene->GetCameraX())) - x_shift,
             int(round(go->position.y)) - m_currentAnimation->anchor_y * PIXELS_ZOOM,
             m_currentAnimation->frame_w * PIXELS_ZOOM, m_currentAnimation->frame_h * PIXELS_ZOOM,
             m_currentAnimation->start_x + frame * m_currentAnimation->frame_w,
@@ -63,7 +63,7 @@ void AnimationRenderer::Update(float dt) {
             m_currentAnimation->frame_w, m_currentAnimation->frame_h,
             mirrorHorizontal
     );
-    level->GetEngine()->fillSquare(round(go->position.x - 2 - level->GetCameraX()),
+    scene->GetEngine()->fillSquare(round(go->position.x - 2 - scene->GetCameraX()),
             round(go->position.y) - 2, 4, {255, 0, 0});
 }
 

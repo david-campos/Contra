@@ -5,6 +5,7 @@
 #include "object_pool.h"
 #include "game_object.h"
 #include "grid.h"
+#include "scene.h"
 
 class GameObject;
 
@@ -17,12 +18,12 @@ class Sprite;
 
 class Component {
 protected:
-    Level *level; // the level reference
+    BaseScene *scene; // the scene reference
     GameObject *go;        // the game object this component is part of
 public:
     virtual ~Component() {}
 
-    virtual void Create(Level *level, GameObject *go);
+    virtual void Create(BaseScene *scene, GameObject *go);
 
     virtual void Init() {
         if (!go) {
@@ -44,12 +45,19 @@ public:
     virtual void Destroy() {}
 };
 
+class LevelComponent : public Component {
+protected:
+    Level *level;
+public:
+    virtual void Create(Level* level, GameObject *go);
+};
+
 
 class RenderComponent : public Component {
 protected:
     std::shared_ptr<Sprite> sprite;
 public:
-    virtual void Create(Level *level, GameObject *go, std::shared_ptr<Sprite> sprite);
+    virtual void Create(BaseScene *scene, GameObject *go, std::shared_ptr<Sprite> sprite);
 
     void Destroy() override;
 
@@ -73,7 +81,7 @@ public:
      * @param layer Indicates the layer to place the collider in, -1 if you don't want it to be placed anywhere
      * @param checkLayer Indicates the layer for the collider to check collisions with, -1 to avoid checking collisions with any
      */
-    void Create(Level *level, GameObject *go, int layer, int checkLayer);
+    void Create(BaseScene *scene, GameObject *go, int layer, int checkLayer);
 
     /**
      * Changes the listener for the collisions of the collider, be aware if there was a previous
@@ -149,9 +157,9 @@ protected:
 
 public:
     virtual void
-    Create(Level *level, GameObject *go,
+    Create(BaseScene *scene, GameObject *go,
            int local_top_left_x, int local_top_left_y, int width, int height, int layer, int checkLayer) {
-        Create(level, go, {
+        Create(scene, go, {
                 local_top_left_x,
                 local_top_left_y,
                 local_top_left_x + width,
@@ -160,8 +168,8 @@ public:
     }
 
     virtual void
-    Create(Level *level, GameObject *go, Box box, int layer, int checkLayer) {
-        CollideComponent::Create(level, go, layer, checkLayer);
+    Create(BaseScene *scene, GameObject *go, Box box, int layer, int checkLayer) {
+        CollideComponent::Create(scene, go, layer, checkLayer);
         m_box = box;
     }
 

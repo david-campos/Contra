@@ -15,49 +15,13 @@
 #include "defense_wall.h"
 
 void Level::Update(float dt) {
-    if (player->position.x < level_width - WINDOW_WIDTH) {
-        if (player->position.x > camera_x + WINDOW_WIDTH / 2.)
-            camera_x = (float) player->position.x - WINDOW_WIDTH / 2.;
-    } else if (camera_x < level_width - WINDOW_WIDTH)
-        camera_x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
-    else
-        camera_x = level_width - WINDOW_WIDTH;
-
+    BaseScene::Update(dt);
     if (complete && player->position.x >= level_width) {
-        Send(LEVEL_END);
+        Send(NEXT_SCENE);
         return;
     }
 
-    // We progressively init the enemies in front of the camera
-    while (camera_x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
-        auto *enemy = not_found_enemies.top().first;
-        game_objects[not_found_enemies.top().second]->insert(enemy);
-        enemy->Init();
-        not_found_enemies.pop();
-        next_enemy_x = not_found_enemies.top().first->position.x;
-    }
-
-    // And eliminate the enemies behind the camera
-    std::set<GameObject *>::iterator it = game_objects[RENDERING_LAYER_ENEMIES]->begin();
-    while (it != game_objects[RENDERING_LAYER_ENEMIES]->end()) {
-        auto *game_object = *it;
-        if (game_object->position.x < camera_x - RENDERING_MARGINS) {
-            it = game_objects[RENDERING_LAYER_ENEMIES]->erase(it);
-            if (game_object->onRemoval == DESTROY) {
-                game_object->Destroy();
-            }
-        } else {
-            it++;
-        }
-    }
-
-    // Draw background (smoothing the zoom)
-    int camera_without_zoom = int(floor(camera_x / PIXELS_ZOOM));
-    int reminder = int(round(camera_x - camera_without_zoom * PIXELS_ZOOM));
-    background->draw(-reminder, 0, WINDOW_WIDTH + PIXELS_ZOOM, WINDOW_HEIGHT,
-            camera_without_zoom, 0, WINDOW_WIDTH / PIXELS_ZOOM + 1,
-            WINDOW_HEIGHT / PIXELS_ZOOM);
-
+    // Print life sprites
     for (int i = 1; i <= playerControl->getRemainingLives(); i++) {
         spritesheet->draw(
                 ((3 - i) * (LIFE_SPRITE_WIDTH + LIFE_SPRITE_MARGIN) + LIFE_SPRITE_MARGIN) * PIXELS_ZOOM,
@@ -67,52 +31,53 @@ void Level::Update(float dt) {
         );
     }
 
-    grid.ClearCollisionCache(); // Clear collision cache
-    for (const auto &layer: game_objects) {
-        // Update objects which are enabled and not to be removed
-        for (auto *game_object : *layer)
-            if (game_object->IsEnabled() && !game_object->IsMarkedToRemove())
-                game_object->Update(dt);
+    // Adjust camera
+    if (player->position.x < level_width - WINDOW_WIDTH) {
+        if (player->position.x > m_camera.x + WINDOW_WIDTH / 2.)
+            m_camera.x = (float) player->position.x - WINDOW_WIDTH / 2.;
+    } else if (m_camera.x < level_width - WINDOW_WIDTH)
+        m_camera.x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
+    else
+        m_camera.x = level_width - WINDOW_WIDTH;
+
+    // Progressively init the enemies in front of the camera
+    while (m_camera.x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
+        auto *enemy = not_found_enemies.top().first;
+        game_objects[not_found_enemies.top().second]->insert(enemy);
+        enemy->Init();
+        not_found_enemies.pop();
+        next_enemy_x = not_found_enemies.top().first->position.x;
     }
 
-    // Delete objects marked to remove
-    for (const auto &layer: game_objects) {
-        it = layer->begin();
-        while (it != layer->end()) {
-            auto *game_object = *it;
-            if (game_object->IsMarkedToRemove()) {
-                it = layer->erase(it);
-                game_object->UnmarkToRemove();
-                if (game_object->onRemoval == DESTROY) {
-                    game_object->Destroy();
-                }
-            } else {
-                it++;
+    // Eliminate the enemies behind the camera
+    std::set<GameObject *>::iterator it = game_objects[RENDERING_LAYER_ENEMIES]->begin();
+    while (it != game_objects[RENDERING_LAYER_ENEMIES]->end()) {
+        auto *game_object = *it;
+        if (game_object->position.x < m_camera.x - RENDERING_MARGINS) {
+            it = game_objects[RENDERING_LAYER_ENEMIES]->erase(it);
+            if (game_object->onRemoval == DESTROY) {
+                game_object->Destroy();
             }
+        } else {
+            it++;
         }
     }
 
-    // Add new ones
-    while (!game_objects_to_add.empty()) {
-        std::pair<GameObject *, int> next = game_objects_to_add.front();
-        game_objects_to_add.pop();
-        game_objects[next.second]->insert(next.first);
-    }
 }
 
 void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &player_spritesheet,
                    const std::shared_ptr<Sprite> &enemy_spritesheet, const std::shared_ptr<Sprite> &pickup_spritesheet,
                    AvancezLib *avancezLib) {
     SDL_Log("Level::Create");
-    this->engine = avancezLib;
     spritesheet = player_spritesheet;
     enemies_spritesheet = enemy_spritesheet;
     pickups_spritesheet = pickup_spritesheet;
     try {
         YAML::Node scene_root = YAML::LoadFile(folder + "/level.yaml");
 
-        background.reset(engine->createSprite((folder + scene_root["background"].as<std::string>()).data()));
-        level_width = background->getWidth() * PIXELS_ZOOM;
+        BaseScene::Create(avancezLib, folder + scene_root["background"].as<std::string>());
+
+        level_width = m_background->getWidth() * PIXELS_ZOOM;
         level_floor = std::make_shared<Floor>((folder + scene_root["floor_mask"].as<std::string>()).data());
         grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
@@ -229,18 +194,10 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 }
 
 void Level::Destroy() {
-    GameObject::Destroy();
-    for (const auto &layer: game_objects) {
-        for (auto game_object : *layer)
-            game_object->Destroy();
-    }
+    BaseScene::Destroy();
     while (!not_found_enemies.empty()) {
         not_found_enemies.top().first->Destroy();
         not_found_enemies.pop();
-    }
-    while (!game_objects_to_add.empty()) {
-        game_objects_to_add.front().first->Destroy();
-        game_objects_to_add.pop();
     }
     default_bullets->Destroy();
     delete default_bullets;
@@ -250,7 +207,6 @@ void Level::Destroy() {
     enemy_bullets = nullptr;
     delete player;
     player = nullptr;
-    background.reset();
 }
 
 void Level::CreateBulletPools() {
@@ -304,8 +260,8 @@ void Level::CreateBulletPools() {
 }
 
 void Level::Init() {
-    GameObject::Init();
-    camera_x = 0;
+    BaseScene::Init();
+    m_camera = Vector2D(0, 0);
     complete = false;
 
     if (!not_found_enemies.empty()) {
@@ -382,7 +338,7 @@ void Level::CreateAndAddPickUpHolder(const PickUpType &type, const Vector2D &pos
 }
 
 void Level::CreateDefenseWall() {
-    auto sprite = std::shared_ptr<Sprite>(engine->createSprite("data/level1/defense_wall.png"));
+    auto sprite = std::shared_ptr<Sprite>(m_engine->createSprite("data/level1/defense_wall.png"));
 
     // Wall front in player layer, between enemies and the bullets
     auto *wallFront = new GameObject();
@@ -526,6 +482,6 @@ void Level::Receive(Message m) {
     if (m == LEVEL_END) {
         complete = true;
     } else {
-        Send(m);
+        BaseScene::Receive(m);
     }
 }

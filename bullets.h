@@ -31,7 +31,7 @@ protected:
     int m_speed;
     bool m_kill;
 public:
-    void Create(Level *level, GameObject *go) override {
+    void Create(Level *level, GameObject *go) {
         Component::Create(level, go);
     }
 
@@ -63,7 +63,7 @@ public:
             }
         } else {
             UpdatePosition(dt);
-            if ((go->position.x < level->GetCameraX() or go->position.x > level->GetCameraX() + WINDOW_WIDTH)
+            if ((go->position.x < scene->GetCameraX() or go->position.x > scene->GetCameraX() + WINDOW_WIDTH)
                 or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
                 go->Disable();
                 go->MarkToRemove();

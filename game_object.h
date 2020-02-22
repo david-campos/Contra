@@ -6,7 +6,7 @@
 #include "vector2D.h"
 
 enum Message {
-    GAME_OVER, LEVEL_END, HIT, NO_MSG
+    GAME_OVER, LEVEL_END, NEXT_SCENE, HIT, NO_MSG
 };
 
 class Component;

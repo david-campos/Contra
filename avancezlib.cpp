@@ -36,7 +36,7 @@ bool AvancezLib::init(int width, int height) {
 	m_windowSurface = SDL_GetWindowSurface(window);
 
 	TTF_Init();
-	font = TTF_OpenFont("data/space_invaders.ttf", 12); //this opens a font style and sets a size
+	font = TTF_OpenFont("data/contra-famicom-nes.ttf", 12); //this opens a font style and sets a size
 	if (font == NULL) {
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "font cannot be created! SDL_Error: %s\n", SDL_GetError());
 		return false;
@@ -48,7 +48,7 @@ bool AvancezLib::init(int width, int height) {
 	key.right = false, key.esc = false;
 
 	//Initialize renderer color
-	SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
 
 	//Clear screen
 	SDL_RenderClear(renderer);
@@ -111,6 +111,9 @@ void AvancezLib::processInput() {
 			    case SDLK_p:
 			        key.pause = true;
 			        break;
+				case SDLK_RETURN:
+					key.start = true;
+					break;
 			}
 		}
 
@@ -140,6 +143,9 @@ void AvancezLib::processInput() {
 			    case SDLK_p:
 			        key.pause = false;
 			        break;
+				case SDLK_RETURN:
+					key.start = false;
+					break;
 			}
 		}
 
@@ -241,6 +247,7 @@ void AvancezLib::getKeyStatus(KeyStatus &keys) {
 	keys.esc = key.esc;
 	keys.debug = key.debug;
 	keys.pause = key.pause;
+	keys.start = key.start;
 }
 
 

@@ -24,7 +24,7 @@ public:
     void Update(float dt) override {
         if (!m_renderer->IsPlaying()) {
             go->Disable();
-            level->RemoveGameObject(go);
+            scene->RemoveGameObject(go);
         }
     }
 };
@@ -71,7 +71,7 @@ public:
     }
 };
 
-class ExplodingBridgeBehaviour : public Component {
+class ExplodingBridgeBehaviour : public LevelComponent {
 private:
     float m_explodingTime;
     bool m_exploding;

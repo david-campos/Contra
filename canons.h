@@ -22,7 +22,7 @@ public:
     void Create(Level* level, const Vector2D &pos);
 };
 
-class CanonBehaviour : public Component, public CollideComponentListener {
+class CanonBehaviour : public LevelComponent, public CollideComponentListener {
 protected:
     enum CanonState {
         HIDDEN,
@@ -41,7 +41,7 @@ protected:
 
     [[nodiscard]] Vector2D GetPlayerDir() const {
         return level->GetPlayer()->position
-        - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
+               - Vector2D(0, 18) - go->position; // Subtract 18 bc position is the feet
     }
 
     [[nodiscard]] int DirToInt(const Vector2D &dir) const {

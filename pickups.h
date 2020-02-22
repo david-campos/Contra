@@ -69,7 +69,7 @@ public:
     }
 };
 
-class PickUpHolderBehaviour : public Component, public CollideComponentListener {
+class PickUpHolderBehaviour : public LevelComponent, public CollideComponentListener {
 protected:
     AnimationRenderer *m_animator;
     int m_animDying;
@@ -78,7 +78,7 @@ protected:
     short m_lives;
 public:
     void Create(Level* level, GameObject *go, PickUp *power_up) {
-        Component::Create(level, go);
+        LevelComponent::Create(level, go);
         m_powerUp = power_up;
     }
 

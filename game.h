@@ -9,10 +9,11 @@
 #include "canons.h"
 #include "enemies.h"
 #include "level.h"
+#include "main_menu.h"
 
 class Game : public GameObject {
 private:
-    Level *currentLevel;
+    BaseScene *currentScene;
     AvancezLib *engine;
     std::shared_ptr<Sprite> spritesheet;
     std::shared_ptr<Sprite> enemies_spritesheet;
@@ -29,16 +30,17 @@ public:
         enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
         pickups_spritesheet.reset(engine->createSprite("data/pickups.png"));
 
-        currentLevel = new Level();
-        currentLevel->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
-        currentLevel->AddReceiver(this);
+        auto* menu = new MainMenu();
+        menu->Create(engine);
+        menu->AddReceiver(this);
+        currentScene = menu;
     }
 
     void Init() override {
         Enable();
         game_over = false;
         pause_pressed_before = false;
-        currentLevel->Init();
+        currentScene->Init();
     }
 
 
@@ -58,8 +60,8 @@ public:
         if (IsGameOver() || paused)
             dt = 0.f;
 
-        if (currentLevel)
-            currentLevel->Update(dt);
+        if (currentScene)
+            currentScene->Update(dt);
     }
 
     virtual void Draw() {
@@ -73,11 +75,16 @@ public:
                 SDL_Log("GAME OVER");
                 game_over = true;
                 break;
-            case LEVEL_END:
-                SDL_Log("LEVEL END");
-                currentLevel->Destroy();
-                delete currentLevel;
-                currentLevel = nullptr;
+            case NEXT_SCENE:
+                SDL_Log("NEXT_SCENE");
+                currentScene->Destroy();
+                delete currentScene;
+
+                auto level = new Level();
+                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, engine);
+                level->AddReceiver(this);
+                level->Init();
+                currentScene = level;
                 break;
         }
     }
@@ -87,6 +94,6 @@ public:
     }
 
     void Destroy() override {
-        if (currentLevel) currentLevel->Destroy();
+        if (currentScene) currentScene->Destroy();
     }
 };
