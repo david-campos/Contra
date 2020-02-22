@@ -21,6 +21,8 @@ void MainMenu::Update(float dt) {
     } else {
         if (!previousKeys.start && keyStatus.start) {
             game->SetPlayers(selected + 1);
+            game->SetCurrentLevel(0);
+            game->Reset();
             Send(NEXT_LEVEL);
         }
         if (!previousKeys.up && keyStatus.up) {
@@ -87,6 +89,9 @@ void ContinueLevel::Update(float dt) {
     if (!previousKeys.start && keyStatus.start) {
         if (selected == 0) {
             m_level->Init();
+            if (m_game->GetCurrentLevel() == 0) {
+                m_game->Reset();
+            }
             m_game->Start(m_level);
         } else {
             // Free the level, we are not going to continue
@@ -97,6 +102,7 @@ void ContinueLevel::Update(float dt) {
             auto* menu = new MainMenu();
             menu->Create(m_engine, m_game);
             menu->Init();
+            menu->AddReceiver(m_game);
             m_game->Start(menu);
         }
     }

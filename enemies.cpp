@@ -198,6 +198,7 @@ void LedderBehaviour::OnCollision(const CollideComponent &collider) {
             bullet->Kill();
 
             m_animator->PlayAnimation(m_animGoingToDie);
+            go->Send(SCORE1_500);
             ChangeToState(GOING_TO_DIE);
         }
     }
@@ -295,6 +296,7 @@ void GreederBehaviour::OnCollision(const CollideComponent &collider) {
             bullet->Kill();
             m_animator->PlayAnimation(m_animJumping);
             m_gravity->SetVelocity(-3 * PLAYER_SPEED * PIXELS_ZOOM);
+            go->Send(SCORE1_100);
             m_deathFor = 0;
             m_isDeath = true;
         }

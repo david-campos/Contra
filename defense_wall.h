@@ -64,6 +64,8 @@ public:
 
                 m_lives--;
                 if (m_lives == 0) {
+                    go->Send(SCORE1_1000);
+
                     auto *explosion = new GameObject();
                     explosion->Create();
                     auto *renderer = new AnimationRenderer();
@@ -151,6 +153,7 @@ public:
                 m_lives--;
                 if (m_lives == 0) {
                     CreateExplosion(go->position + Vector2D(18, 32) * PIXELS_ZOOM);
+                    go->Send(SCORE1_10000);
                     m_nextExplosion = 2 * TIME_BETWEEN_EXPLOSIONS;
                     m_explosionSteps = EXPLOSION_STEPS;
                     m_doorAnimator->enabled = false;

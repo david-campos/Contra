@@ -31,6 +31,7 @@ protected:
         HIDING
     };
     CanonState m_state;
+    unsigned short m_scoreGiven = 100;
     int m_dir, m_minDir, m_maxDir, m_defaultDir;
     float m_currentDirTime, m_fireRemainingCooldown, m_burstRemainingCooldown;
     int m_burstLength, m_shotBulletsInBurst;
@@ -93,6 +94,10 @@ public:
 
 class GulcanBehaviour: public CanonBehaviour {
 public:
+    GulcanBehaviour() {
+        m_scoreGiven = 500;
+    }
+
     void UpdateHidden(const Vector2D &player_dir, float dt) override;
 };
 

@@ -316,6 +316,7 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 }
 
 void PlayerControl::PickUp(PickUpType type) {
+    go->Send(SCORE1_1000);
     switch (type) {
         case PICKUP_MACHINE_GUN:
             m_currentWeapon.reset(new MachineGun(level));

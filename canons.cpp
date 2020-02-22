@@ -11,6 +11,10 @@ void CanonBehaviour::OnCollision(const CollideComponent &collider) {
         if (bullet && !bullet->IsKilled()) {
             m_life -= bullet->GetDamage();
             bullet->Kill();
+
+            if (m_life <= 0) {
+                go->Send(m_scoreGiven == 100 ? SCORE1_100 : SCORE1_500);
+            }
         }
     }
 }

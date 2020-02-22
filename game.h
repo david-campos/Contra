@@ -21,14 +21,25 @@ private:
     std::shared_ptr<Sprite> enemies_spritesheet;
     std::shared_ptr<Sprite> pickups_spritesheet;
 
-    bool game_over;
     bool paused;
     bool pause_pressed_before;
     bool can_continue;
+    int current_level;
     PlayerStats stats[2];
     unsigned short players;
 public:
     virtual void Create(AvancezLib *avancezLib);
+
+    void Reset() {
+        pause_pressed_before = false;
+        paused = false;
+        can_continue = true;
+        memset(stats, 0, 2 * sizeof(PlayerStats));
+    }
+
+    int GetCurrentLevel() const;
+
+    void SetCurrentLevel(int currentLevel);
 
     void SetPlayers(unsigned short value) {
         if (value > 2) value = 2;
@@ -44,12 +55,9 @@ public:
 
     void Init() override {
         Enable();
-        game_over = false;
-        pause_pressed_before = false;
-        currentScene->Init();
+        Reset();
         players = 1;
-        can_continue = true;
-        memset(stats, 0, 2 * sizeof(PlayerStats));
+        currentScene->Init();
     }
 
 

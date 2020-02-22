@@ -107,6 +107,7 @@ public:
                 if (m_lives == 0) {
                     m_animator->PlayAnimation(m_animDying);
                     m_powerUp->position = go->position;
+                    go->Send(SCORE1_500);
                     m_powerUp->Init();
                     level->AddGameObject(m_powerUp, RENDERING_LAYER_ENEMIES);
                 }

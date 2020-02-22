@@ -18,8 +18,8 @@ private:
     Game* game;
 public:
     void Create(AvancezLib *engine, Game* the_game) {
-        game = the_game;
         BaseScene::Create(engine, "data/main_menu/background.png");
+        game = the_game;
         selector = new GameObject();
         selector->Create();
         auto *render = new SimpleRenderer();
@@ -34,7 +34,7 @@ public:
     }
 
     void Init() override {
-        GameObject::Init();
+        BaseScene::Init();
         m_camera = Vector2D(-WINDOW_WIDTH, 0);
     }
 
