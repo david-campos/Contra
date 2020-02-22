@@ -36,6 +36,7 @@ void Game::Receive(Message m) {
                 auto* menu = new MainMenu();
                 menu->Create(engine, this);
                 menu->AddReceiver(this);
+                menu->Init();
 
                 Start(menu);
             }
