@@ -48,6 +48,8 @@ void Game::Receive(Message m) {
             SDL_Log("NEXT_LEVEL");
             current_level++;
 
+            memcpy(lastSavedStats, stats, sizeof(PlayerStats) * 2);
+
             // We only have level 1 by now ^^'
             switch (current_level) {
                 case 0: {

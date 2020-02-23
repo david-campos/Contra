@@ -91,6 +91,8 @@ void ContinueLevel::Update(float dt) {
             m_level->Init();
             if (m_game->GetCurrentLevel() == 0) {
                 m_game->Reset();
+            } else {
+                m_game->ResetPlayerStats(); // Restore previous score
             }
             m_game->Start(m_level);
         } else {

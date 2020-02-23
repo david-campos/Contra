@@ -35,6 +35,7 @@ public:
         pause_pressed_before = false;
         paused = false;
         can_continue = true;
+        memset(lastSavedStats, 0, 2 * sizeof(PlayerStats));
         memset(stats, 0, 2 * sizeof(PlayerStats));
     }
 
@@ -52,6 +53,13 @@ public:
 
     [[nodiscard]] const PlayerStats *GetPlayerStats() const {
         return stats;
+    }
+
+    /**
+     * Resets the player stats to the last saved ones
+     */
+    void ResetPlayerStats() {
+        memcpy(stats, lastSavedStats, sizeof(PlayerStats) * 2);
     }
 
     void Init() override {
