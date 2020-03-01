@@ -22,6 +22,7 @@ protected:
     Grid m_grid;
     Vector2D m_animationShift;
     float m_time = 0.f;
+    std::unique_ptr<Music> m_music;
 public:
     BaseScene() {
         for (int i = 0; i < RENDERING_LAYERS; i++) {
@@ -35,12 +36,16 @@ public:
         }
     }
 
-    void Create(AvancezLib *engine, const char* background_path, const  Vector2D anim_shift = Vector2D(0, 0)) {
+    void Create(AvancezLib *engine, const char *background_path, const char *music_path = nullptr,
+                const Vector2D anim_shift = Vector2D(0, 0)) {
         GameObject::Create();
         m_engine = engine;
         m_animationShift = anim_shift;
         if (background_path != nullptr) {
             m_background.reset(m_engine->createSprite(background_path));
+        }
+        if (music_path != nullptr) {
+            m_music.reset(m_engine->createMusic(music_path));
         }
         m_camera = Vector2D(0, 0);
     }
@@ -165,7 +170,7 @@ public:
         return m_camera.y;
     }
 
-    Grid* GetGrid() {
+    Grid *GetGrid() {
         return &m_grid;
     }
 

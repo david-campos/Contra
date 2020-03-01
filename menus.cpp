@@ -8,6 +8,19 @@ void MainMenu::Update(float dt) {
     BaseScene::Update(dt);
     AvancezLib::KeyStatus keyStatus;
     m_engine->getKeyStatus(keyStatus);
+    char msg[10];
+    sprintf(msg, "1 Player");
+    Uint8 color = m_camera.x >= 0 && selected == 0 ? 255 : 188;
+    if (started == 0.f || color != 255 || fmod(m_time - started, 0.5) > 0.25) {
+        m_engine->drawText(round(options[0].x - m_camera.x + 20 * PIXELS_ZOOM), round(options[0].y + PIXELS_ZOOM),
+                msg, {color, color, color});
+    }
+    sprintf(msg, "2 Players");
+    color =  m_camera.x >= 0 && selected == 1 ? 255 : 188;
+    if (started == 0.f || color != 255 || fmod(m_time - started, 0.5) > 0.25) {
+        m_engine->drawText(round(options[1].x - m_camera.x + 20 * PIXELS_ZOOM), round(options[1].y + PIXELS_ZOOM),
+                msg, {color, color, color});
+    }
     if (m_camera.x < 0) {
         if (keyStatus.start) {
             m_camera.x = 0;
@@ -19,21 +32,31 @@ void MainMenu::Update(float dt) {
             selector->Init();
         }
     } else {
+        if (!musicPlayed) {
+            m_music->Play(1);
+            musicPlayed = true;
+        }
         if (!previousKeys.start && keyStatus.start) {
-            game->SetPlayers(selected + 1);
-            game->SetCurrentLevel(-1);
-            game->Reset();
-            Send(NEXT_LEVEL);
+            started = m_time;
         }
-        if (!previousKeys.up && keyStatus.up) {
-            selected -= 1;
+        if (started != 0.f) {
+            if (!m_engine->isMusicPlaying()) {
+                game->SetPlayers(selected + 1);
+                game->SetCurrentLevel(-1);
+                game->Reset();
+                Send(NEXT_LEVEL);
+            }
+        } else {
+            if (!previousKeys.up && keyStatus.up) {
+                selected -= 1;
+            }
+            if (!previousKeys.down && keyStatus.down) {
+                selected += 1;
+            }
+            if (selected < 0) selected += 2;
+            if (selected > 1) selected -= 2;
+            selector->position = options[selected];
         }
-        if (!previousKeys.down && keyStatus.down) {
-            selected += 1;
-        }
-        if (selected < 0) selected += 2;
-        if (selected > 1) selected -= 2;
-        selector->position = options[selected];
     }
     previousKeys = keyStatus;
 }
@@ -101,7 +124,7 @@ void ContinueLevel::Update(float dt) {
             delete m_level;
 
             // Go to main menu
-            auto* menu = new MainMenu();
+            auto *menu = new MainMenu();
             menu->Create(m_engine, m_game);
             menu->Init();
             menu->AddReceiver(m_game);
@@ -130,13 +153,13 @@ void Credits::Update(float dt) {
     sprintf(reinterpret_cast<char *>(&msg), "CONGRATULATIONS, YOU HAVE WON!");
     m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 140,
             msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
-    sprintf(reinterpret_cast<char *>(&msg),"VERSION AUTHOR:");
+    sprintf(reinterpret_cast<char *>(&msg), "VERSION AUTHOR:");
     m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 70,
             msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
-    sprintf(reinterpret_cast<char *>(&msg)," DAVID CAMPOS RODRIGUEZ");
+    sprintf(reinterpret_cast<char *>(&msg), " DAVID CAMPOS RODRIGUEZ");
     m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 - 35,
             msg, {255, 255, 255}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
-    sprintf(reinterpret_cast<char *>(&msg),"ORIGINAL GAME BY KONAMI");
+    sprintf(reinterpret_cast<char *>(&msg), "ORIGINAL GAME BY KONAMI");
     m_engine->drawText(WINDOW_WIDTH / 2, WINDOW_WIDTH / 2 + 35,
             msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_CENTER_MIDDLE);
     sprintf(reinterpret_cast<char *>(&msg), "THANKS FOR PLAYING");
@@ -146,7 +169,7 @@ void Credits::Update(float dt) {
 
     if (keyStatus.start && m_time > 0.5f) {
         // Go to main menu
-        auto* menu = new MainMenu();
+        auto *menu = new MainMenu();
         menu->Create(m_engine, m_game);
         menu->Init();
         menu->AddReceiver(m_game);

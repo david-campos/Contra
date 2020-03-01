@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 
 class Sprite {
     SDL_Renderer *renderer;
@@ -22,6 +23,49 @@ public:
     // the params sx, sy, sw, sh allow to define the part
     // of the sprite to draw
     void draw(int x, int y, int tw, int th, int sx, int sy, int sw, int sh, bool mirrorHorizontal = false);
+};
+
+class Music final {
+public:
+    Music(Mix_Music *mMusic) : mMusic(mMusic) {}
+
+    void Play(short times = 0) {
+        if (mMusic && Mix_PlayingMusic() == 0) {
+            Mix_PlayMusic(mMusic, times - 1);
+        }
+    }
+
+    void Stop() {
+        Mix_HaltMusic();
+    }
+
+    ~Music() {
+        if (mMusic)
+            Mix_FreeMusic(mMusic);
+        mMusic = nullptr;
+    }
+
+private:
+    Mix_Music *mMusic = nullptr;
+};
+
+class SoundEffect final {
+public:
+    SoundEffect(Mix_Chunk *effect) : effect(effect) {}
+
+    void Play(short times = 1) {
+        if (effect) {
+            Mix_PlayChannel(-1, effect, times - 1);
+        }
+    }
+
+    ~SoundEffect() {
+        if (effect)
+            Mix_FreeChunk(effect);
+    }
+
+private:
+    Mix_Chunk *effect;
 };
 
 
@@ -61,9 +105,15 @@ public:
     // All sprites are 32*32 pixels.
     Sprite *createSprite(const char *name);
 
+    Music *createMusic(const char *path);
+
+    SoundEffect *createSound(const char *path);
+
+    bool isMusicPlaying() { return Mix_PlayingMusic(); }
+
     // Draws the given text.
     void drawText(int x, int y, const char *msg, SDL_Color color = {255, 255, 255},
-            const TextAlign textAlign = TEXT_ALIGN_LEFT_TOP);
+                  const TextAlign textAlign = TEXT_ALIGN_LEFT_TOP);
 
     // Fills a square
     void fillSquare(int x, int y, int side, SDL_Color color);
@@ -100,7 +150,7 @@ public:
 private:
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Surface *m_windowSurface;
+    bool audioOpen;
 
     TTF_Font *font;
 

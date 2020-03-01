@@ -1,5 +1,6 @@
 number: 1
 name: Jungle
+music: music.wav
 background: background_no_labels.png
 background_animation_shift: [0, 224]
 floor_mask: mask.bmp

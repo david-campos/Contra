@@ -102,11 +102,17 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
 
         {
             std::string bg = folder + scene_root["background"].as<std::string>();
+            std::string music_str;
+            char* music = nullptr;
             Vector2D animation_shift(0, 0);
             if (scene_root["background_animation_shift"]) {
                 animation_shift = scene_root["background_animation_shift"].as<Vector2D>();
             }
-            BaseScene::Create(avancezLib, bg.data(), animation_shift);
+            if (scene_root["music"]) {
+                music_str = folder + scene_root["music"].as<std::string>();
+                music = music_str.data();
+            }
+            BaseScene::Create(avancezLib, bg.data(), music, animation_shift);
         }
 
         level_width = m_background->getWidth() * PIXELS_ZOOM;
@@ -335,6 +341,8 @@ void Level::Init() {
         for (auto game_object : *layer)
             game_object->Init();
     }
+
+    if (m_music) m_music->Play();
 }
 
 void Level::CreatePlayers(short num_players) {

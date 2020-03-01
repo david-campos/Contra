@@ -12,10 +12,16 @@ class Weapon {
 protected:
     Level *m_level;
     float m_bulletSpeedMultiplier = 1.f;
+    SoundEffect* m_sound;
 public:
-    explicit Weapon(Level *level) : m_level(level) {}
+    explicit Weapon(Level *level, const char* sound_path = "data/sound/rifle.wav") : m_level(level) {
+        m_sound = m_level->GetEngine()->createSound(sound_path);
+    }
 
-    virtual ~Weapon() {}
+    virtual ~Weapon() {
+        delete m_sound;
+        m_sound = nullptr;
+    }
 
     float GetBulletSpeedMultiplier() const {
         return m_bulletSpeedMultiplier;
@@ -52,7 +58,7 @@ protected:
     float m_shootDowntime = 0;
     int m_bulletSpeed = BULLET_SPEED;
 public:
-    DefaultWeapon(Level *level) : Weapon(level) {}
+    DefaultWeapon(Level *level, const char* sound = "data/sound/rifle.wav") : Weapon(level, sound) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -70,6 +76,7 @@ public:
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
             m_shootDowntime = 0.15;
+            m_sound->Play(1);
             return true;
         }
         return false;
@@ -86,7 +93,7 @@ public:
 
 class FireGun : public DefaultWeapon {
 public:
-    FireGun(Level *level) : DefaultWeapon(level) {
+    FireGun(Level *level) : DefaultWeapon(level, "data/sound/flamethrower.wav") {
         m_bulletSpeed = FIRE_BULLET_SPEED;
     }
 
@@ -102,7 +109,7 @@ protected:
     int m_nextBullet;
     Vector2D m_position, m_direction;
 public:
-    LaserGun(Level *level) : Weapon(level) {}
+    LaserGun(Level *level) : Weapon(level, "data/sound/laser.wav") {}
 
     bool IsAutomatic() override {
         return false;
@@ -128,6 +135,7 @@ public:
         m_position = position;
         m_direction = direction;
         m_hasShot = true;
+        m_sound->Play(1);
         ResetNext();
         return true;
     }
@@ -146,11 +154,13 @@ public:
 class MachineGun : public Weapon {
 private:
     float m_shootDowntime = 0;
+    float m_soundDowntime = 0;
 public:
-    MachineGun(Level *level) : Weapon(level) {}
+    MachineGun(Level *level) : Weapon(level, "data/sound/machine_gun.wav") {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
+        m_soundDowntime -= dt;
         return fireKey && m_shootDowntime <= 0;
     }
 
@@ -161,6 +171,10 @@ public:
             bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_shootDowntime = 0.15;
+            if (m_soundDowntime <= 0) {
+                m_sound->Play(1);
+                m_soundDowntime = 0.6;
+            }
             return true;
         }
         return false;
@@ -176,7 +190,7 @@ private:
     float m_shootDowntime = 0;
     bool m_hasShot = false;
 public:
-    SpreadGun(Level *level) : Weapon(level) {}
+    SpreadGun(Level *level) : Weapon(level, "data/sound/spread.wav") {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -198,6 +212,7 @@ public:
                 m_level->AddGameObject(bullets[i], RENDERING_LAYER_BULLETS);
             }
             m_hasShot = true;
+            m_sound->Play(1);
             m_shootDowntime = 0.15;
             return true;
         }

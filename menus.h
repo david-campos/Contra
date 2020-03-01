@@ -16,9 +16,11 @@ private:
     AvancezLib::KeyStatus previousKeys;
     int selected = 0;
     Game* game;
+    float started = 0.f;
+    bool musicPlayed = false;
 public:
     void Create(AvancezLib *engine, Game* the_game) {
-        BaseScene::Create(engine, "data/main_menu/background.png");
+        BaseScene::Create(engine, "data/main_menu/background.png", "data/sound/title.wav");
         game = the_game;
         selector = new GameObject();
         selector->Create();
@@ -49,8 +51,8 @@ class MenuWithStats: public BaseScene {
 protected:
     Game* m_game;
 public:
-    virtual void Create(AvancezLib *engine, Game* game) {
-        BaseScene::Create(engine, nullptr);
+    virtual void Create(AvancezLib *engine, Game* game, const char* music_path = nullptr) {
+        BaseScene::Create(engine, nullptr, music_path);
         m_engine = engine;
         m_game = game;
     }
@@ -80,8 +82,8 @@ private:
     AvancezLib::KeyStatus previousKeys;
     int selected = 0;
 public:
-    void Create(AvancezLib *engine, Game* game) override {
-        MenuWithStats::Create(engine, game);
+    void Create(AvancezLib *engine, Game* game) {
+        MenuWithStats::Create(engine, game, "data/sound/game_over.wav");
         selector = new GameObject();
         selector->Create();
         auto *render = new SimpleRenderer();
@@ -98,6 +100,7 @@ public:
 
     void Init(Level* level) {
         MenuWithStats::Init();
+        m_music->Play(1);
         m_level = level;
     }
 

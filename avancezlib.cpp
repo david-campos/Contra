@@ -33,8 +33,6 @@ bool AvancezLib::init(int width, int height) {
         return false;
     }
 
-    m_windowSurface = SDL_GetWindowSurface(window);
-
     TTF_Init();
     font = TTF_OpenFont("data/contra-famicom-nes.ttf", 32); //this opens a font style and sets a size
     if (font == NULL) {
@@ -52,6 +50,12 @@ bool AvancezLib::init(int width, int height) {
 
     //Clear screen
     SDL_RenderClear(renderer);
+
+    //Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        audioOpen = false;
+    }
 
     SDL_Log("Engine up and running...\n");
     return true;
@@ -304,6 +308,22 @@ void AvancezLib::getKeyStatus(KeyStatus &keys) {
     memcpy(&keys, &key, sizeof(KeyStatus));
 }
 
+SoundEffect *AvancezLib::createSound(const char *path) {
+    auto *sound = Mix_LoadWAV(path);
+    if (!sound) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load sound! SDL_mixer Error: %s\n", Mix_GetError());
+    }
+    return new SoundEffect(sound);
+}
+
+Music *AvancezLib::createMusic(const char *path) {
+    auto *music = Mix_LoadMUS(path);
+    if (!music) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load music! SDL_mixer Error: %s\n", Mix_GetError());
+    }
+    return new Music(music);
+}
+
 
 Sprite::Sprite(SDL_Renderer *renderer, SDL_Texture *texture) {
     this->renderer = renderer;
@@ -347,4 +367,3 @@ int Sprite::getWidth() const {
     SDL_QueryTexture(texture, nullptr, nullptr, &w, nullptr);
     return w;
 }
-
