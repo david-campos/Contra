@@ -113,6 +113,10 @@ public:
 
     }
 
+    void FadeOutMusic(int ms = 1000) {
+        m_engine->FadeOutMusic(ms);
+    }
+
     void Destroy() override {
         GameObject::Destroy();
         while (!game_objects_to_add.empty()) {

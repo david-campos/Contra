@@ -38,6 +38,7 @@ class Level : public BaseScene {
     std::shared_ptr<Sprite> bridge_sprite; // Loaded on demand
     std::unordered_map<int, SoundEffect*> shared_sounds;
     std::shared_ptr<Floor> level_floor;
+    std::unique_ptr<Music> mus_stage_clear;
     std::vector<Player *> players;
     std::vector<PlayerControl*> playerControls;
     std::priority_queue<std::pair<GameObject *, short>, std::deque<std::pair<GameObject *, short>>, game_objects_comp_x> not_found_enemies;
@@ -45,6 +46,7 @@ class Level : public BaseScene {
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     bool complete;
+    float completeTime;
     int level_width;
     std::string levelName;
     int levelIndex;
@@ -144,6 +146,8 @@ public:
     const std::string &GetLevelName() const;
 
     int GetLevelIndex() const;
+
+    float GetTimeSinceComplete();
 
 private:
     void CreateBulletPools();

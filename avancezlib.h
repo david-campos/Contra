@@ -114,6 +114,7 @@ public:
 
     bool isMusicPlaying() { return Mix_PlayingMusic(); }
     void StopMusic() {Mix_HaltMusic();}
+    void FadeOutMusic(int ms = 1000);
 
     // Draws the given text.
     void drawText(int x, int y, const char *msg, SDL_Color color = {255, 255, 255},

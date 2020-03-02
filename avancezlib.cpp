@@ -349,6 +349,10 @@ Music *AvancezLib::createMusic(const char *path) {
     return new Music(music);
 }
 
+void AvancezLib::FadeOutMusic(int ms) {
+    Mix_FadeOutMusic(ms);
+}
+
 
 Sprite::Sprite(SDL_Renderer *renderer, SDL_Texture *texture) {
     this->renderer = renderer;

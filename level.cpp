@@ -17,7 +17,7 @@
 void Level::Update(float dt) {
     BaseScene::Update(dt);
     float players_top_x = PlayersTopX();
-    if (complete && players_top_x >= level_width) {
+    if (complete && players_top_x >= level_width && !m_engine->isMusicPlaying()) {
         Send(NEXT_LEVEL);
         return;
     }
@@ -555,6 +555,8 @@ ObjectPool<Bullet> *Level::CreateBlasterBulletPool() {
 void Level::Receive(Message m) {
     if (m == LEVEL_END) {
         complete = true;
+        completeTime = m_time;
+        mus_stage_clear->Play(1);
     } else {
         BaseScene::Receive(m);
     }
@@ -616,9 +618,14 @@ float Level::PlayersTopX() const {
 }
 
 void Level::PreloadSounds() {
-    shared_sounds.insert({SOUND_ENEMY_DEATH, this->m_engine->createSound("data/sound/enemy_death.wav")});
-    shared_sounds.insert({SOUND_ENEMY_HIT, this->m_engine->createSound("data/sound/enemy_hit.wav")});
-    shared_sounds.insert({SOUND_PLAYER_DEATH, this->m_engine->createSound("data/sound/death.wav")});
-    shared_sounds.insert({SOUND_EXPLOSION, this->m_engine->createSound("data/sound/explosion.wav")});
-    shared_sounds.insert({SOUND_PICKUP, this->m_engine->createSound("data/sound/pickup.wav")});
+    shared_sounds.insert({SOUND_ENEMY_DEATH, m_engine->createSound("data/sound/enemy_death.wav")});
+    shared_sounds.insert({SOUND_ENEMY_HIT, m_engine->createSound("data/sound/enemy_hit.wav")});
+    shared_sounds.insert({SOUND_PLAYER_DEATH, m_engine->createSound("data/sound/death.wav")});
+    shared_sounds.insert({SOUND_EXPLOSION, m_engine->createSound("data/sound/explosion.wav")});
+    shared_sounds.insert({SOUND_PICKUP, m_engine->createSound("data/sound/pickup.wav")});
+    mus_stage_clear.reset(m_engine->createMusic("data/sound/stage_clear.wav"));
+}
+
+float Level::GetTimeSinceComplete() {
+    return complete ? m_time - completeTime : -1.f;
 }

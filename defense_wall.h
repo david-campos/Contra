@@ -10,7 +10,7 @@
 #include "Gravity.h"
 
 #define EXPLOSION_STEPS 4
-#define TIME_BETWEEN_EXPLOSIONS 0.6f
+#define TIME_BETWEEN_EXPLOSIONS 0.3f
 
 class BlasterCanonBehaviour : public LevelComponent, public CollideComponentListener {
 private:
@@ -82,8 +82,11 @@ public:
                     explosion->position = go->position + Vector2D(3, 3) * PIXELS_ZOOM;
 
                     explosion->Init();
+                    level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
                     level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
                     level->RemoveGameObject(go);
+                } else {
+                    level->GetSound(SOUND_ENEMY_HIT)->Play(1);
                 }
             }
         }
@@ -153,10 +156,13 @@ public:
                 m_lives--;
                 if (m_lives == 0) {
                     CreateExplosion(go->position + Vector2D(18, 32) * PIXELS_ZOOM);
+                    level->FadeOutMusic(EXPLOSION_STEPS * floor(TIME_BETWEEN_EXPLOSIONS * 1000));
                     go->Send(SCORE1_10000);
                     m_nextExplosion = 2 * TIME_BETWEEN_EXPLOSIONS;
                     m_explosionSteps = EXPLOSION_STEPS;
                     m_doorAnimator->enabled = false;
+                } else {
+                    level->GetSound(SOUND_ENEMY_HIT)->Play(1);
                 }
             }
         }
@@ -179,6 +185,7 @@ public:
         explosion->position = pos;
 
         explosion->Init();
+        level->GetSound(SOUND_EXPLOSION)->Play(1);
         level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
     }
 };

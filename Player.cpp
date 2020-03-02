@@ -13,12 +13,13 @@ void PlayerControl::Update(float dt) {
     if (dt == 0) return;
 
     AvancezLib::KeyStatus keyStatus{};
-    if (level->IsComplete())
+    if (level->IsComplete()) {
+        bool moving = level->GetTimeSinceComplete() > 1.0;
         keyStatus = {
-                false, true, false, true, false, false, false,
+                false, moving, false, moving, false, false, false,
                 false, false
         };
-    else {
+    } else {
         level->GetEngine()->getKeyStatus(keyStatus);
         NormaliseKeyStatus(keyStatus);
     }
@@ -59,7 +60,7 @@ void PlayerControl::Update(float dt) {
         return;
     }
 
-    if (go->position.y > WINDOW_HEIGHT) {
+    if (go->position.y > WINDOW_HEIGHT && !level->IsComplete()) {
         Kill();
         m_gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM * .75);
         return;
