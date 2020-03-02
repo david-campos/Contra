@@ -154,13 +154,19 @@ public:
 class MachineGun : public Weapon {
 private:
     float m_shootDowntime = 0;
-    float m_soundDowntime = 0;
+    float m_soundTime = 0;
+    bool m_soundStopped = true;
+    std::function<void()> m_currentSoundStop = [](){};
 public:
     MachineGun(Level *level) : Weapon(level, "data/sound/machine_gun.wav") {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
-        m_soundDowntime -= dt;
+        m_soundTime += dt;
+        if (!m_soundStopped && !fireKey && m_soundTime > 0.15 && m_soundTime < 0.60) {
+            m_currentSoundStop();
+            m_soundStopped = true;
+        }
         return fireKey && m_shootDowntime <= 0;
     }
 
@@ -170,10 +176,12 @@ public:
         if (bullet != nullptr) {
             bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
-            m_shootDowntime = 0.15;
-            if (m_soundDowntime <= 0) {
-                m_sound->Play(1);
-                m_soundDowntime = 0.6;
+            m_shootDowntime = 0.2;
+            if (m_soundStopped || m_soundTime > 0.60) {
+                m_currentSoundStop();
+                m_currentSoundStop = m_sound->Play(1);
+                m_soundTime = 0;
+                m_soundStopped = false;
             }
             return true;
         }

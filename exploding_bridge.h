@@ -106,6 +106,8 @@ public:
             exp->Init();
             level->AddGameObject(exp, RENDERING_LAYER_BULLETS);
 
+            level->GetSound(SOUND_EXPLOSION)->Play(1);
+
             m_explodingTime = 0.85f;
         }
     }

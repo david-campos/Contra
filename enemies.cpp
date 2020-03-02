@@ -112,6 +112,7 @@ void LedderBehaviour::Update(float dt) {
         case GOING_TO_DIE:
             if (!m_animator->IsPlaying()) {
                 m_animator->PlayAnimation(m_animDying);
+                level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
                 ChangeToState(DYING);
             } else {
                 go->position = go->position + Vector2D(m_animator->mirrorHorizontal ? -0.5f : 0.5f, -1);
@@ -256,6 +257,7 @@ void GreederBehaviour::Update(float dt) {
             m_deathFor += dt;
             if (m_deathFor >= 0.25) {
                 m_animator->PlayAnimation(m_animDying);
+                level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
                 m_gravity->SetAcceleration(0);
                 m_gravity->SetVelocity(0);
             }

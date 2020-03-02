@@ -236,6 +236,7 @@ void PlayerControl::Kill() {
     m_isDeath = true;
     m_waitDead = 2.f;
     m_animator->PlayAnimation(m_dieAnim);
+    level->GetSound(SOUND_PLAYER_DEATH)->Play(1);
     m_gravity->SetFallThoughWater(true);
 }
 
@@ -326,6 +327,7 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 
 void PlayerControl::PickUp(PickUpType type) {
     go->Send(SCORE1_1000);
+    level->GetSound(SOUND_PICKUP)->Play(1);
     switch (type) {
         case PICKUP_MACHINE_GUN:
             m_currentWeapon.reset(new MachineGun(level));

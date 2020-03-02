@@ -1,8 +1,15 @@
 #pragma once
 
+#ifndef CONTRA_AVANCEZLIB_H
+#define CONTRA_AVANCEZLIB_H
+
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
+#include <functional>
+#include <set>
+
+void channel_finished_callback(int channel);
 
 class Sprite {
     SDL_Renderer *renderer;
@@ -30,13 +37,10 @@ public:
     Music(Mix_Music *mMusic) : mMusic(mMusic) {}
 
     void Play(short times = 0) {
-        if (mMusic && Mix_PlayingMusic() == 0) {
+        if (mMusic) {
+            Mix_HaltMusic();
             Mix_PlayMusic(mMusic, times - 1);
         }
-    }
-
-    void Stop() {
-        Mix_HaltMusic();
     }
 
     ~Music() {
@@ -53,11 +57,10 @@ class SoundEffect final {
 public:
     SoundEffect(Mix_Chunk *effect) : effect(effect) {}
 
-    void Play(short times = 1) {
-        if (effect) {
-            Mix_PlayChannel(-1, effect, times - 1);
-        }
-    }
+    /**
+     * @return A callback to Stop the channel (if it is still playing)
+     */
+    std::function<void()> Play(short times = 1);
 
     ~SoundEffect() {
         if (effect)
@@ -110,6 +113,7 @@ public:
     SoundEffect *createSound(const char *path);
 
     bool isMusicPlaying() { return Mix_PlayingMusic(); }
+    void StopMusic() {Mix_HaltMusic();}
 
     // Draws the given text.
     void drawText(int x, int y, const char *msg, SDL_Color color = {255, 255, 255},
@@ -150,10 +154,11 @@ public:
 private:
     SDL_Window *window;
     SDL_Renderer *renderer;
-    bool audioOpen;
+    bool audioOpen = false;
 
     TTF_Font *font;
 
     KeyStatus key;
 };
 
+#endif

@@ -231,6 +231,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         }
 
         CreateDefenseWall();
+        PreloadSounds();
     } catch (YAML::BadFile &exception) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't load level file: %s/level.yaml", &folder[0]);
     }
@@ -249,6 +250,9 @@ void Level::Destroy() {
     enemy_bullets->Destroy();
     delete enemy_bullets;
     enemy_bullets = nullptr;
+    for (auto pair: shared_sounds) {
+        delete pair.second;
+    }
     for (auto *player: players) {
         delete player;
         player = nullptr;
@@ -609,4 +613,12 @@ float Level::PlayersTopX() const {
             max_x = (*player)->position.x;
     }
     return max_x;
+}
+
+void Level::PreloadSounds() {
+    shared_sounds.insert({SOUND_ENEMY_DEATH, this->m_engine->createSound("data/sound/enemy_death.wav")});
+    shared_sounds.insert({SOUND_ENEMY_HIT, this->m_engine->createSound("data/sound/enemy_hit.wav")});
+    shared_sounds.insert({SOUND_PLAYER_DEATH, this->m_engine->createSound("data/sound/death.wav")});
+    shared_sounds.insert({SOUND_EXPLOSION, this->m_engine->createSound("data/sound/explosion.wav")});
+    shared_sounds.insert({SOUND_PICKUP, this->m_engine->createSound("data/sound/pickup.wav")});
 }

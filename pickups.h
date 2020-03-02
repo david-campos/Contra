@@ -106,6 +106,7 @@ public:
                 bullet->Kill();
                 if (m_lives == 0) {
                     m_animator->PlayAnimation(m_animDying);
+                    level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
                     m_powerUp->position = go->position;
                     go->Send(SCORE1_500);
                     m_powerUp->Init();

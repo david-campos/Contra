@@ -1,6 +1,29 @@
 #include "avancezlib.h"
 #include <SDL_image.h>
 
+std::unordered_map<int, unsigned int> current_sound_ids;
+unsigned int next_sound_id = 1;
+
+void channel_finished_callback(int channel) {
+    current_sound_ids[channel] = 0;
+}
+
+std::function<void()> SoundEffect::Play(short times) {
+    if (effect) {
+        int channel = Mix_PlayChannel(-1, effect, times - 1);
+        if (channel > 0) {
+            int sound_id = next_sound_id++;
+            current_sound_ids[channel] = sound_id;
+            return [channel, sound_id]() {
+                if (current_sound_ids[channel] == sound_id) {
+                    Mix_HaltChannel(channel);
+                }
+            };
+        }
+    }
+    return [](){};
+}
+
 // Creates the main window. Returns true on success.
 bool AvancezLib::init(int width, int height) {
     SDL_Log("Initializing the engine...\n");
@@ -54,7 +77,9 @@ bool AvancezLib::init(int width, int height) {
     //Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        audioOpen = false;
+    } else {
+        Mix_ChannelFinished(channel_finished_callback);
+        audioOpen = true;
     }
 
     SDL_Log("Engine up and running...\n");

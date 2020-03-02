@@ -14,6 +14,9 @@ void CanonBehaviour::OnCollision(const CollideComponent &collider) {
 
             if (m_life <= 0) {
                 go->Send(m_scoreGiven == 100 ? SCORE1_100 : SCORE1_500);
+                level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
+            } else {
+                level->GetSound(SOUND_ENEMY_HIT)->Play(1);
             }
         }
     }

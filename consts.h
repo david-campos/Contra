@@ -53,4 +53,11 @@
 #define FIRE_BULLET_MOVEMENT_RADIUS 15
 #define ENEMY_BULLET_SPEED 90
 
+// Preloaded sounds in the level
+#define SOUND_ENEMY_DEATH 0
+#define SOUND_PLAYER_DEATH 1
+#define SOUND_ENEMY_HIT 2
+#define SOUND_EXPLOSION 3
+#define SOUND_PICKUP 4
+
 #endif //CONTRA_CONSTS_H

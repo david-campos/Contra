@@ -36,6 +36,7 @@ class Level : public BaseScene {
     std::shared_ptr<Sprite> enemies_spritesheet;
     std::shared_ptr<Sprite> pickups_spritesheet;
     std::shared_ptr<Sprite> bridge_sprite; // Loaded on demand
+    std::unordered_map<int, SoundEffect*> shared_sounds;
     std::shared_ptr<Floor> level_floor;
     std::vector<Player *> players;
     std::vector<PlayerControl*> playerControls;
@@ -55,7 +56,7 @@ public:
     void Create(const std::string &folder, const std::shared_ptr<Sprite> &sprite_sheet,
                 const std::shared_ptr<Sprite> &enemies_spritesheet, const std::shared_ptr<Sprite> &pickups_spritesheet,
                 short num_players, AvancezLib *engine);
-
+    void PreloadSounds();
     void Init() override;
     void Update(float dt) override;
 
@@ -75,6 +76,10 @@ public:
     }
 
     void Destroy() override;
+
+    SoundEffect* GetSound(int id) const {
+        return shared_sounds.at(id);
+    }
 
     const std::shared_ptr<Sprite> &GetSpritesheet() const {
         return spritesheet;
