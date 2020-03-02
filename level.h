@@ -17,6 +17,7 @@
 #include "AnimationRenderer.h"
 #include "pickup_types.h"
 #include "scene.h"
+#include "player_stats.h"
 
 class Player;
 class PlayerControl;
@@ -57,7 +58,7 @@ class Level : public BaseScene {
 public:
     void Create(const std::string &folder, const std::shared_ptr<Sprite> &sprite_sheet,
                 const std::shared_ptr<Sprite> &enemies_spritesheet, const std::shared_ptr<Sprite> &pickups_spritesheet,
-                short num_players, AvancezLib *engine);
+                short num_players, PlayerStats* stats, AvancezLib *engine);
     void PreloadSounds();
     void Init() override;
     void Update(float dt) override;
@@ -155,7 +156,7 @@ private:
     template<typename T>
     ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
                                                const Box &box);
-    void CreatePlayers(short num_players);
+    void CreatePlayers(short num_players, PlayerStats* stats);
     /**
      * @param behaviour Create will be called, no need to create it first
      */

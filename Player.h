@@ -18,12 +18,12 @@
 
 class Player : public GameObject {
 public:
-    void Create(Level* level, short index);
+    void Create(Level* level, short index, PlayerStats playerStats);
 };
 
 class PlayerControl : public LevelComponent, public CollideComponentListener {
 public:
-    void Create(Level* level, GameObject* go, short index);
+    void Create(Level* level, GameObject* go, short index, int lives, Weapon* weapon);
 
     void Init() override;
 

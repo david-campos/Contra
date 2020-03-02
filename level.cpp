@@ -89,7 +89,7 @@ void Level::Update(float dt) {
 
 void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &player_spritesheet,
                    const std::shared_ptr<Sprite> &enemy_spritesheet, const std::shared_ptr<Sprite> &pickup_spritesheet,
-                   short num_players, AvancezLib *avancezLib) {
+                   short num_players, PlayerStats* stats, AvancezLib *avancezLib) {
     SDL_Log("Level::Create");
     spritesheet = player_spritesheet;
     enemies_spritesheet = enemy_spritesheet;
@@ -120,7 +120,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         m_grid.Create(34 * PIXELS_ZOOM, level_width, WINDOW_HEIGHT);
 
         CreateBulletPools();
-        CreatePlayers(num_players);
+        CreatePlayers(num_players, stats);
 
         for (const auto &rc_node: scene_root["rotating_canons"]) {
             auto *tank = new RotatingCanon();
@@ -349,10 +349,10 @@ void Level::Init() {
     if (m_music) m_music->Play();
 }
 
-void Level::CreatePlayers(short num_players) {
+void Level::CreatePlayers(short num_players, PlayerStats* stats) {
     for (short i = 0; i < num_players; i++) {
         auto *player = new Player();
-        player->Create(this, i);
+        player->Create(this, i, stats[i]);
         auto *playerControl = player->GetComponent<PlayerControl *>();
         player->AddReceiver(this);
         game_objects[RENDERING_LAYER_PLAYER]->insert(player);

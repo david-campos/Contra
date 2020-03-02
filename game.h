@@ -8,12 +8,9 @@
 #include "bullets.h"
 #include "canons.h"
 #include "enemies.h"
+#include "player_stats.h"
 
 class Game : public GameObject {
-public:
-    struct PlayerStats {
-        int score;
-    };
 private:
     GameObject *currentScene;
     AvancezLib *engine;
@@ -36,7 +33,8 @@ public:
         paused = false;
         can_continue = true;
         memset(lastSavedStats, 0, 2 * sizeof(PlayerStats));
-        memset(stats, 0, 2 * sizeof(PlayerStats));
+        lastSavedStats[0].lives = lastSavedStats[1].lives = 2;
+        memcpy(stats, lastSavedStats, 2 * sizeof(PlayerStats));
     }
 
     int GetCurrentLevel() const;

@@ -67,9 +67,16 @@ void MenuWithStats::Update(float dt) {
     sprintf(reinterpret_cast<char *>(&msg), "P1 % 10d", m_game->GetPlayerStats()[0].score);
     m_engine->drawText(10 * PIXELS_ZOOM, 10 * PIXELS_ZOOM,
             msg, {188, 188, 188});
+    sprintf(reinterpret_cast<char *>(&msg), "REST %d", m_game->GetPlayerStats()[0].lives + 1);
+    m_engine->drawText(10 * PIXELS_ZOOM, 10 * PIXELS_ZOOM + 40,
+            msg, {188, 188, 188});
+
     if (m_game->GetPlayers() == 2) {
         sprintf(reinterpret_cast<char *>(&msg), "P2 % 10d", m_game->GetPlayerStats()[1].score);
         m_engine->drawText(WINDOW_WIDTH - 10 * PIXELS_ZOOM, 10 * PIXELS_ZOOM,
+                msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_RIGHT_TOP);
+        sprintf(reinterpret_cast<char *>(&msg), "REST %d", m_game->GetPlayerStats()[1].lives + 1);
+        m_engine->drawText(WINDOW_WIDTH - 10 * PIXELS_ZOOM, 10 * PIXELS_ZOOM + 40,
                 msg, {188, 188, 188}, AvancezLib::TEXT_ALIGN_RIGHT_TOP);
     }
 }

@@ -224,10 +224,8 @@ void PlayerControl::Init() {
             -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
             7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
     };
-    m_currentWeapon = std::make_unique<DefaultWeapon>(level);
     m_previousKeyStatus = {false, false, false, false, false, false, false,
                            false};
-    m_remainingLives = 2;
     m_hasInertia = false;
     m_facingRight = true;
     m_diving = false;
@@ -236,6 +234,7 @@ void PlayerControl::Init() {
 void PlayerControl::Kill() {
     m_isDeath = true;
     m_waitDead = 2.f;
+    go->Send(m_index == 0 ? LIFE_LOST_1 : LIFE_LOST_2);
     m_animator->PlayAnimation(m_dieAnim);
     level->GetSound(SOUND_PLAYER_DEATH)->Play(1);
     m_gravity->SetFallThoughWater(true);
@@ -351,8 +350,10 @@ void PlayerControl::PickUp(PickUpType type) {
     }
 }
 
-void PlayerControl::Create(Level *level, GameObject *go, short index) {
+void PlayerControl::Create(Level *level, GameObject *go, short index, int lives, Weapon* weapon) {
     LevelComponent::Create(level, go);
+    m_remainingLives = lives;
+    m_currentWeapon.reset(weapon);
     m_index = index;
 }
 
@@ -368,7 +369,7 @@ void PlayerControl::NormaliseKeyStatus(AvancezLib::KeyStatus &status) {
 }
 
 void
-Player::Create(Level *level, short index) {
+Player::Create(Level *level, short index, PlayerStats stats) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
     int shift = index == 0 ? 0 : SECOND_PLAYER_SHIFT;
@@ -457,7 +458,7 @@ Player::Create(Level *level, short index) {
     auto *gravity = new Gravity();
     gravity->Create(level, this);
     auto *playerControl = new PlayerControl();
-    playerControl->Create(level, this, index);
+    playerControl->Create(level, this, index, stats.lives, new DefaultWeapon(level));
     auto *collider = new BoxCollider();
     collider->Create(level, this,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,

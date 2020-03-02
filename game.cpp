@@ -26,7 +26,8 @@ void Game::Receive(Message m) {
                 can_continue = false;
 
                 auto level = new Level();
-                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players, engine);
+                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players,
+                        stats, engine);
                 level->AddReceiver(this);
                 auto continue_menu = new ContinueLevel();
                 continue_menu->Create(engine, this);
@@ -55,7 +56,7 @@ void Game::Receive(Message m) {
                 case 0: {
                     auto level = new Level();
                     level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players,
-                            engine);
+                            stats, engine);
 
                     level->AddReceiver(this);
 
@@ -68,7 +69,7 @@ void Game::Receive(Message m) {
                     break;
                 }
                 case 1: {
-                    auto* credits = new Credits();
+                    auto *credits = new Credits();
                     credits->Create(engine, this);
                     credits->Init();
                     credits->AddReceiver(this);
@@ -93,6 +94,14 @@ void Game::Receive(Message m) {
             stats[(m - SCORE1_100) / 5].score += array[(m - SCORE1_100) % 5];
             break;
         }
+        case LIFE_LOST_1:
+            stats[0].lives -= 1;
+            break;
+        case LIFE_LOST_2:
+            if (players > 1) {
+                stats[1].lives -= 1;
+            }
+            break;
     }
 }
 

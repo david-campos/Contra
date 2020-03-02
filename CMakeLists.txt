@@ -14,7 +14,7 @@ find_package(SDL2_mixer REQUIRED)
 #find_package(GLEW REQUIRED)
 #find_package(OpenGL REQUIRED)
 
-add_executable(Contra main.cpp avancezlib.cpp component.cpp game_object.cpp object_pool.h vector2D.h AnimationRenderer.cpp AnimationRenderer.h Player.cpp Player.h floor.h Gravity.cpp Gravity.h SimpleRenderer.h bullets.h canons.cpp canons.h grid.cpp weapons.h enemies.cpp enemies.h level.cpp level.h yaml_converters.h pickups.h pickup_types.h exploding_bridge.h defense_wall.h menus.h scene.h menus.cpp game.cpp)
+add_executable(Contra main.cpp avancezlib.cpp component.cpp game_object.cpp object_pool.h vector2D.h AnimationRenderer.cpp AnimationRenderer.h Player.cpp Player.h floor.h Gravity.cpp Gravity.h SimpleRenderer.h bullets.h canons.cpp canons.h grid.cpp weapons.h enemies.cpp enemies.h level.cpp level.h yaml_converters.h pickups.h pickup_types.h exploding_bridge.h defense_wall.h menus.h scene.h menus.cpp game.cpp player_stats.h)
 
 file(COPY data DESTINATION .)
 
