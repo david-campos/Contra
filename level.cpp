@@ -50,17 +50,19 @@ void Level::Update(float dt) {
 
     // Adjust camera
     float players_min_x = PlayersMinX();
-    if (players_min_x < level_width - WINDOW_WIDTH) {
-        int top_x = WINDOW_WIDTH * (players.size() > 1 ? 0.7f : 0.5f);
-        if (players_top_x > m_camera.x + top_x) {
-            float center_on_top = players_top_x - top_x;
-            m_camera.x = (float) center_on_top > players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM ?
-                    players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM : center_on_top;
-        }
-    } else if (m_camera.x < level_width - WINDOW_WIDTH)
-        m_camera.x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
-    else
-        m_camera.x = level_width - WINDOW_WIDTH;
+    if (PlayersAlive() > 0) {
+        if (players_min_x < level_width - WINDOW_WIDTH) {
+            int top_x = WINDOW_WIDTH * (players.size() > 1 ? 0.7f : 0.5f);
+            if (players_top_x > m_camera.x + top_x) {
+                float center_on_top = players_top_x - top_x;
+                m_camera.x = (float) center_on_top > players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM ?
+                             players_min_x - SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM : center_on_top;
+            }
+        } else if (m_camera.x < level_width - WINDOW_WIDTH)
+            m_camera.x += PLAYER_SPEED * PIXELS_ZOOM * 2 * dt;
+        else
+            m_camera.x = level_width - WINDOW_WIDTH;
+    }
 
     // Progressively init the enemies in front of the camera
     while (m_camera.x + WINDOW_WIDTH + RENDERING_MARGINS > next_enemy_x && !not_found_enemies.empty()) {
@@ -89,7 +91,7 @@ void Level::Update(float dt) {
 
 void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &player_spritesheet,
                    const std::shared_ptr<Sprite> &enemy_spritesheet, const std::shared_ptr<Sprite> &pickup_spritesheet,
-                   short num_players, PlayerStats* stats, AvancezLib *avancezLib) {
+                   short num_players, PlayerStats *stats, AvancezLib *avancezLib) {
     SDL_Log("Level::Create");
     spritesheet = player_spritesheet;
     enemies_spritesheet = enemy_spritesheet;
@@ -103,7 +105,7 @@ void Level::Create(const std::string &folder, const std::shared_ptr<Sprite> &pla
         {
             std::string bg = folder + scene_root["background"].as<std::string>();
             std::string music_str;
-            char* music = nullptr;
+            char *music = nullptr;
             Vector2D animation_shift(0, 0);
             if (scene_root["background_animation_shift"]) {
                 animation_shift = scene_root["background_animation_shift"].as<Vector2D>();
@@ -349,7 +351,7 @@ void Level::Init() {
     if (m_music) m_music->Play();
 }
 
-void Level::CreatePlayers(short num_players, PlayerStats* stats) {
+void Level::CreatePlayers(short num_players, PlayerStats *stats) {
     for (short i = 0; i < num_players; i++) {
         auto *player = new Player();
         player->Create(this, i, stats[i]);
@@ -600,21 +602,31 @@ short Level::PlayersAlive() const {
 }
 
 float Level::PlayersMinX() const {
-    float min_x = players[0]->position.x;
-    for (auto* player = &players[1]; player < &players[0] + players.size(); player++) {
-        if ((*player)->position.x < min_x)
-            min_x = (*player)->position.x;
+    float min_x = 0;
+    bool found_alive = false;
+    for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
+        if ((*player)->IsAlive() && (
+                !found_alive || (*player)->GetGameObject()->position.x < min_x
+        )) {
+            min_x = (*player)->GetGameObject()->position.x;
+            found_alive = true;
+        }
     }
     return min_x;
 }
 
 float Level::PlayersTopX() const {
-    float max_x = players[0]->position.x;
-    for (auto* player = &players[1]; player < &players[0] + players.size(); player++) {
-        if ((*player)->position.x > max_x)
-            max_x = (*player)->position.x;
+    float top_x = 0;
+    bool found_alive = false;
+    for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
+        if ((*player)->IsAlive() && (
+                !found_alive || (*player)->GetGameObject()->position.x > top_x
+        )) {
+            top_x = (*player)->GetGameObject()->position.x;
+            found_alive = true;
+        }
     }
-    return max_x;
+    return top_x;
 }
 
 void Level::PreloadSounds() {
