@@ -16,7 +16,7 @@ void Ledder::Create(Level *level, float time_hidden, float time_shown, float coo
                     int burst_length, float burst_cooldown, bool horizontally_precise) {
     GameObject::Create();
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, std::move(level->GetEnemiesSpritesheet()));
+    renderer->Create(level, this, std::move(level->GetSpritesheet(SPRITESHEET_ENEMIES)));
     renderer->AddAnimation({
             214, 59, 0.2, 3,
             25, 16, 19, 16,
@@ -210,7 +210,7 @@ void LedderBehaviour::OnCollision(const CollideComponent &collider) {
 void Greeder::Create(Level *level) {
     GameObject::Create();
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, std::move(level->GetEnemiesSpritesheet()));
+    renderer->Create(level, this, std::move(level->GetSpritesheet(SPRITESHEET_ENEMIES)));
     renderer->AddAnimation({
             1, 2, 0.1, 3,
             17, 32, 9, 32,

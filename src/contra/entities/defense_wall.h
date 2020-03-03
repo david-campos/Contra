@@ -8,6 +8,8 @@
 #include "bullets.h"
 #include "../../components/collision/BoxCollider.h"
 #include "../components/Gravity.h"
+#include "exploding_bridge.h"
+#include "../../components/render/SimpleRenderer.h"
 
 #define EXPLOSION_STEPS 4
 #define TIME_BETWEEN_EXPLOSIONS 0.3f
@@ -69,7 +71,7 @@ public:
                     auto *explosion = new GameObject();
                     explosion->Create();
                     auto *renderer = new AnimationRenderer();
-                    renderer->Create(level, explosion, level->GetEnemiesSpritesheet());
+                    renderer->Create(level, explosion, level->GetSpritesheet(SPRITESHEET_ENEMIES));
                     renderer->AddAnimation({
                             92, 611, 0.15, 3,
                             30, 30, 15, 15,
@@ -172,7 +174,7 @@ public:
         auto *explosion = new GameObject();
         explosion->Create();
         auto *renderer = new AnimationRenderer();
-        renderer->Create(level, explosion, level->GetEnemiesSpritesheet());
+        renderer->Create(level, explosion, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation({
                 92, 611, 0.15, 3,
                 30, 30, 15, 15,

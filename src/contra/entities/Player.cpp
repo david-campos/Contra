@@ -372,7 +372,7 @@ Player::Create(Level *level, short index, PlayerStats stats) {
     position = Vector2D(50 * PIXELS_ZOOM, 0);
     auto *renderer = new AnimationRenderer();
     int shift = index == 0 ? 0 : SECOND_PLAYER_SHIFT;
-    renderer->Create(level, this, level->GetSpritesheet());
+    renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_PLAYER));
     renderer->AddAnimation({
             0 + shift, 8, 0.1, 2,
             24, 34, 8, 33,

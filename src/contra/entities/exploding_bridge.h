@@ -37,21 +37,21 @@ public:
                 30, 30, 15, -5,
                 "Dying", AnimationRenderer::BOUNCE_AND_STOP};
         auto *renderer = new AnimationRenderer();
-        renderer->Create(level, this, level->GetEnemiesSpritesheet());
+        renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation(animation);
         renderer->Play();
         AddComponent(renderer);
 
         animation.anchor_x = 7;
         renderer = new AnimationRenderer();
-        renderer->Create(level, this, level->GetEnemiesSpritesheet());
+        renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation(animation);
         renderer->Play();
         AddComponent(renderer);
 
         animation.anchor_x = 22;
         renderer = new AnimationRenderer();
-        renderer->Create(level, this, level->GetEnemiesSpritesheet());
+        renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation(animation);
         renderer->Play();
         AddComponent(renderer);
@@ -59,7 +59,7 @@ public:
         animation.anchor_x = 15;
         animation.anchor_y = 15;
         renderer = new AnimationRenderer();
-        renderer->Create(level, this, level->GetEnemiesSpritesheet());
+        renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation(animation);
         renderer->Play();
         AddComponent(renderer);

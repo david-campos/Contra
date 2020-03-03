@@ -153,7 +153,7 @@ void RotatingCanon::Create(Level *level, const Vector2D &pos, int burst_length) 
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, level->GetEnemiesSpritesheet());
+    renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
     // Add all the directions as consecutive animations
     const int frame_side = 34;
     const int anim_len = 3;
@@ -198,7 +198,7 @@ void Gulcan::Create(Level *level, const Vector2D &pos) {
     GameObject::Create();
     position = pos;
     auto *renderer = new AnimationRenderer();
-    renderer->Create(level, this, level->GetEnemiesSpritesheet());
+    renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
     // Add all the directions as consecutive animations
     const int frame_side = 34;
     const int anim_len = 3;

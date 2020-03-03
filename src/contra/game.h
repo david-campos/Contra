@@ -10,13 +10,14 @@
 #include "entities/enemies.h"
 #include "player_stats.h"
 
+class LevelFactory;
+
 class Game : public GameObject {
 private:
     GameObject *currentScene;
     AvancezLib *engine;
-    std::shared_ptr<Sprite> spritesheet;
-    std::shared_ptr<Sprite> enemies_spritesheet;
-    std::shared_ptr<Sprite> pickups_spritesheet;
+    LevelFactory *levelFactory;
+    std::unordered_map<int, std::shared_ptr<Sprite>> spritesheets;
 
     bool paused;
     bool pause_pressed_before;
@@ -103,8 +104,5 @@ public:
 
     void Receive(Message m) override;
 
-    void Destroy() override {
-        SDL_Log("Game::Destroy");
-        if (currentScene) currentScene->Destroy();
-    }
+    void Destroy() override;
 };

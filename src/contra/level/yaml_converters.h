@@ -6,12 +6,14 @@
 #define CONTRA_YAML_CONVERTERS_H
 
 #include <yaml-cpp/yaml.h>
+#include "../../kernel/vector2D.h"
+#include "../entities/pickup_types.h"
 
 namespace YAML {
     template<>
     struct convert<Vector2D> {
-        static bool decode(const Node& node, Vector2D& rhs) {
-            if(!node.IsSequence() || node.size() != 2) {
+        static bool decode(const Node &node, Vector2D &rhs) {
+            if (!node.IsSequence() || node.size() != 2) {
                 return false;
             }
 

@@ -4,13 +4,21 @@
 
 #include "game.h"
 #include "menus.h"
+#include "level/level_factory.h"
 
 void Game::Create(AvancezLib *avancezLib) {
     SDL_Log("Game::Create");
     this->engine = avancezLib;
-    spritesheet.reset(engine->createSprite("data/spritesheet.png"));
-    enemies_spritesheet.reset(engine->createSprite("data/enemies_spritesheet.png"));
-    pickups_spritesheet.reset(engine->createSprite("data/pickups.png"));
+    levelFactory = new LevelFactory(&spritesheets, players, &stats[0], engine);
+
+    {
+        std::shared_ptr<Sprite> ss_player(engine->createSprite("data/spritesheet.png"));
+        std::shared_ptr<Sprite> ss_enemies(engine->createSprite("data/enemies_spritesheet.png"));
+        std::shared_ptr<Sprite> ss_pickups(engine->createSprite("data/pickups.png"));
+        spritesheets.insert({SPRITESHEET_PLAYER, ss_player});
+        spritesheets.insert({SPRITESHEET_ENEMIES, ss_enemies});
+        spritesheets.insert({SPRITESHEET_PICKUPS, ss_pickups});
+    }
 
     auto *menu = new MainMenu();
     menu->Create(engine, this);
@@ -25,9 +33,7 @@ void Game::Receive(Message m) {
             if (can_continue) {
                 can_continue = false;
 
-                auto level = new Level();
-                level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players,
-                        stats, engine);
+                auto *level = levelFactory->LoadLevel("data/level1/", players);
                 level->AddReceiver(this);
                 auto continue_menu = new ContinueLevel();
                 continue_menu->Create(engine, this);
@@ -51,32 +57,22 @@ void Game::Receive(Message m) {
 
             memcpy(lastSavedStats, stats, sizeof(PlayerStats) * 2);
 
-            // We only have level 1 by now ^^'
-            switch (current_level) {
-                case 0: {
-                    auto level = new Level();
-                    level->Create("data/level1/", spritesheet, enemies_spritesheet, pickups_spritesheet, players,
-                            stats, engine);
+            if (current_level < 2) {
+                auto *level = levelFactory->LoadLevel("data/level" + std::to_string(current_level + 1) + "/", players);
+                level->AddReceiver(this);
+                auto *introduction = new PreLevel();
+                introduction->Create(engine, this);
+                introduction->Init(level);
+                introduction->AddReceiver(this);
 
-                    level->AddReceiver(this);
+                Start(introduction);
+            } else {
+                auto *credits = new Credits();
+                credits->Create(engine, this);
+                credits->Init();
+                credits->AddReceiver(this);
 
-                    auto introduction = new PreLevel();
-                    introduction->Create(engine, this);
-                    introduction->Init(level);
-                    introduction->AddReceiver(this);
-
-                    Start(introduction);
-                    break;
-                }
-                case 1: {
-                    auto *credits = new Credits();
-                    credits->Create(engine, this);
-                    credits->Init();
-                    credits->AddReceiver(this);
-
-                    Start(credits);
-                    break;
-                }
+                Start(credits);
             }
             break;
         }
@@ -111,5 +107,11 @@ int Game::GetCurrentLevel() const {
 
 void Game::SetCurrentLevel(int currentLevel) {
     current_level = currentLevel;
+}
+
+void Game::Destroy() {
+    SDL_Log("Game::Destroy");
+    if (currentScene) currentScene->Destroy();
+    delete levelFactory;
 }
 
