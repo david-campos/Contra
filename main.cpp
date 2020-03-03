@@ -3,10 +3,10 @@
 #include <thread>
 #include <chrono>
 
-#include "consts.h"
+#include "src/consts.h"
 
-#include "game.h"
-#include "avancezlib.h"
+#include "src/contra/game.h"
+#include "src/kernel/avancezlib.h"
 
 float game_speed = 1.f;
 
@@ -47,10 +47,4 @@ int main() {
         game.Draw();
     }
 #pragma clang diagnostic pop
-
-    // clean up
-    game.Destroy();
-    engine.destroy();
-
-    return 0;
 }
