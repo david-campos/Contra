@@ -142,6 +142,9 @@ void ScrollingLevel::Init() {
 
 void ScrollingLevel::Update(float dt) {
     Level::Update(dt);
+
+    if (PlayersAlive() <= 0) return;
+
     float players_top_x = PlayersTopX();
     if (complete && players_top_x >= levelWidth && !m_engine->isMusicPlaying()) {
         Send(NEXT_LEVEL);
