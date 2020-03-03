@@ -14,7 +14,6 @@ ScrollingLevel::Create(const std::string &folder, const std::unordered_map<int, 
                        YAML::Node scene_root, short num_players, PlayerStats *stats, AvancezLib *engine) {
     Level::Create(folder, spritesheets, scene_root, num_players, stats, engine);
     level_floor = std::make_shared<Floor>((folder + scene_root["floor_mask"].as<std::string>()).data());
-    m_grid.Create(34 * PIXELS_ZOOM, levelWidth, WINDOW_HEIGHT);
 
     for (const auto &rc_node: scene_root["rotating_canons"]) {
         auto *tank = new RotatingCanon();
@@ -357,4 +356,19 @@ ObjectPool<Bullet> *ScrollingLevel::CreateBlasterBulletPool() {
         bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
     }
     return pool;
+}
+
+Player *ScrollingLevel::CreatePlayer(int index, PlayerStats *stats) {
+    auto *player = new Player();
+    player->Create(this, index);
+
+    auto *playerControl = new PlayerControlScrolling();
+    // TODO: add weapon to the stats and change this
+    playerControl->Create(this, player, index, stats->lives, new DefaultWeapon(this));
+
+    player->AddComponent(playerControl);
+    player->GetComponent<CollideComponent *>()->SetListener(playerControl);
+    player->AddReceiver(this);
+
+    return player;
 }

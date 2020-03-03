@@ -19,16 +19,18 @@ protected:
     Vector2D m_direction;
     int m_speed;
     bool m_kill;
+    float m_minY;
 public:
     void Create(Level *level, GameObject *go) {
         Component::Create(level, go);
     }
 
-    virtual void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1) {
+    virtual void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1, float y_min = -9999) {
         m_direction = direction.normalise();
         m_speed = speed;
         m_damage = damage;
         m_kill = false;
+        m_minY = y_min;
         if (!m_renderer) {
             m_renderer = go->GetComponent<AnimationRenderer *>();
             m_animBullet = m_renderer->FindAnimation("Bullet");
@@ -56,6 +58,9 @@ public:
                 or (go->position.y < 0 or go->position.y > WINDOW_HEIGHT)) {
                 go->Disable();
                 go->MarkToRemove();
+            }
+            if (go->position.y < m_minY) {
+                Kill();
             }
         }
     }
@@ -87,8 +92,8 @@ private:
     Vector2D m_theoricalPos;
     float m_currentAngle;
 public:
-    void Init(const Vector2D &direction, int speed, int damage) override {
-        BulletBehaviour::Init(direction, speed, damage);
+    void Init(const Vector2D &direction, int speed, int damage, float y_min = -9999) override {
+        BulletBehaviour::Init(direction, speed, damage, y_min);
         m_theoricalPos = go->position;
         m_currentAngle = 3.1416;
     }
@@ -103,8 +108,8 @@ public:
 
 class LaserBulletBehaviour : public BulletStraightMovement {
 public:
-    void Init(const Vector2D &direction, int speed, int damage) override {
-        BulletBehaviour::Init(direction, speed, damage);
+    void Init(const Vector2D &direction, int speed, int damage, float y_min = -9999) override {
+        BulletBehaviour::Init(direction, speed, damage, y_min);
         if (abs(direction.x) <= 0.0001) {
             m_renderer->CurrentAndPause(0); // 0 = vertical
         } else if (abs(direction.y) <= 0.0001) {
@@ -120,8 +125,8 @@ class BlastBulletBehaviour : public BulletBehaviour {
 private:
     Gravity *m_gravity;
 public:
-    void Init(const Vector2D &direction, int speed, int damage) override {
-        BulletBehaviour::Init(direction, speed, damage);
+    void Init(const Vector2D &direction, int speed, int damage, float y_min = -9999) override {
+        BulletBehaviour::Init(direction, speed, damage, y_min);
         if (!m_gravity) {
             m_gravity = go->GetComponent<Gravity *>();
         }
@@ -139,14 +144,14 @@ public:
 class Bullet : public GameObject {
 public:
     void Init(const Vector2D &pos, const Vector2D &direction,
-              const int speed = BULLET_SPEED * PIXELS_ZOOM) {
+              const int speed = BULLET_SPEED * PIXELS_ZOOM, const float limit_y = -9999) {
         GameObject::Init();
         position = pos;
         auto *behaviour = GetComponent<BulletBehaviour *>();
         if (!behaviour) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find bullet behaviour.");
         } else {
-            behaviour->Init(direction, speed);
+            behaviour->Init(direction, speed, 1, limit_y);
         }
     }
 };

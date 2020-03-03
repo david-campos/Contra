@@ -43,7 +43,7 @@ public:
      * Fires the gun
      * @return True if the fire was successful, false if not
      */
-    virtual bool Fire(const Vector2D &position, const Vector2D &direction) = 0;
+    virtual bool Fire(const Vector2D &position, const Vector2D &direction, const float minY = -9999) = 0;
 
     /**
      * Indicates if the weapon is automatic or not, so the animation of the player does not make weird stuff
@@ -58,7 +58,7 @@ protected:
     float m_shootDowntime = 0;
     int m_bulletSpeed = BULLET_SPEED;
 public:
-    DefaultWeapon(Level *level, const char* sound = "data/sound/rifle.wav") : Weapon(level, sound) {}
+    DefaultWeapon(Level *level, const char *sound = "data/sound/rifle.wav") : Weapon(level, sound) {}
 
     bool ShouldFire(bool fireKey, float dt) override {
         m_shootDowntime -= dt;
@@ -68,11 +68,12 @@ public:
         return !m_hasShot && fireKey && m_shootDowntime <= 0;
     }
 
-    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+    bool Fire(const Vector2D &position, const Vector2D &direction, const float minY = -9999) override {
         // Grab the bullet from the pool
         auto *bullet = GetBulletPool()->FirstAvailable();
         if (bullet != nullptr) {
-            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * m_bulletSpeed * PIXELS_ZOOM);
+            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * m_bulletSpeed * PIXELS_ZOOM,
+                    minY);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_hasShot = true;
             m_shootDowntime = 0.15;
@@ -108,6 +109,7 @@ protected:
     float m_shootDowntime = 0;
     int m_nextBullet;
     Vector2D m_position, m_direction;
+    float m_minY;
 public:
     LaserGun(Level *level) : Weapon(level, "data/sound/laser.wav") {}
 
@@ -129,11 +131,12 @@ public:
         return fireKey && !m_hasShot;
     }
 
-    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+    bool Fire(const Vector2D &position, const Vector2D &direction, const float minY = -9999) override {
         // All bullets are fired and they reset
         m_nextBullet = 0;
         m_position = position;
         m_direction = direction;
+        m_minY = minY;
         m_hasShot = true;
         m_sound->Play(1);
         ResetNext();
@@ -144,7 +147,7 @@ public:
         auto *bullet = m_level->GetLaserBullets()->pool[m_nextBullet];
         bullet->Disable();
         m_level->RemoveImmediately(bullet, RENDERING_LAYER_BULLETS);
-        bullet->Init(m_position, m_direction.normalise(), BULLET_SPEED * PIXELS_ZOOM);
+        bullet->Init(m_position, m_direction.normalise(), BULLET_SPEED * PIXELS_ZOOM, m_minY);
         m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
         m_nextBullet++;
         m_shootDowntime = 0.02;
@@ -156,7 +159,7 @@ private:
     float m_shootDowntime = 0;
     float m_soundTime = 0;
     bool m_soundStopped = true;
-    std::function<void()> m_currentSoundStop = [](){};
+    std::function<void()> m_currentSoundStop = []() {};
 public:
     MachineGun(Level *level) : Weapon(level, "data/sound/machine_gun.wav") {}
 
@@ -170,11 +173,11 @@ public:
         return fireKey && m_shootDowntime <= 0;
     }
 
-    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+    bool Fire(const Vector2D &position, const Vector2D &direction, const float minY = -9999) override {
         // Grab the bullet from the pool
         auto *bullet = m_level->GetMachineGunBullets()->FirstAvailable();
         if (bullet != nullptr) {
-            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
+            bullet->Init(position, direction.normalise(), m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM, minY);
             m_level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             m_shootDowntime = 0.2;
             if (m_soundStopped || m_soundTime > 0.60) {
@@ -208,7 +211,7 @@ public:
         return !m_hasShot && fireKey && m_shootDowntime <= 0;
     }
 
-    bool Fire(const Vector2D &position, const Vector2D &direction) override {
+    bool Fire(const Vector2D &position, const Vector2D &direction, const float minY = -9999) override {
         m_hasShot = false;
         std::vector<Bullet *> bullets = m_level->GetSpreadBullets()->FirstAvailableN(5);
         if (bullets.size() >= 3) {
@@ -216,7 +219,8 @@ public:
                 float angle = 0.2618f - i * 0.5236f / (bullets.size() - 1); // 15deg - (30deg / (num bullets + 1)) * i
                 bullets[i]->Init(position,
                         direction.rotate(angle).normalise(),
-                        m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM);
+                        m_bulletSpeedMultiplier * BULLET_SPEED * PIXELS_ZOOM,
+                        minY);
                 m_level->AddGameObject(bullets[i], RENDERING_LAYER_BULLETS);
             }
             m_hasShot = true;

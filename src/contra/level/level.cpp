@@ -58,6 +58,7 @@ void Level::Create(const std::string &folder, const std::unordered_map<int, std:
     }
     BaseScene::Create(avancezLib, bg.data(), music, animation_shift);
     levelWidth = m_background->getWidth() * PIXELS_ZOOM;
+    m_grid.Create(34 * PIXELS_ZOOM, levelWidth, WINDOW_HEIGHT);
 
     CreateBulletPools();
     CreatePlayers(num_players, stats);
@@ -164,12 +165,10 @@ void Level::Init() {
 
 void Level::CreatePlayers(short num_players, PlayerStats *stats) {
     for (short i = 0; i < num_players; i++) {
-        auto *player = new Player();
-        player->Create(this, i, stats[i]);
-        auto *playerControl = player->GetComponent<PlayerControl *>();
-        player->AddReceiver(this);
+        auto *player = CreatePlayer(i, &stats[i]);
         game_objects[RENDERING_LAYER_PLAYER]->insert(player);
         players.push_back(player);
+        auto *playerControl = player->GetComponent<PlayerControl *>();
         playerControls.push_back(playerControl);
     }
 }

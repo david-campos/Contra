@@ -17,6 +17,7 @@ private:
     bool m_lettingFall;
     bool m_fallThroughWater = false; // Used after death
     bool m_fallThroughCanFall = false;
+    float m_baseFloor = 999999999;
 public:
     void Update(float dt) override;
 
@@ -29,17 +30,26 @@ public:
     [[nodiscard]] float GetVelocity() const {
         return m_velocity;
     }
+
     void SetFallThoughWater(const bool value) { m_fallThroughWater = value; }
-    void SetFallThroughCanFall(const bool value) {m_fallThroughCanFall = value;}
+
+    void SetFallThroughCanFall(const bool value) { m_fallThroughCanFall = value; }
+
     // Let's the game object fall until it leaves the current floor
     void LetFall();
+
     [[nodiscard]] bool CanFall() const;
 
     [[nodiscard]] float GetAcceleration() const;
+
     void SetAcceleration(float acceleration);
 
+    void SetBaseFloor(float mBaseFloor);
+
     [[nodiscard]] bool IsOnWater() const;
+
     [[nodiscard]] bool IsOnFloor() const;
+
     [[nodiscard]] bool IsOnAir() const;
 };
 

@@ -143,7 +143,11 @@ private:
     template<typename T>
     ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
                                                const Box &box);
-    void CreatePlayers(short num_players, PlayerStats* stats);
+
+    void CreatePlayers(short num_players, PlayerStats *stats);
+
+protected:
+    virtual Player *CreatePlayer(int index, PlayerStats *stats) = 0;
 };
 
 #endif //CONTRA_LEVEL_H

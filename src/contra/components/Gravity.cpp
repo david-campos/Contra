@@ -11,9 +11,6 @@ void Gravity::Update(float dt) {
     m_canFall = false;
 
     auto floor = level->GetLevelFloor().lock();
-    if (!floor) {
-        return;
-    }
 
     float y_increment = m_velocity * dt;
     if (m_velocity < 0) {
@@ -22,26 +19,34 @@ void Gravity::Update(float dt) {
         return;
     }
 
-    // Check all the intermediate pixels to ensure it never misses even in low frame rate
     int next_y = (int) std::floor((go->position.y + y_increment) / PIXELS_ZOOM);
     int x = (int) std::floor(go->position.x / PIXELS_ZOOM);
     int y;
-    for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor &&
-                                                             (!m_onWater || m_fallThroughWater); y++) {
-        m_onFloor = m_onFloor || floor->IsFloor(x, y);
-        m_onWater = m_onWater || floor->IsWater(x, y);
-    }
-    y--; // Correct y as the loop will over-increase 1
+    if (floor) {
+        // Check all the intermediate pixels to ensure it never misses even in low frame rate
+        for (y = (int) std::floor(go->position.y / PIXELS_ZOOM); y <= next_y && !m_onFloor &&
+                                                                 (!m_onWater || m_fallThroughWater); y++) {
+            m_onFloor = m_onFloor || floor->IsFloor(x, y);
+            m_onWater = m_onWater || floor->IsWater(x, y);
+        }
+        y--; // Correct y as the loop will over-increase 1
 
-    if (!m_onFloor) {
-        m_lettingFall = false;
+        if (!m_onFloor) {
+            m_lettingFall = false;
+        }
+    } else {
+        m_onFloor = go->position.y >= m_baseFloor;
+        y = m_baseFloor / PIXELS_ZOOM;
     }
 
     if (!(m_onFloor or m_onWater) or m_lettingFall or (!m_onFloor && m_fallThroughWater)) {
         go->position = go->position + Vector2D(0, y_increment); // Falls free
         m_velocity += m_acceleration * dt;
     } else if (!m_lettingFall) {
-        m_canFall = floor->ShouldBeAbleToFall(x, y);
+        if (floor) {
+            m_canFall = floor->ShouldBeAbleToFall(x, y);
+        } else m_canFall = false;
+
         if (!m_canFall || !m_fallThroughCanFall) {
             // Put on the floor pixel
             go->position = Vector2D(go->position.x, y * PIXELS_ZOOM);
@@ -79,5 +84,9 @@ bool Gravity::IsOnAir() const {
 
 bool Gravity::CanFall() const {
     return m_canFall;
+}
+
+void Gravity::SetBaseFloor(float mBaseFloor) {
+    m_baseFloor = mBaseFloor;
 }
 

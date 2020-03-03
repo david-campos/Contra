@@ -45,6 +45,9 @@ private:
     void CreateDefenseWall();
 
     ObjectPool<Bullet> *CreateBlasterBulletPool();
+
+protected:
+    Player *CreatePlayer(int index, PlayerStats *stats) override;
 };
 
 #endif //CONTRA_SCROLLING_LEVEL_H

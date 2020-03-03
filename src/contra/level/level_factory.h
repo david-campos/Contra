@@ -9,6 +9,7 @@
 #include <memory>
 #include <yaml-cpp/yaml.h>
 #include "scrolling_level.h"
+#include "perspective_level.h"
 
 class LevelFactory {
 private:
@@ -30,6 +31,11 @@ public:
                 switch (level_type) {
                     case 'S': {
                         level = new ScrollingLevel();
+                        level->Create(folder, spritesheets, scene_root, num_players, stats, engine);
+                        break;
+                    }
+                    case 'P': {
+                        level = new PerspectiveLevel();
                         level->Create(folder, spritesheets, scene_root, num_players, stats, engine);
                         break;
                     }

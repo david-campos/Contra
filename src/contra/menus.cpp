@@ -36,17 +36,17 @@ void MainMenu::Update(float dt) {
             m_music->Play(1);
             musicPlayed = true;
         }
-        if (!previousKeys.start && keyStatus.start) {
-            started = m_time;
-        }
         if (started != 0.f) {
             if (!m_engine->isMusicPlaying()) {
                 game->SetPlayers(selected + 1);
-                game->SetCurrentLevel(-1);
+                game->SetCurrentLevel(0/*TODO: restore to -1*/);
                 game->Reset();
                 Send(NEXT_LEVEL);
             }
         } else {
+            if (!previousKeys.start && keyStatus.start) {
+                started = m_time;
+            }
             if (!previousKeys.up && keyStatus.up) {
                 selected -= 1;
             }
