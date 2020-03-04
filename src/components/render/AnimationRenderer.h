@@ -86,6 +86,8 @@ public:
     /** Moves the current time to the start of the specified frame */
     void GoToFrame(int frame);
 
+    [[nodiscard]] bool IsGoingBackwards() const { return !m_goingForward; }
+
     void Update(float dt) override;
 
 private:
