@@ -10,6 +10,7 @@
 #include "../components/Gravity.h"
 #include "exploding_bridge.h"
 #include "../../components/render/SimpleRenderer.h"
+#include "explosion.h"
 
 #define EXPLOSION_STEPS 4
 #define TIME_BETWEEN_EXPLOSIONS 0.3f

@@ -70,7 +70,7 @@ public:
      */
     virtual bool IsColliding(const CollideComponent *other) = 0;
 
-    void Update(float dt) override;
+    virtual void Update(float dt) override;
 
     void SendCollision(const CollideComponent &other) {
         if (listener) listener->OnCollision(other);

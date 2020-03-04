@@ -34,25 +34,31 @@ void Gravity::Update(float dt) {
         if (!m_onFloor) {
             m_lettingFall = false;
         }
-    } else {
-        m_onFloor = go->position.y >= m_baseFloor;
-        y = m_baseFloor / PIXELS_ZOOM;
-    }
 
-    if (!(m_onFloor or m_onWater) or m_lettingFall or (!m_onFloor && m_fallThroughWater)) {
-        go->position = go->position + Vector2D(0, y_increment); // Falls free
-        m_velocity += m_acceleration * dt;
-    } else if (!m_lettingFall) {
-        if (floor) {
+        if (!(m_onFloor or m_onWater) or m_lettingFall or (!m_onFloor && m_fallThroughWater)) {
+            go->position = go->position + Vector2D(0, y_increment); // Falls free
+            m_velocity += m_acceleration * dt;
+        } else if (!m_lettingFall) {
             m_canFall = floor->ShouldBeAbleToFall(x, y);
-        } else m_canFall = false;
 
-        if (!m_canFall || !m_fallThroughCanFall) {
-            // Put on the floor pixel
-            go->position = Vector2D(go->position.x, y * PIXELS_ZOOM);
+            if (!m_canFall || !m_fallThroughCanFall) {
+                // Put on the floor pixel
+                go->position = Vector2D(go->position.x, y * PIXELS_ZOOM);
+                m_velocity = 0;
+            } else {
+                go->position = go->position + Vector2D(0, y_increment); // Falls free (yep, again)
+                m_velocity += m_acceleration * dt;
+            }
+        }
+    } else {
+        m_onWater = false;
+        m_canFall = false;
+        m_onFloor = go->position.y + y_increment >= m_baseFloor - 0.001;
+        if (m_onFloor) {
+            go->position = Vector2D(go->position.x, m_baseFloor);
             m_velocity = 0;
         } else {
-            go->position = go->position + Vector2D(0, y_increment); // Falls free (yep, again)
+            go->position = go->position + Vector2D(0, y_increment); // Falls free
             m_velocity += m_acceleration * dt;
         }
     }

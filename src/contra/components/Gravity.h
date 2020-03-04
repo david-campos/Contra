@@ -24,9 +24,11 @@ public:
     void AddVelocity(float velocity) {
         m_velocity += velocity;
     }
+
     void SetVelocity(float velocity) {
         m_velocity = velocity;
     }
+
     [[nodiscard]] float GetVelocity() const {
         return m_velocity;
     }
@@ -45,6 +47,8 @@ public:
     void SetAcceleration(float acceleration);
 
     void SetBaseFloor(float mBaseFloor);
+
+    [[nodiscard]] float GetBaseFloor() const { return m_baseFloor; }
 
     [[nodiscard]] bool IsOnWater() const;
 

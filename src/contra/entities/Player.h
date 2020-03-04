@@ -11,6 +11,7 @@
 #include "weapons.h"
 #include "../../components/collision/BoxCollider.h"
 #include "../components/Gravity.h"
+#include "../level/perspective_level.h"
 
 class Player : public GameObject {
 public:
@@ -19,11 +20,11 @@ public:
 
 class PlayerControl : public LevelComponent, public CollideComponentListener {
 public:
-    void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon);
+    virtual void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon);
 
     void Init() override;
 
-    void Update(float dt) final;
+    void Update(float dt) override;
 
     void PickUp(PickUpType type);
 
@@ -36,6 +37,10 @@ public:
     [[nodiscard]] short getRemainingLives() const { return m_remainingLives; }
 
     [[nodiscard]] short IsAlive() const { return !m_isDeath; }
+
+    [[nodiscard]] bool IsOnFloor() const { return m_gravity->IsOnFloor(); }
+
+    void SetBaseFloor(float floor) { m_gravity->SetBaseFloor(floor); }
 
 protected:
     AnimationRenderer *m_animator;
@@ -56,7 +61,8 @@ protected:
             m_splashAnim, m_swimAnim, m_diveAnim,
             m_swimShootAnim, m_swimShootDiagonalAnim,
             m_swimShootUpAnim, m_fallAnim, m_persIdleAnim,
-            m_persCrawlAnim, m_persRunAnim;
+            m_persCrawlAnim, m_persRunAnim, m_persFryingAnim,
+            m_persDyingAnim, m_persForward;
     Box m_standingBox, m_crawlingBox, m_swimmingBox, m_jumpBox;
     bool m_diving;
     std::unique_ptr<Weapon> m_currentWeapon;
@@ -71,7 +77,10 @@ protected:
      */
     void NormaliseKeyStatus(AvancezLib::KeyStatus &status);
 
-    virtual void AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out) = 0;
+    virtual void AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out,
+                                 float dt) = 0;
+
+    virtual bool IsBlocked() { return false; }
 
     struct PlayerBoundaries {
         float min_x;
@@ -79,25 +88,46 @@ protected:
     };
 
     virtual PlayerBoundaries GetPlayerMovementBoundaries() = 0;
+
+    virtual void VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {}
 };
 
 class PlayerControlScrolling : public PlayerControl {
-    void AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out) override;
-
 protected:
     PlayerBoundaries GetPlayerMovementBoundaries() override;
+
+    void
+    AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out, float dt) override;
 
     bool Fire(const AvancezLib::KeyStatus &keyStatus) override;
 };
 
 class PlayerControlPerspective : public PlayerControl {
 public:
-    void AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out) override;
+    void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon) override {
+        PlayerControl::Create(level, go, index, lives, weapon);
+        m_perspectiveLevel = dynamic_cast<PerspectiveLevel *>(level);
+        if (!m_perspectiveLevel) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                    "PlayerControlPerspective::Create: the level is not an instance of PerspectiveLevel");
+        }
+    }
 
 protected:
     PlayerBoundaries GetPlayerMovementBoundaries() override;
 
     bool Fire(const AvancezLib::KeyStatus &keyStatus) override;
+
+    void
+    AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out, float dt) override;
+
+    void VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) override;
+
+    bool IsBlocked() override;
+
+private:
+    float m_fryingFor;
+    PerspectiveLevel *m_perspectiveLevel;
 };
 
 #endif //CONTRA_PLAYER_H

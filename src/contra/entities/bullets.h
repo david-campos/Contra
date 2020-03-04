@@ -65,6 +65,10 @@ public:
         }
     }
 
+    float GetMinY() const {
+        return m_minY;
+    }
+
     void Kill() {
         m_collider->Disable();
         m_kill = true;

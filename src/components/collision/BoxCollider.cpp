@@ -35,3 +35,11 @@ bool BoxCollider::IsColliding(const CollideComponent *other) {
                && a_y_max >= b_y_min && b_y_max >= a_y_min;
     }
 }
+
+void BoxCollider::Update(float dt) {
+    CollideComponent::Update(dt);
+    scene->GetEngine()->strokeSquare(
+            AbsoluteTopLeftX() - scene->GetCameraX(), AbsoluteTopLeftY(),
+            AbsoluteBottomRightX() - scene->GetCameraX(), AbsoluteBottomRightY(),
+            {0, 0, 255});
+}

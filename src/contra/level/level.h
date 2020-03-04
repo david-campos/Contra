@@ -94,10 +94,17 @@ public:
      * (prefers to select a player "in front"/"before" the given point).
      * @return
      */
-    PlayerControl *GetClosestPlayerControl(const Vector2D& position, bool only_before = false) const;
+    PlayerControl *GetClosestPlayerControl(const Vector2D &position, bool only_before = false) const;
+
     short PlayersAlive() const;
+
     float PlayersTopX() const;
+
     float PlayersMinX() const;
+
+    float PlayersTopY() const;
+
+    float PlayersMinY() const;
 
     ObjectPool<Bullet> *GetDefaultBullets() const {
         return default_bullets;

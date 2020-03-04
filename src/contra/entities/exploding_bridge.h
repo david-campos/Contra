@@ -8,25 +8,7 @@
 #include "../level/level.h"
 #include "../../kernel/game_object.h"
 #include "Player.h"
-
-class DestroyOnAnimationStop : public Component {
-private:
-    AnimationRenderer *m_renderer;
-public:
-    void Init() override {
-        Component::Init();
-        if (!m_renderer) {
-            m_renderer = go->GetComponent<AnimationRenderer *>();
-        }
-    }
-
-    void Update(float dt) override {
-        if (!m_renderer->IsPlaying()) {
-            go->Disable();
-            scene->RemoveGameObject(go);
-        }
-    }
-};
+#include "explosion.h"
 
 class BridgeExplosion : public GameObject {
 public:

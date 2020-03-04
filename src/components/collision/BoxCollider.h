@@ -39,6 +39,8 @@ public:
         m_box = box;
     }
 
+    void Update(float dt) override;
+
     [[nodiscard]] float AbsoluteTopLeftX() const {
         return float(go->position.x) + float(m_box.top_left_x);
     }

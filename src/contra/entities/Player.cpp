@@ -32,6 +32,9 @@ void PlayerControl::Init() {
     m_persIdleAnim = m_animator->FindAnimation("PerspectiveIdle");
     m_persCrawlAnim = m_animator->FindAnimation("PerspectiveCrawl");
     m_persRunAnim = m_animator->FindAnimation("PerspectiveRun");
+    m_persFryingAnim = m_animator->FindAnimation("PerspectiveFrying");
+    m_persDyingAnim = m_animator->FindAnimation("PerspectiveDie");
+    m_persForward = m_animator->FindAnimation("PerspectiveForward");
     m_animator->PlayAnimation(m_jumpAnim); // Start jumping
     m_jumpBox = {
             -6 * PIXELS_ZOOM, -22 * PIXELS_ZOOM,
@@ -153,8 +156,9 @@ void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
     if (level->IsComplete()) {
         bool moving = level->GetTimeSinceComplete() > 1.0;
+        bool jumping = moving && go->position.x >= level->GetLevelWidth() - 112.f * PIXELS_ZOOM;
         keyStatus = {
-                false, moving, false, moving, false, false, false,
+                false, jumping, false, moving, false, false, false,
                 false, false
         };
     } else {
@@ -206,42 +210,46 @@ void PlayerControl::Update(float dt) {
 
     PlayerBoundaries bounds = GetPlayerMovementBoundaries();
 
-    if (m_gravity->IsOnFloor()) {
-        m_hasInertia = false;
-        if (keyStatus.jump && !m_previousKeyStatus.jump) {
-            if (keyStatus.down and not(keyStatus.left or keyStatus.right)) {
-                if (m_gravity->CanFall())
-                    m_gravity->LetFall();
-            } else {
-                m_gravity->AddVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
-                m_animator->PlayAnimation(m_jumpAnim);
+    bool shooting = false;
+    if (!IsBlocked()) {
+        if (m_gravity->IsOnFloor()) {
+            m_hasInertia = false;
+            if (keyStatus.jump && !m_previousKeyStatus.jump) {
+                if (keyStatus.down and not(keyStatus.left or keyStatus.right)) {
+                    if (m_gravity->CanFall())
+                        m_gravity->LetFall();
+                } else {
+                    m_gravity->AddVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
+                    m_animator->PlayAnimation(m_jumpAnim);
+                }
             }
         }
-    }
 
-    if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
-        Vector2D new_position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
-        if (new_position.x < bounds.max_x) {
-            go->position = new_position;
+        if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
+            Vector2D new_position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
+            if (new_position.x < bounds.max_x) {
+                go->position = new_position;
+            }
+            m_hasInertia = true;
+            m_facingRight = true;
         }
-        m_hasInertia = true;
-        m_facingRight = true;
-    }
-    if ((keyStatus.left && !keyStatus.right) || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
-        Vector2D new_position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
-        if (go->position.x > bounds.min_x) {
-            go->position = new_position;
+        if ((keyStatus.left && !keyStatus.right) || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
+            Vector2D new_position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
+            if (go->position.x > bounds.min_x) {
+                go->position = new_position;
+            }
+            m_hasInertia = true;
+            m_facingRight = false;
         }
-        m_hasInertia = true;
-        m_facingRight = false;
+        VerticalMovementUpdate(keyStatus, dt);
+
+        // Shooting (we need facing to be calculated already)
+        if (m_currentWeapon->ShouldFire(keyStatus.fire, dt))
+            shooting = Fire(keyStatus);
     }
-    // Shooting (we need facing to be calculated already)
-    bool shooting = false;
-    if (m_currentWeapon->ShouldFire(keyStatus.fire, dt))
-        shooting = Fire(keyStatus);
 
     Box *collider_box;
-    AnimationUpdate(shooting, keyStatus, &collider_box);
+    AnimationUpdate(shooting, keyStatus, &collider_box, dt);
 
     m_animator->mirrorHorizontal = !m_facingRight;
     if (m_facingRight) {
@@ -258,7 +266,8 @@ void PlayerControl::Update(float dt) {
     m_previousKeyStatus = keyStatus;
 }
 
-void PlayerControlScrolling::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box) {
+void PlayerControlScrolling::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
+                                             float dt) {
     *box = &m_standingBox;
     m_diving = false;
     // Animation
@@ -374,10 +383,22 @@ bool PlayerControlScrolling::Fire(const AvancezLib::KeyStatus &keyStatus) {
     return m_currentWeapon->Fire(go->position + displacement * PIXELS_ZOOM, direction);
 }
 
-void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box) {
+void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
+                                               float dt) {
+    m_fryingFor -= dt;
     *box = &m_standingBox;
-    // Animation
+    if (m_fryingFor > 0) {
+        m_animator->PlayAnimation(m_persFryingAnim);
+        return;
+    }
+
     if (m_gravity->IsOnFloor()) {
+        if (keyStatus.up && !keyStatus.down) {
+            if (!m_perspectiveLevel->IsLaserOn()) {
+                m_animator->PlayAnimation(m_persForward);
+                return;
+            }
+        }
         if (keyStatus.right != keyStatus.left) {
             m_animator->PlayAnimation(m_persRunAnim);
         } else {
@@ -400,13 +421,22 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
 }
 
 PlayerControl::PlayerBoundaries PlayerControlPerspective::GetPlayerMovementBoundaries() {
+    float distance_factor =
+            (PIXELS_ZOOM * 182 - m_gravity->GetBaseFloor()) / (35.f * PIXELS_ZOOM);
+    float margin = 35 * PIXELS_ZOOM + 35 * PIXELS_ZOOM * distance_factor;
+    if (margin > WINDOW_WIDTH / 2) {
+        margin = WINDOW_WIDTH / 2;
+    }
     return {
-            level->GetCameraX() + 40 * PIXELS_ZOOM,
-            level->GetCameraX() + WINDOW_WIDTH - 40 * PIXELS_ZOOM
+            level->GetCameraX() + margin,
+            level->GetCameraX() + WINDOW_WIDTH - margin
     };
 }
 
 bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
+    if (!m_perspectiveLevel->IsLaserOn())
+        return false;
+
     bool lying_down = keyStatus.down && !keyStatus.up && !keyStatus.right && !keyStatus.left;
     Vector2D displacement(
             0,
@@ -424,6 +454,29 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
 
     Vector2D direction = target - go->position - displacement;
     return m_currentWeapon->Fire(go->position + displacement, direction, target.y);
+}
+
+void PlayerControlPerspective::VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {
+    if (m_gravity->IsOnFloor()) {
+        if (keyStatus.up && !keyStatus.down) {
+            if (m_perspectiveLevel->IsLaserOn()) {
+                if (!m_previousKeyStatus.up) {
+                    m_fryingFor = 0.5f;
+                }
+            } else {
+                go->position = go->position - Vector2D(0, PLAYER_SPEED * PIXELS_ZOOM) * 0.5 * dt;
+            }
+        }
+        if (!m_perspectiveLevel->IsLaserOn()) {
+            m_gravity->SetBaseFloor(go->position.y);
+            auto bounds = GetPlayerMovementBoundaries();
+            go->position.x = std::max(std::min(float(go->position.x), bounds.max_x), bounds.min_x);
+        }
+    }
+}
+
+bool PlayerControlPerspective::IsBlocked() {
+    return m_fryingFor > 0.f;
 }
 
 void
@@ -527,6 +580,21 @@ Player::Create(Level *level, short index) {
             0 + shift, 394, 0.1, 2,
             18, 43, 9, 42,
             "PerspectiveRun", AnimationRenderer::STOP_AND_FIRST
+    });
+    renderer->AddAnimation({
+            0 + shift, 482, 0.1, 2,
+            25, 45, 12, 44,
+            "PerspectiveFrying", AnimationRenderer::DONT_STOP
+    });
+    renderer->AddAnimation({
+            50 + shift, 482, 0.1, 2,
+            25, 45, 12, 44,
+            "PerspectiveDie", AnimationRenderer::STOP_AND_LAST
+    });
+    renderer->AddAnimation({
+            90 + shift, 351, 0.1, 2,
+            20, 40, 10, 39,
+            "PerspectiveForward", AnimationRenderer::DONT_STOP
     });
     auto *gravity = new Gravity();
     gravity->Create(level, this);

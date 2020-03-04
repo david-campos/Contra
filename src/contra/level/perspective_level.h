@@ -14,8 +14,22 @@ public:
 
     void Init() override;
 
+    void Update(float dt) override;
+
+    void Receive(Message m) override;
+
+    [[nodiscard]] bool IsLaserOn() const {
+        return m_laserOn;
+    }
+
 protected:
     Player *CreatePlayer(int index, PlayerStats *stats) override;
+
+    bool m_laserOn;
+    short m_currentScreen = 0;
+    short m_onTransition = -1;
+
+    bool AllPlayersOnFloor();
 };
 
 #endif //CONTRA_PERSPECTIVE_LEVEL_H

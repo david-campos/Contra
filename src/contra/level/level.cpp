@@ -52,11 +52,15 @@ void Level::Create(const std::string &folder, const std::unordered_map<int, std:
     if (scene_root["background_animation_shift"]) {
         animation_shift = scene_root["background_animation_shift"].as<Vector2D>();
     }
+    float animation_shift_time = 0.2f;
+    if (scene_root["background_animation_shift_time"]) {
+        animation_shift_time = scene_root["background_animation_shift_time"].as<float>();
+    }
     if (scene_root["music"]) {
         music_str = folder + scene_root["music"].as<std::string>();
         music = music_str.data();
     }
-    BaseScene::Create(avancezLib, bg.data(), music, animation_shift);
+    BaseScene::Create(avancezLib, bg.data(), music, animation_shift, animation_shift_time);
     levelWidth = m_background->getWidth() * PIXELS_ZOOM;
     m_grid.Create(34 * PIXELS_ZOOM, levelWidth, WINDOW_HEIGHT);
 
@@ -265,6 +269,20 @@ float Level::PlayersMinX() const {
     return min_x;
 }
 
+float Level::PlayersMinY() const {
+    float min_y = 0;
+    bool found_alive = false;
+    for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
+        if ((*player)->IsAlive() && (
+                !found_alive || (*player)->GetGameObject()->position.y < min_y
+        )) {
+            min_y = (*player)->GetGameObject()->position.y;
+            found_alive = true;
+        }
+    }
+    return min_y;
+}
+
 float Level::PlayersTopX() const {
     float top_x = 0;
     bool found_alive = false;
@@ -277,6 +295,20 @@ float Level::PlayersTopX() const {
         }
     }
     return top_x;
+}
+
+float Level::PlayersTopY() const {
+    float top_y = 0;
+    bool found_alive = false;
+    for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
+        if ((*player)->IsAlive() && (
+                !found_alive || (*player)->GetGameObject()->position.y > top_y
+        )) {
+            top_y = (*player)->GetGameObject()->position.y;
+            found_alive = true;
+        }
+    }
+    return top_y;
 }
 
 void Level::PreloadSounds() {

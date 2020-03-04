@@ -22,6 +22,7 @@ protected:
     Grid m_grid;
     Vector2D m_animationShift;
     float m_time = 0.f;
+    float m_animationShiftTime;
     std::unique_ptr<Music> m_music;
 public:
     BaseScene() {
@@ -37,10 +38,11 @@ public:
     }
 
     void Create(AvancezLib *engine, const char *background_path, const char *music_path = nullptr,
-                const Vector2D anim_shift = Vector2D(0, 0)) {
+                const Vector2D anim_shift = Vector2D(0, 0), const float anim_shift_time = 0.2f) {
         GameObject::Create();
         m_engine = engine;
         m_animationShift = anim_shift;
+        m_animationShiftTime = anim_shift_time;
         if (background_path != nullptr) {
             m_background.reset(m_engine->createSprite(background_path));
         }
@@ -66,7 +68,7 @@ public:
             int camera_without_zoom_y = int(floorf(m_camera.y / PIXELS_ZOOM));
             int shift_y = -int(roundf(m_camera.y - camera_without_zoom_y * PIXELS_ZOOM));
 
-            bool use_animation_shift = fmod(m_time, 0.4f) < 0.2f;
+            bool use_animation_shift = fmod(m_time, 2 * m_animationShiftTime) < m_animationShiftTime;
 
             // We need to add an extra pixel if we shift slightly bc if not we will have black pixels
             // the reason why we don't do it ALWAYS is because if the background image has
