@@ -447,7 +447,7 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D target(
             (shooting_point.x - level->GetCameraX() - 40 * PIXELS_ZOOM) * 66 / 176
             + 95 * PIXELS_ZOOM + level->GetCameraX(),
-            (shooting_point.y - 57 * PIXELS_ZOOM) * 80 / 115 + 33 * PIXELS_ZOOM);
+            (shooting_point.y - 57 * PIXELS_ZOOM) * 80 / 115 + 37 * PIXELS_ZOOM);
 
     Vector2D direction = target - go->position - displacement;
     return m_currentWeapon->Fire(go->position + displacement, direction, target.y);

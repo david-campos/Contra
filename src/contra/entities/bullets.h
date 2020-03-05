@@ -8,6 +8,7 @@
 #include <SDL_log.h>
 #include "../components/Gravity.h"
 #include "../../components/collision/CollideComponent.h"
+#include "../hittable.h"
 
 class BulletBehaviour : public Component {
 private:
@@ -59,7 +60,17 @@ public:
                 go->Disable();
                 go->MarkToRemove();
             }
-            if (go->position.y < m_minY) {
+            if (go->position.y < m_minY && !IsKilled()) {
+                std::set<CollideComponent *> colliding;
+                m_collider->GetCurrentCollisions(&colliding);
+                // Kill the first destroyable we found
+                for (auto collider: colliding) {
+                    auto *hittable = collider->GetGameObject()->GetComponent<Hittable *>();
+                    if (hittable) {
+                        hittable->Hit();
+                        break;
+                    }
+                }
                 Kill();
             }
         }

@@ -5,6 +5,7 @@
 #ifndef CONTRA_COLLIDECOMPONENT_H
 #define CONTRA_COLLIDECOMPONENT_H
 
+#include <set>
 #include "../../kernel/component.h"
 #include "grid.h"
 
@@ -71,6 +72,8 @@ public:
     virtual bool IsColliding(const CollideComponent *other) = 0;
 
     virtual void Update(float dt) override;
+
+    void GetCurrentCollisions(std::set<CollideComponent *> *out_set);
 
     void SendCollision(const CollideComponent &other) {
         if (listener) listener->OnCollision(other);

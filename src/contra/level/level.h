@@ -155,6 +155,9 @@ private:
 
 protected:
     virtual Player *CreatePlayer(int index, PlayerStats *stats) = 0;
+
+    int m_playerBulletsCollisionLayer = NPCS_COLLISION_LAYER, m_playerBulletsCollisionCheckLayer = -1,
+            m_enemyBulletsCollisionLayer = PLAYER_COLLISION_LAYER, m_enemyBulletsCollisionCheckLayer = -1;
 };
 
 #endif //CONTRA_LEVEL_H

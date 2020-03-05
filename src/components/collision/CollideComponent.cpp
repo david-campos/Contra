@@ -12,8 +12,18 @@ void CollideComponent::Create(BaseScene *scene, GameObject *go, int layer, int c
 }
 
 void CollideComponent::Update(float dt) {
-    auto *grid = scene->GetGrid();
     if (m_disabled || !go->IsEnabled()) return;
+    std::set<CollideComponent *> colliders;
+    GetCurrentCollisions(&colliders);
+    for (auto collider: colliders) {
+        SendCollision(*collider);
+    }
+    // Update our layer information
+    if (m_layer >= 0) scene->GetGrid()->Update(this);
+}
+
+void CollideComponent::GetCurrentCollisions(std::set<CollideComponent *> *out_set) {
+    auto *grid = scene->GetGrid();
     if (m_checkLayer >= 0) {
         Grid::CellsSquare square{};
         GetOccupiedCells(square);
@@ -28,19 +38,20 @@ void CollideComponent::Update(float dt) {
                     if (collision == 1) {
                         SendCollision(*collider); // It had already been checked
                     } else if (collision == -1) {
-                        if (grid->GetCollisionCached(this, collider) != -1) {
-                            continue; // Skip if we found it in a previous cell
+                        bool colliding;
+                        int reversed = grid->GetCollisionCached(this, collider);
+                        if (reversed != -1) {
+                            colliding = reversed == 1;
+                        } else {
+                            colliding = IsColliding(collider);
+                            grid->NotifyCacheCollision(this, collider, colliding); // Notify my result
                         }
-                        bool colliding = IsColliding(collider);
-                        grid->NotifyCacheCollision(this, collider, colliding); // Notify my result
-                        if (colliding) SendCollision(*collider); // Notify my listener that I am colliding with collider
+                        if (colliding) out_set->insert(collider);
                     }
                 }
             }
         }
     }
-    // Update our layer information
-    if (m_layer >= 0) grid->Update(this);
 }
 
 void CollideComponent::Destroy() {

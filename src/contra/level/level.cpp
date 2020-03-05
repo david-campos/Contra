@@ -7,7 +7,6 @@
 #include "yaml_converters.h"
 #include "../entities/bullets.h"
 #include "../entities/Player.h"
-#include "../entities/defense_wall.h"
 
 void Level::Update(float dt) {
     BaseScene::Update(dt);
@@ -145,7 +144,7 @@ void Level::CreateBulletPools() {
         auto *box_collider = new BoxCollider();
         box_collider->Create(this, bullet,
                 -1 * PIXELS_ZOOM, -1 * PIXELS_ZOOM,
-                3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, PLAYER_COLLISION_LAYER, -1);
+                3 * PIXELS_ZOOM, 3 * PIXELS_ZOOM, m_enemyBulletsCollisionLayer, m_enemyBulletsCollisionCheckLayer);
         bullet->AddComponent(behaviour);
         bullet->AddComponent(renderer);
         bullet->AddComponent(box_collider);
@@ -196,7 +195,8 @@ ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const Animati
         auto *behaviour = new T();
         behaviour->Create(this, bullet);
         auto *box_collider = new BoxCollider();
-        box_collider->Create(this, bullet, box * PIXELS_ZOOM, NPCS_COLLISION_LAYER, -1);
+        box_collider->Create(this, bullet, box * PIXELS_ZOOM,
+                m_playerBulletsCollisionLayer, m_playerBulletsCollisionCheckLayer);
         bullet->AddComponent(behaviour);
         bullet->AddComponent(renderer);
         bullet->AddComponent(box_collider);
