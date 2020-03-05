@@ -4,7 +4,7 @@
 
 #include "perspective_level.h"
 #include "../entities/Player.h"
-#include "../entities/cores.h"
+#include "../entities/perspective/cores.h"
 
 void PerspectiveLevel::Create(const std::string &folder,
                               const std::unordered_map<int, std::shared_ptr<Sprite>> *spritesheets,
@@ -16,6 +16,20 @@ void PerspectiveLevel::Create(const std::string &folder,
         core->Init();
         core->AddReceiver(this);
         AddGameObject(core, RENDERING_LAYER_ENEMIES);
+    }
+    for (const auto &rc_node: scene_root["strong_cores"]) {
+        auto *core = new StrongCore();
+        core->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
+        core->Init();
+        core->AddReceiver(this);
+        AddGameObject(core, RENDERING_LAYER_ENEMIES);
+    }
+    for (const auto &rc_node: scene_root["core_canons"]) {
+        auto *canon = new CoreCannon();
+        canon->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
+        canon->Init();
+        canon->AddReceiver(this);
+        AddGameObject(canon, RENDERING_LAYER_ENEMIES);
     }
 }
 

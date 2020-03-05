@@ -11,7 +11,7 @@ void channel_finished_callback(int channel) {
 std::function<void()> SoundEffect::Play(short times) {
     if (effect) {
         int channel = Mix_PlayChannel(-1, effect, times - 1);
-        if (channel > 0) {
+        if (channel >= 0) {
             int sound_id = next_sound_id++;
             current_sound_ids[channel] = sound_id;
             return [channel, sound_id]() {
@@ -19,6 +19,13 @@ std::function<void()> SoundEffect::Play(short times) {
                     Mix_HaltChannel(channel);
                 }
             };
+        } else {
+            int channels = Mix_AllocateChannels(-1);
+            if (channels < 100) {
+                Mix_AllocateChannels(channels + 1);
+                Mix_PlayChannel(channels, effect, times - 1); // 0-based
+                SDL_Log("Audio Mixer: channels increased to %d", channels + 1);
+            }
         }
     }
     return [](){};

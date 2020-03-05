@@ -5,12 +5,12 @@
 #ifndef CONTRA_CORES_H
 #define CONTRA_CORES_H
 
-#include "../../kernel/game_object.h"
-#include "../../components/render/AnimationRenderer.h"
-#include "../level/level.h"
-#include "explosion.h"
+#include "../../../kernel/game_object.h"
+#include "../../../components/render/AnimationRenderer.h"
+#include "../../level/level.h"
+#include "../explosion.h"
 
-class CoreBehaviour : public LevelComponent, public CollideComponentListener {
+class HiddenDestroyableBehaviour : public LevelComponent, public CollideComponentListener {
 private:
     int m_lives;
     int m_maxLives;
@@ -24,10 +24,12 @@ private:
     State m_state;
     float m_stateTime;
     int m_animOpen, m_animGlowing;
+    bool m_doesClearScreen;
 public:
-    void Create(Level *scene, GameObject *go, int lives) {
+    void Create(Level *scene, GameObject *go, int lives, bool does_clear_screen) {
         LevelComponent::Create(scene, go);
         m_maxLives = m_lives = lives;
+        m_doesClearScreen = does_clear_screen;
     }
 
     void Init() override {
@@ -41,13 +43,21 @@ public:
             m_animGlowing = m_animator->FindAnimation("Glowing");
         }
         m_lives = m_maxLives;
-        m_state = STATE_OPEN;
+        if (m_animOpen >= 0) {
+            m_collider->Disable();
+            m_state = STATE_CLOSED;
+        } else {
+            m_collider->Enable();
+            m_state = STATE_OPEN;
+        }
     }
 
     void Update(float dt) override {
         switch (m_state) {
             case STATE_CLOSED:
             case STATE_OPEN: {
+                if (m_animOpen < 0) break;
+
                 m_stateTime += dt;
                 if (m_stateTime > 2.f) {
                     m_stateTime = 0.f;
@@ -80,8 +90,12 @@ public:
                 explosion->Create(level, go->position);
                 explosion->Init();
                 explosion->AddReceiver(level);
-                explosion->SendOnDestroy(SCREEN_CLEARED);
+                if (m_doesClearScreen) {
+                    explosion->SendOnDestroy(SCREEN_CLEARED);
+                }
                 level->AddGameObject(explosion, RENDERING_LAYER_ENEMIES);
+            } else {
+                level->GetSound(SOUND_ENEMY_HIT)->Play(1);
             }
         }
     }
@@ -112,8 +126,75 @@ public:
                 16 * PIXELS_ZOOM, 10 * PIXELS_ZOOM, -1,
                 NPCS_COLLISION_LAYER);
 
-        auto *behaviour = new CoreBehaviour();
-        behaviour->Create(level, this, 10);
+        auto *behaviour = new HiddenDestroyableBehaviour();
+        behaviour->Create(level, this, 10, true);
+
+        collider->SetListener(behaviour);
+
+        AddComponent(render);
+        AddComponent(behaviour);
+        AddComponent(collider);
+    }
+};
+
+class StrongCore : public GameObject {
+public:
+    void Create(Level *level, Vector2D position) {
+        GameObject::Create();
+        this->position = position;
+
+        auto *render = new AnimationRenderer();
+        render->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
+        render->AddAnimation({
+                55, 332, 0.2, 3,
+                24, 24, 12, 12,
+                "Glowing", AnimationRenderer::BOUNCE
+        });
+        render->Play();
+        auto *collider = new BoxCollider();
+        collider->Create(level, this,
+                -11 * PIXELS_ZOOM, -11 * PIXELS_ZOOM,
+                22 * PIXELS_ZOOM, 16 * PIXELS_ZOOM, -1,
+                NPCS_COLLISION_LAYER);
+
+        auto *behaviour = new HiddenDestroyableBehaviour();
+        behaviour->Create(level, this, 20, true);
+
+        collider->SetListener(behaviour);
+
+        AddComponent(render);
+        AddComponent(behaviour);
+        AddComponent(collider);
+    }
+};
+
+class CoreCannon : public GameObject {
+public:
+    void Create(Level *level, Vector2D position) {
+        GameObject::Create();
+        this->position = position;
+
+        auto *render = new AnimationRenderer();
+        render->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
+        render->AddAnimation({
+                91, 314, 0.2, 3,
+                18, 18, 9, 9,
+                "Glowing", AnimationRenderer::BOUNCE
+        });
+        render->AddAnimation({
+                1, 314, 0.2, 5,
+                18, 18, 9, 9,
+                "Open", AnimationRenderer::STOP_AND_LAST
+        });
+        render->Play();
+        auto *collider = new BoxCollider();
+        collider->Create(level, this,
+                -8 * PIXELS_ZOOM, -8 * PIXELS_ZOOM,
+                16 * PIXELS_ZOOM, 10 * PIXELS_ZOOM, -1,
+                NPCS_COLLISION_LAYER);
+
+        auto *behaviour = new HiddenDestroyableBehaviour();
+        behaviour->Create(level, this, 10, false);
 
         collider->SetListener(behaviour);
 

@@ -438,10 +438,7 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
         return false;
 
     bool lying_down = keyStatus.down && !keyStatus.up && !keyStatus.right && !keyStatus.left;
-    Vector2D displacement(
-            0,
-            lying_down ? -32 : -43
-    );
+    Vector2D displacement(0, -43);
     if (m_animator->IsCurrent(m_jumpAnim)) {
         displacement.y = -16;
     }
@@ -450,7 +447,7 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D target(
             (shooting_point.x - level->GetCameraX() - 40 * PIXELS_ZOOM) * 66 / 176
             + 95 * PIXELS_ZOOM + level->GetCameraX(),
-            (shooting_point.y - 57 * PIXELS_ZOOM) * 45 / 115 + 63 * PIXELS_ZOOM);
+            (shooting_point.y - 57 * PIXELS_ZOOM) * 80 / 115 + 33 * PIXELS_ZOOM);
 
     Vector2D direction = target - go->position - displacement;
     return m_currentWeapon->Fire(go->position + displacement, direction, target.y);
