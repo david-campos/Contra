@@ -38,8 +38,10 @@ bool BoxCollider::IsColliding(const CollideComponent *other) {
 
 void BoxCollider::Update(float dt) {
     CollideComponent::Update(dt);
-    scene->GetEngine()->strokeSquare(
-            AbsoluteTopLeftX() - scene->GetCameraX(), AbsoluteTopLeftY(),
-            AbsoluteBottomRightX() - scene->GetCameraX(), AbsoluteBottomRightY(),
-            {0, 0, 255});
+    if (!m_disabled) {
+        scene->GetEngine()->strokeSquare(
+                AbsoluteTopLeftX() - scene->GetCameraX(), AbsoluteTopLeftY(),
+                AbsoluteBottomRightX() - scene->GetCameraX(), AbsoluteBottomRightY(),
+                {0, 0, 255});
+    }
 }

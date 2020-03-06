@@ -142,6 +142,14 @@ public:
 
     float GetTimeSinceComplete();
 
+    int GetPlayerColliderLayer() {
+        return m_enemyBulletsCollisionCheckLayer;
+    }
+
+    int GetPlayerColliderCheckLayer() {
+        return m_enemyBulletsCollisionLayer;
+    }
+
 private:
     void CreateBulletPools();
 

@@ -18,7 +18,7 @@ public:
     void Create(Level *level, short index);
 };
 
-class PlayerControl : public LevelComponent, public CollideComponentListener {
+class PlayerControl : public LevelComponent, public CollideComponentListener, public Hittable {
 public:
     virtual void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon);
 
@@ -29,6 +29,10 @@ public:
     void PickUp(PickUpType type);
 
     void Kill();
+
+    void Hit() override;
+
+    bool CanBeHit() override;
 
     void Respawn();
 

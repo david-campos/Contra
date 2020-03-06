@@ -6,6 +6,7 @@
 #define CONTRA_PERSPECTIVE_LEVEL_H
 
 #include "level.h"
+#include "../hittable.h"
 
 class PerspectiveLevel : public Level {
 public:
@@ -23,6 +24,12 @@ public:
 
     void Init() override;
 
+    void InitScreen();
+
+    void KillScreen();
+
+    void ClearScreen();
+
     void Update(float dt) override;
 
     void Receive(Message m) override;
@@ -37,6 +44,7 @@ protected:
     bool m_laserOn;
     short m_currentScreen = 0;
     short m_onTransition = -1;
+    std::multimap<int, GameObject *> m_screens;
 
     bool AllPlayersOnFloor();
 };

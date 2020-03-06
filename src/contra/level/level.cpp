@@ -323,3 +323,4 @@ void Level::PreloadSounds() {
 float Level::GetTimeSinceComplete() {
     return complete ? m_time - completeTime : -1.f;
 }
+

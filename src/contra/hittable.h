@@ -7,9 +7,16 @@
 
 #include "level/level_component.h"
 
+class Killable {
+public:
+    virtual void Kill() = 0;
+};
+
 class Hittable {
 public:
     virtual void Hit() = 0;
+
+    virtual bool CanBeHit() = 0;
 };
 
 #endif //CONTRA_HITTABLE_H

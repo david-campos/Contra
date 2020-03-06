@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SDL_log.h>
+#include "game_object.h"
 
-class GameObject;
 
 class BaseScene;
 
@@ -23,6 +23,11 @@ public:
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
                     "Component::Init: No GameObject assigned, probably a missing Component::Create call?");
         }
+    }
+
+    template<typename T>
+    T GetComponent() {
+        return go->GetComponent<T>();
     }
 
     virtual void OnGameObjectEnabled() {}

@@ -68,6 +68,11 @@ void PlayerControl::Kill() {
     m_gravity->SetFallThoughWater(true);
 }
 
+void PlayerControl::Hit() {
+    Kill();
+    m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+}
+
 void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     go->position = Vector2D(level->GetCameraX() + 50 * PIXELS_ZOOM, 0);
@@ -85,16 +90,15 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 
     auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
     if (bullet) {
-        if (!bullet->IsKilled() && m_invincibleTime <= 0 && !m_diving) {
-            Kill();
-            m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+        if (!bullet->IsKilled() && CanBeHit()) {
+            Hit();
             bullet->Kill();
         }
         return;
     }
     auto *greeder = collider.GetGameObject()->GetComponent<GreederBehaviour *>();
     if (greeder) {
-        if (greeder->IsAlive() && m_invincibleTime <= 0 && !m_diving) {
+        if (greeder->IsAlive() && CanBeHit()) {
             Kill();
             m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
         }
@@ -154,6 +158,7 @@ void PlayerControl::NormaliseKeyStatus(AvancezLib::KeyStatus &status) {
 void PlayerControl::Update(float dt) {
     if (dt == 0) return;
     AvancezLib::KeyStatus keyStatus{};
+    SDL_Log("Player in %.3f %.3f", go->position.x, go->position.y);
     if (level->IsComplete()) {
         bool moving = level->GetTimeSinceComplete() > 1.0;
         bool jumping = moving && go->position.x >= level->GetLevelWidth() - 112.f * PIXELS_ZOOM;
@@ -264,6 +269,10 @@ void PlayerControl::Update(float dt) {
     }
     m_wasInWater = m_gravity->IsOnWater();
     m_previousKeyStatus = keyStatus;
+}
+
+bool PlayerControl::CanBeHit() {
+    return !m_isDeath && m_invincibleTime <= 0 && !m_diving;
 }
 
 void PlayerControlScrolling::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
@@ -393,18 +402,13 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
     }
 
     if (m_gravity->IsOnFloor()) {
-        if (keyStatus.up && !keyStatus.down) {
-            if (!m_perspectiveLevel->IsLaserOn()) {
-                m_animator->PlayAnimation(m_persForward);
-                return;
-            }
-        }
-        if (keyStatus.right != keyStatus.left) {
+        if (keyStatus.up && !keyStatus.down && !m_perspectiveLevel->IsLaserOn()) {
+            m_animator->PlayAnimation(m_persForward);
+        } else if (keyStatus.right != keyStatus.left) {
             m_animator->PlayAnimation(m_persRunAnim);
         } else {
             if (keyStatus.down && !keyStatus.up) {
                 m_animator->CurrentAndPause(m_persCrawlAnim);
-                *box = &m_crawlingBox;
             } else {
                 m_animator->CurrentAndPause(m_persIdleAnim);
             }
@@ -418,6 +422,9 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
             m_animator->PlayAnimation(m_fallAnim);
         }
     }
+
+    if (m_animator->IsCurrent(m_persCrawlAnim)) m_collider->Disable();
+    else m_collider->Enable();
 }
 
 PlayerControl::PlayerBoundaries PlayerControlPerspective::GetPlayerMovementBoundaries() {
@@ -434,9 +441,6 @@ PlayerControl::PlayerBoundaries PlayerControlPerspective::GetPlayerMovementBound
 }
 
 bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
-    if (!m_perspectiveLevel->IsLaserOn())
-        return false;
-
     bool lying_down = keyStatus.down && !keyStatus.up && !keyStatus.right && !keyStatus.left;
     Vector2D displacement(0, -43);
     if (m_animator->IsCurrent(m_jumpAnim)) {
@@ -461,7 +465,7 @@ void PlayerControlPerspective::VerticalMovementUpdate(const AvancezLib::KeyStatu
                     m_fryingFor = 0.5f;
                 }
             } else {
-                go->position = go->position - Vector2D(0, PLAYER_SPEED * PIXELS_ZOOM) * 0.5 * dt;
+                go->position = go->position - Vector2D(0, PLAYER_SPEED * PIXELS_ZOOM) * dt;
             }
         }
         if (!m_perspectiveLevel->IsLaserOn()) {
@@ -598,7 +602,8 @@ Player::Create(Level *level, short index) {
     auto *collider = new BoxCollider();
     collider->Create(level, this,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
-            6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM, -1, PLAYER_COLLISION_LAYER);
+            6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM,
+            level->GetPlayerColliderLayer(), level->GetPlayerColliderCheckLayer());
     AddComponent(gravity);
     AddComponent(renderer);
     AddComponent(collider);

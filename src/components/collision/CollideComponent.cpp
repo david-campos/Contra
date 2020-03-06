@@ -68,12 +68,14 @@ void CollideComponent::OnGameObjectDisabled() {
 }
 
 void CollideComponent::Disable() {
-    if (m_layer >= 0) {
-        scene->GetGrid()->Remove(this);
+    if (!m_disabled) {
+        if (m_layer >= 0) {
+            scene->GetGrid()->Remove(this);
+        }
+        m_disabled = true;
     }
-    m_disabled = true;
 }
 
 void CollideComponent::Enable() {
-    m_disabled = false;
+    if (m_disabled) m_disabled = false;
 }

@@ -15,34 +15,43 @@ void PerspectiveLevel::Create(const std::string &folder,
         core->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
         core->Init();
         core->AddReceiver(this);
-        AddGameObject(core, RENDERING_LAYER_ENEMIES);
+        m_screens.insert({
+                floor(core->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
+                core
+        });
     }
     for (const auto &rc_node: scene_root["strong_cores"]) {
         auto *core = new StrongCore();
         core->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
         core->Init();
         core->AddReceiver(this);
-        AddGameObject(core, RENDERING_LAYER_ENEMIES);
+        m_screens.insert({
+                floor(core->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
+                core
+        });
     }
     for (const auto &rc_node: scene_root["core_canons"]) {
         auto *canon = new CoreCannon();
         canon->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
         canon->Init();
         canon->AddReceiver(this);
-        AddGameObject(canon, RENDERING_LAYER_ENEMIES);
+        m_screens.insert({
+                floor(canon->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
+                canon
+        });
     }
 }
 
 void PerspectiveLevel::Init() {
     Level::Init();
-    m_camera = Vector2D(1024 * PIXELS_ZOOM, 0);
     m_laserOn = true;
+    InitScreen();
 }
 
 Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
     auto *player = new Player();
     player->Create(this, index);
-    player->position = Vector2D(1024 * PIXELS_ZOOM + WINDOW_WIDTH / 2, PIXELS_ZOOM * 182);
+    player->position = Vector2D(WINDOW_WIDTH / 2, PIXELS_ZOOM * 182);
 
     auto *playerControl = new PlayerControlPerspective();
     // TODO: add weapon to the stats and change this
@@ -60,6 +69,7 @@ Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
 
 void PerspectiveLevel::Receive(Message m) {
     if (m == SCREEN_CLEARED) {
+        ClearScreen();
         m_laserOn = false;
         m_currentScreen++;
         m_onTransition = 0;
@@ -83,10 +93,12 @@ void PerspectiveLevel::Update(float dt) {
     Level::Update(dt);
 
     float new_x = (m_onTransition < 0 ? m_currentScreen + 4 : m_onTransition) * WINDOW_WIDTH;
+    SDL_Log("Camera x %.3f", m_camera.x);
     if (abs(new_x - m_camera.x) > 0.001) {
         for (auto *player: players) {
             player->position.x = player->position.x - m_camera.x + new_x;
         }
+        InitScreen();
         m_camera = Vector2D(new_x, 0); // The first 4 are the transitions
     }
 
@@ -103,10 +115,34 @@ void PerspectiveLevel::Update(float dt) {
     }
 }
 
+void PerspectiveLevel::InitScreen() {
+    auto ret = m_screens.equal_range(m_currentScreen);
+    for (auto it = ret.first; it != ret.second; ++it) {
+        it->second->Init();
+        AddGameObject(it->second, RENDERING_LAYER_ENEMIES);
+    }
+}
+
+void PerspectiveLevel::KillScreen() {
+    auto ret = m_screens.equal_range(m_currentScreen);
+    for (auto it = ret.first; it != ret.second; ++it) {
+        auto *killable = it->second->GetComponent<Killable *>();
+        if (killable) {
+            killable->Kill();
+        }
+    }
+}
+
+void PerspectiveLevel::ClearScreen() {
+    auto ret = m_screens.equal_range(m_currentScreen);
+    for (auto it = ret.first; it != ret.second; ++it) {
+        it->second->MarkToRemove();
+    }
+}
+
 bool PerspectiveLevel::AllPlayersOnFloor() {
     for (auto *player: playerControls) {
         if (!player->IsOnFloor()) return false;
     }
     return true;
 }
-
