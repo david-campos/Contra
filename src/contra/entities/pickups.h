@@ -19,14 +19,16 @@ class PickUpBehaviour : public Component {
 private:
     PickUpType m_type;
     Gravity *m_gravity;
+    Vector2D m_speedOnAir;
 public:
     void Create(Level *level, GameObject *go, PickUpType type) {
         Component::Create(level, go);
         m_type = type;
     }
 
-    void Init() override {
+    void Init(const Vector2D &speed_on_air) {
         Component::Init();
+        m_speedOnAir = speed_on_air;
         if (!m_gravity) {
             m_gravity = go->GetComponent<Gravity *>();
         }
@@ -38,7 +40,7 @@ public:
 
     void Update(float dt) override {
         if (!m_gravity->IsOnFloor()) {
-            go->position = go->position + Vector2D(PICKUP_SPEED * PIXELS_ZOOM, 0) * dt;
+            go->position = go->position + m_speedOnAir * dt;
         }
     }
 };
@@ -46,7 +48,8 @@ public:
 class PickUp : public GameObject {
 public:
     void Create(Level *level, std::shared_ptr<Sprite> pickups_spritesheet,
-                Grid *grid, std::weak_ptr<Floor> level_floor, PickUpType type) {
+                Grid *grid, std::weak_ptr<Floor> level_floor, PickUpType type,
+                float gravity_base = -1) {
         GameObject::Create();
         auto *behaviour = new PickUpBehaviour();
         behaviour->Create(level, this, type);
@@ -57,6 +60,9 @@ public:
         renderer->Create(level, this, std::move(pickups_spritesheet),
                 25 * (int) type, 0, 24, 15, 12, 14);
         gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
+        if (gravity_base > 0) {
+            gravity->SetBaseFloor(gravity_base);
+        }
         auto *collider = new BoxCollider();
         collider->Create(level, this,
                 -4 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
@@ -66,6 +72,11 @@ public:
         AddComponent(behaviour);
         AddComponent(renderer);
         AddComponent(collider);
+    }
+
+    void Init(Vector2D speed_on_air = Vector2D(PICKUP_SPEED * PIXELS_ZOOM, 0)) {
+        GameObject::Init();
+        GetComponent<PickUpBehaviour *>()->Init(speed_on_air);
     }
 };
 

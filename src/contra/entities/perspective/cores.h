@@ -97,8 +97,10 @@ public:
     }
 
     void Kill() {
-        m_lives = 1;
-        Hit();
+        if (m_lives > 0) {
+            m_lives = 1;
+            Hit();
+        }
     }
 
     void Hit() override {

@@ -158,7 +158,6 @@ void PlayerControl::NormaliseKeyStatus(AvancezLib::KeyStatus &status) {
 void PlayerControl::Update(float dt) {
     if (dt == 0) return;
     AvancezLib::KeyStatus keyStatus{};
-    SDL_Log("Player in %.3f %.3f", go->position.x, go->position.y);
     if (level->IsComplete()) {
         bool moving = level->GetTimeSinceComplete() > 1.0;
         bool jumping = moving && go->position.x >= level->GetLevelWidth() - 112.f * PIXELS_ZOOM;
@@ -448,11 +447,7 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
     }
     displacement = displacement * PIXELS_ZOOM;
     Vector2D shooting_point = go->position + (lying_down ? displacement * 0.5 : displacement);
-    Vector2D target(
-            (shooting_point.x - level->GetCameraX() - 40 * PIXELS_ZOOM) * 66 / 176
-            + 95 * PIXELS_ZOOM + level->GetCameraX(),
-            (shooting_point.y - 57 * PIXELS_ZOOM) * 80 / 115 + 37 * PIXELS_ZOOM);
-
+    Vector2D target = m_perspectiveLevel->ProjectFromFrontToBack(shooting_point);
     Vector2D direction = target - go->position - displacement;
     return m_currentWeapon->Fire(go->position + displacement, direction, target.y);
 }
@@ -603,7 +598,7 @@ Player::Create(Level *level, short index) {
     collider->Create(level, this,
             -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
             6 * PIXELS_ZOOM, 34 * PIXELS_ZOOM,
-            level->GetPlayerColliderLayer(), level->GetPlayerColliderCheckLayer());
+            level->GetPlayerColliderLayer(), PLAYER_COLLISION_LAYER);
     AddComponent(gravity);
     AddComponent(renderer);
     AddComponent(collider);

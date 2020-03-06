@@ -345,4 +345,3 @@ void GreederSpawner::Destroy() {
     scene->AddGameObject(m_greeder, RENDERING_LAYER_ENEMIES); // Just let the level remove it, to avoid problems
     Component::Destroy();
 }
-

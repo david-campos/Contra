@@ -7,6 +7,7 @@
 
 #include "level.h"
 #include "../hittable.h"
+#include "perspective_const.h"
 
 class PerspectiveLevel : public Level {
 public:
@@ -36,6 +37,22 @@ public:
 
     [[nodiscard]] bool IsLaserOn() const {
         return m_laserOn;
+    }
+
+    Vector2D ProjectFromFrontToBack(Vector2D &point) {
+        return Vector2D(
+                (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE / PERSP_FRONT_X_RANGE
+                + PERSP_BACK_X_START * PIXELS_ZOOM + m_camera.x,
+                (point.y - PERSP_FRONT_Y_START * PIXELS_ZOOM) * PERSP_BACK_Y_RANGE / PERSP_FRONT_Y_RANGE +
+                PERSP_BACK_Y_START * PIXELS_ZOOM);
+    }
+
+    Vector2D ProjectFromBackToFront(Vector2D &point) {
+        return Vector2D(
+                (point.x - m_camera.x - PERSP_BACK_X_START * PIXELS_ZOOM) * PERSP_FRONT_X_RANGE / PERSP_BACK_X_RANGE
+                + PERSP_FRONT_X_START * PIXELS_ZOOM + m_camera.x,
+                (point.y - PERSP_BACK_Y_START * PIXELS_ZOOM) * PERSP_FRONT_Y_RANGE / PERSP_BACK_Y_RANGE +
+                PERSP_FRONT_Y_START * PIXELS_ZOOM);
     }
 
 protected:
