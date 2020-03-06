@@ -150,6 +150,10 @@ public:
         return m_enemyBulletsCollisionLayer;
     }
 
+    const std::vector<PlayerControl *> &GetPlayerControls() const {
+        return playerControls;
+    }
+
 private:
     void CreateBulletPools();
 

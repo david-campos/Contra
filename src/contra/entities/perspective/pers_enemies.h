@@ -10,6 +10,7 @@
 #include "../../level/perspective_level.h"
 #include "../../components/Gravity.h"
 #include "../pickups.h"
+#include "exploding_pill.h"
 
 class PerspectiveLedderBehaviour : public LevelComponent, public Hittable, public Killable {
 private:
@@ -18,12 +19,14 @@ private:
     Gravity *m_gravity;
     int m_duckAnim, m_jumpAnim, m_runAnim, m_standAnim, m_dyingAnim;
     bool m_goesJumping;
+    bool m_shootsPills;
     float m_speed;
-    float m_stopToShootChance;
+    float m_stopToShootChance, m_changeDirectionChance;
     float m_timeOnFloor;
     float m_nextShoot;
     float m_timeStanding;
     float m_deadFor;
+    float m_cooldownMin;
     PickUp *m_droppedPickup;
     enum MovementState {
         MOVING,
@@ -38,11 +41,14 @@ private:
 public:
     void
     Create(PerspectiveLevel *level, GameObject *go, bool jumps, bool stopToShootChance, float speed,
-           PickUp *droppedPickup) {
+           PickUp *droppedPickup, bool shoots_pills, float cooldown_min, float change_direction_chance) {
         LevelComponent::Create(level, go);
         m_perspectiveLevel = level;
         m_goesJumping = jumps;
+        m_shootsPills = shoots_pills;
+        m_changeDirectionChance = change_direction_chance;
         m_stopToShootChance = stopToShootChance;
+        m_cooldownMin = cooldown_min;
         m_speed = speed;
         m_droppedPickup = droppedPickup;
     }
@@ -91,7 +97,11 @@ public:
             case STANDING:
                 m_animator->PlayAnimation(m_standAnim);
                 m_timeStanding += dt;
-                if (m_timeStanding > 0.3f) {
+                if (m_timeStanding > 0.5f) {
+                    if (m_random_dist(m_mt) < m_changeDirectionChance) {
+                        m_speed *= -1.f;
+                        m_animator->mirrorHorizontal = !m_animator->mirrorHorizontal;
+                    }
                     m_state = MOVING;
                 }
                 break;
@@ -115,13 +125,13 @@ public:
         }
         if (!m_goesJumping) {
             m_nextShoot -= dt;
+            if (m_nextShoot < 0.25f && m_state == MOVING && m_random_dist(m_mt) < m_stopToShootChance) {
+                m_timeStanding = 0;
+                m_state = STANDING;
+            }
             if (m_nextShoot < 0.f) {
                 Fire();
-                m_nextShoot = m_random_dist(m_mt) * 1.0f + 0.5f;
-                if (m_state == MOVING && m_random_dist(m_mt) < m_stopToShootChance) {
-                    m_timeStanding = 0;
-                    m_state = STANDING;
-                }
+                m_nextShoot = m_random_dist(m_mt) * 1.0f + m_cooldownMin;
             }
         }
         if (go->position.x < level->GetCameraX() + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM ||
@@ -131,13 +141,20 @@ public:
     }
 
     void Fire() {
-        auto *bullet = level->GetEnemyBullets()->FirstAvailable();
         Vector2D fire_pos = go->position;
-        Vector2D target = m_perspectiveLevel->ProjectFromBackToFront(fire_pos);
-        if (bullet) {
-            bullet->Init(fire_pos, target - fire_pos, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
-                    -9999, (PERSP_PLAYER_Y - 15) * PIXELS_ZOOM);
-            level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
+        if (!m_shootsPills) {
+            auto *bullet = level->GetEnemyBullets()->FirstAvailable();
+            Vector2D target = m_perspectiveLevel->ProjectFromBackToFront(fire_pos);
+            if (bullet) {
+                bullet->Init(fire_pos, target - fire_pos, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
+                        -9999, (PERSP_PLAYER_Y - 15) * PIXELS_ZOOM);
+                level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
+            }
+        } else if (abs(go->position.x - level->GetClosestPlayer(go->position)->position.x) < 20 * PIXELS_ZOOM) {
+            auto *pill = new ExplodingPill();
+            pill->Create(level);
+            pill->Init(fire_pos);
+            level->AddGameObject(pill, RENDERING_LAYER_BULLETS);
         }
     }
 
@@ -164,10 +181,12 @@ public:
 class PerspectiveLedder : public GameObject {
 public:
     void Create(PerspectiveLevel *level, bool jumps, float stopToShootChance, float speed,
-                PickUp *dropped = nullptr) {
+                PickUp *dropped = nullptr, bool shoots_pills = false, float cooldown_min = 0.5f,
+                float change_dir_chance = 0.f) {
         GameObject::Create();
         auto *behaviour = new PerspectiveLedderBehaviour();
-        behaviour->Create(level, this, jumps, stopToShootChance, speed, dropped);
+        behaviour->Create(level, this, jumps, stopToShootChance, speed, dropped,
+                shoots_pills, cooldown_min, change_dir_chance);
         auto *renderer = new AnimationRenderer();
         auto shift = dropped ? 110 : 0;
         renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));

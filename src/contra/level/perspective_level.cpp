@@ -122,7 +122,8 @@ void PerspectiveLevel::InitScreen() {
     }
 
     auto *ledder = new PerspectiveLedder();
-    ledder->Create(this, false, 1.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
+    ledder->Create(this, false, 1.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, nullptr,
+            true, 2.f);
     ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM,
             PERSP_ENEMIES_Y * PIXELS_ZOOM));
     AddGameObject(ledder, RENDERING_LAYER_ENEMIES);

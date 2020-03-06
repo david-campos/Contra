@@ -66,4 +66,8 @@ public:
         this->x = 0;
         this->y = 0;
     }
+
+    float distance(const Vector2D &vector2D) {
+        return (*this - vector2D).magnitude();
+    }
 };

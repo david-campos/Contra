@@ -42,14 +42,21 @@ public:
 
 class Explosion : public GameObject {
 public:
-    void Create(Level *level, const Vector2D &pos) {
+    void Create(Level *level, const Vector2D &pos, bool cloud_explosion = true) {
         GameObject::Create();
         auto *renderer = new AnimationRenderer();
         renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
-        renderer->AddAnimation({
-                92, 611, 0.15, 3,
-                30, 30, 15, 15,
-                "Explosion", AnimationRenderer::BOUNCE_AND_STOP});
+        if (cloud_explosion) {
+            renderer->AddAnimation({
+                    92, 611, 0.15, 3,
+                    30, 30, 15, 15,
+                    "Explosion", AnimationRenderer::BOUNCE_AND_STOP});
+        } else {
+            renderer->AddAnimation({
+                    186, 610, 0.15, 3,
+                    34, 34, 17, 26,
+                    "Explosion", AnimationRenderer::STOP_AND_LAST});
+        }
         renderer->Play();
         auto *self_destroy = new DestroyOnAnimationStop();
         self_destroy->Create(level, this);
