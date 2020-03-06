@@ -47,14 +47,14 @@ void PlayerControl::Kill() {
     m_isDeath = true;
     m_waitDead = 2.f;
     go->Send(m_index == 0 ? LIFE_LOST_1 : LIFE_LOST_2);
-    m_animator->PlayAnimation(m_dieAnim);
+    m_animator->PlayAnimation(PickDieAnimation());
     level->GetSound(SOUND_PLAYER_DEATH)->Play(1);
     m_gravity->SetFallThoughWater(true);
 }
 
 void PlayerControl::Hit() {
     Kill();
-    m_gravity->AddVelocity(-PLAYER_JUMP / 2.f);
+    m_gravity->AddVelocity(-PLAYER_JUMP * PIXELS_ZOOM / 2.f);
 }
 
 void PlayerControl::Respawn() {
