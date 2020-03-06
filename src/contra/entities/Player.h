@@ -67,7 +67,7 @@ protected:
             m_swimShootUpAnim, m_fallAnim, m_persIdleAnim,
             m_persCrawlAnim, m_persRunAnim, m_persFryingAnim,
             m_persDyingAnim, m_persForward;
-    Box m_standingBox, m_crawlingBox, m_swimmingBox, m_jumpBox;
+    Box m_standingBox, m_standingBoxPerspective, m_crawlingBox, m_swimmingBox, m_jumpBox;
     bool m_diving;
     std::unique_ptr<Weapon> m_currentWeapon;
 

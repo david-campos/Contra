@@ -236,7 +236,7 @@ public:
         auto *bullet = level->GetEnemyBullets()->FirstAvailable();
         if (bullet) {
             bullet->Init(go->position, dir, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
-                    -9999, player_pos.y - 10 * PIXELS_ZOOM);
+                    -9999, player_pos.y - 15 * PIXELS_ZOOM);
             level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
         }
     }

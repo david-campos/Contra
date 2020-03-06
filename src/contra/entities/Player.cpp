@@ -36,22 +36,6 @@ void PlayerControl::Init() {
     m_persDyingAnim = m_animator->FindAnimation("PerspectiveDie");
     m_persForward = m_animator->FindAnimation("PerspectiveForward");
     m_animator->PlayAnimation(m_jumpAnim); // Start jumping
-    m_jumpBox = {
-            -6 * PIXELS_ZOOM, -22 * PIXELS_ZOOM,
-            6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM
-    };
-    m_standingBox = {
-            -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
-            3 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
-    };
-    m_crawlingBox = {
-            -12 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
-            15 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
-    };
-    m_swimmingBox = {
-            -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
-            7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
-    };
     m_previousKeyStatus = {false, false, false, false, false, false, false,
                            false};
     m_hasInertia = false;
@@ -142,6 +126,26 @@ void PlayerControl::Create(Level *level, GameObject *go, short index, int lives,
     m_remainingLives = lives;
     m_currentWeapon.reset(weapon);
     m_index = index;
+    m_jumpBox = {
+            -6 * PIXELS_ZOOM, -22 * PIXELS_ZOOM,
+            6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM
+    };
+    m_standingBox = {
+            -3 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
+            3 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
+    };
+    m_standingBoxPerspective = {
+            -5 * PIXELS_ZOOM, -33 * PIXELS_ZOOM,
+            5 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
+    };
+    m_crawlingBox = {
+            -12 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+            15 * PIXELS_ZOOM, -1 * PIXELS_ZOOM
+    };
+    m_swimmingBox = {
+            -3 * PIXELS_ZOOM, -10 * PIXELS_ZOOM,
+            7 * PIXELS_ZOOM, 0 * PIXELS_ZOOM
+    };
 }
 
 void PlayerControl::NormaliseKeyStatus(AvancezLib::KeyStatus &status) {
@@ -394,7 +398,7 @@ bool PlayerControlScrolling::Fire(const AvancezLib::KeyStatus &keyStatus) {
 void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
                                                float dt) {
     m_fryingFor -= dt;
-    *box = &m_standingBox;
+    *box = &m_standingBoxPerspective;
     if (m_fryingFor > 0) {
         m_animator->PlayAnimation(m_persFryingAnim);
         return;

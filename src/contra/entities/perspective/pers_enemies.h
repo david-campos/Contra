@@ -100,28 +100,33 @@ public:
                     m_animator->PlayAnimation(m_standAnim);
                     m_gravity->SetAcceleration(0);
                     m_gravity->SetVelocity(0);
-                    go->position = go->position + Vector2D(0, -PLAYER_SPEED * dt);
+                    go->position = go->position + Vector2D(0, -2 * 2 * PLAYER_SPEED * dt);
                     m_deadFor += dt;
                     if (m_deadFor >= 0.25f) {
                         Kill();
                     }
-                } else {
-                    if (!m_animator->IsPlaying()) {
-                        go->Disable();
-                        go->MarkToRemove();
-                    }
                 }
+                if (!m_animator->IsPlaying()) {
+                    go->Disable();
+                    go->MarkToRemove();
+                }
+                break;
+
         }
         if (!m_goesJumping) {
             m_nextShoot -= dt;
             if (m_nextShoot < 0.f) {
                 Fire();
-                m_nextShoot = m_random_dist(m_mt) * 0.5f + 0.2f;
-                if (m_state != STANDING && m_random_dist(m_mt) < m_stopToShootChance) {
+                m_nextShoot = m_random_dist(m_mt) * 1.0f + 0.5f;
+                if (m_state == MOVING && m_random_dist(m_mt) < m_stopToShootChance) {
                     m_timeStanding = 0;
                     m_state = STANDING;
                 }
             }
+        }
+        if (go->position.x < level->GetCameraX() + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM ||
+            go->position.x > level->GetCameraX() + WINDOW_WIDTH - PERSP_ENEMIES_MARGINS * PIXELS_ZOOM) {
+            go->MarkToRemove();
         }
     }
 
@@ -131,7 +136,7 @@ public:
         Vector2D target = m_perspectiveLevel->ProjectFromBackToFront(fire_pos);
         if (bullet) {
             bullet->Init(fire_pos, target - fire_pos, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
-                    -9999, (PERSP_PLAYER_Y - 10) * PIXELS_ZOOM);
+                    -9999, (PERSP_PLAYER_Y - 15) * PIXELS_ZOOM);
             level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
         }
     }

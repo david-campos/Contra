@@ -97,7 +97,7 @@ void PerspectiveLevel::Update(float dt) {
         for (auto *player: players) {
             player->position.x = player->position.x - m_camera.x + new_x;
         }
-        InitScreen();
+        if (m_onTransition < 0) InitScreen();
         m_camera = Vector2D(new_x, 0); // The first 4 are the transitions
     }
 
@@ -122,38 +122,33 @@ void PerspectiveLevel::InitScreen() {
     }
 
     auto *ledder = new PerspectiveLedder();
-    ledder->Create(this, false, 1.f, PLAYER_SPEED * PIXELS_ZOOM);
+    ledder->Create(this, false, 1.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
     ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM,
             PERSP_ENEMIES_Y * PIXELS_ZOOM));
     AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-    ledder = new PerspectiveLedder();
-    ledder->Create(this, false, 0.5f, PLAYER_SPEED * PIXELS_ZOOM);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS - 20) * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-    ledder = new PerspectiveLedder();
-    ledder->Create(this, true, 0.f, PLAYER_SPEED * PIXELS_ZOOM);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS - 40) * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-
-    PickUp *pickUp = new PickUp();
-    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
-            PERSP_PLAYER_Y * PIXELS_ZOOM);
-    ledder = new PerspectiveLedder();
-    ledder->Create(this, true, 0.f, 0.5 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS - 40) * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-
-    pickUp = new PickUp();
-    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
-            PERSP_PLAYER_Y * PIXELS_ZOOM);
-    ledder = new PerspectiveLedder();
-    ledder->Create(this, false, 0.f, 0.5 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS - 40) * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+    m_screens.insert({m_currentScreen, ledder});
+//    ledder = new PerspectiveLedder();
+//    ledder->Create(this, false, 0.5f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
+//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 20) * PIXELS_ZOOM,
+//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
+//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+//    m_screens.insert({m_currentScreen, ledder});
+//    ledder = new PerspectiveLedder();
+//    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
+//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 40) * PIXELS_ZOOM,
+//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
+//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+//    m_screens.insert({m_currentScreen, ledder});
+//
+//    PickUp *pickUp = new PickUp();
+//    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
+//            PERSP_PLAYER_Y * PIXELS_ZOOM);
+//    ledder = new PerspectiveLedder();
+//    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
+//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 60) * PIXELS_ZOOM,
+//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
+//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+//    m_screens.insert({m_currentScreen, ledder});
 }
 
 void PerspectiveLevel::KillScreen() {
