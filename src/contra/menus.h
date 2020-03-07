@@ -76,7 +76,6 @@ public:
 
 class ContinueLevel: public MenuWithStats {
 private:
-    Level* m_level;
     GameObject *selector;
     Vector2D options[2];
     AvancezLib::KeyStatus previousKeys;
@@ -98,10 +97,9 @@ public:
         options[1] = Vector2D(35, 167) * PIXELS_ZOOM;
     }
 
-    void Init(Level* level) {
+    void Init() override {
         MenuWithStats::Init();
         m_music->Play(1);
-        m_level = level;
     }
 
     void Update(float dt) override;

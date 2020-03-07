@@ -118,24 +118,9 @@ void ContinueLevel::Update(float dt) {
 
     if (!previousKeys.start && keyStatus.start) {
         if (selected == 0) {
-            m_level->Init();
-            if (m_game->GetCurrentLevel() == 0) {
-                m_game->Reset();
-            } else {
-                m_game->RollbackPlayerStats(); // Restore previous score
-            }
-            m_game->Start(m_level);
+            Send(REPEAT_LEVEL);
         } else {
-            // Free the level, we are not going to continue
-            m_level->Destroy();
-            delete m_level;
-
-            // Go to main menu
-            auto *menu = new MainMenu();
-            menu->Create(m_engine, m_game);
-            menu->Init();
-            menu->AddReceiver(m_game);
-            m_game->Start(menu);
+            Send(GO_TO_MAIN_MENU);
         }
         return;
     }
@@ -176,11 +161,6 @@ void Credits::Update(float dt) {
     m_time += dt;
 
     if (keyStatus.start && m_time > 0.5f) {
-        // Go to main menu
-        auto *menu = new MainMenu();
-        menu->Create(m_engine, m_game);
-        menu->Init();
-        menu->AddReceiver(m_game);
-        m_game->Start(menu);
+        Send(GO_TO_MAIN_MENU);
     }
 }

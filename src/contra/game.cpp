@@ -20,35 +20,41 @@ void Game::Create(AvancezLib *avancezLib) {
         spritesheets.insert({SPRITESHEET_PICKUPS, ss_pickups});
     }
 
-    auto *menu = new MainMenu();
-    menu->Create(engine, this);
-    menu->AddReceiver(this);
-    currentScene = menu;
+    currentScene = InitMainMenu();
 }
 
 void Game::Receive(Message m) {
     switch (m) {
+        case GO_TO_MAIN_MENU: {
+            Start(InitMainMenu());
+            break;
+        }
         case GAME_OVER: {
             SDL_Log("GAME_OVER");
             if (can_continue) {
                 can_continue = false;
 
-                auto *level = levelFactory->LoadLevel("data/level" + std::to_string(current_level + 1) + "/", players);
-                level->AddReceiver(this);
                 auto continue_menu = new ContinueLevel();
                 continue_menu->Create(engine, this);
-                continue_menu->Init(level);
+                continue_menu->Init();
                 continue_menu->AddReceiver(this);
 
                 Start(continue_menu);
             } else {
-                auto *menu = new MainMenu();
-                menu->Create(engine, this);
-                menu->AddReceiver(this);
-                menu->Init();
-
-                Start(menu);
+                Start(InitMainMenu());
             }
+            break;
+        }
+        case REPEAT_LEVEL: {
+            if (current_level == 0) {
+                Reset();
+            } else {
+                RollbackPlayerStats(); // Restore previous score
+            }
+            auto *level = levelFactory->LoadLevel("data/level" + std::to_string(current_level + 1) + "/", players);
+            level->AddReceiver(this);
+            level->Init();
+            Start(level);
             break;
         }
         case NEXT_LEVEL: {
@@ -112,7 +118,6 @@ void Game::Receive(Message m) {
                     stats[1].weapon = controls[1]->GetWeaponType();
                     stats[1].hasRapid = abs(controls[1]->GetBulletSpeedMultiplier() - 1.f) > 0.01f;
                 }
-                SDL_Log("Updated weapons %d %c", stats[0].weapon, stats[0].hasRapid ? 'R' : ' ');
             }
             break;
         }
@@ -131,5 +136,13 @@ void Game::Destroy() {
     SDL_Log("Game::Destroy");
     if (currentScene) currentScene->Destroy();
     delete levelFactory;
+}
+
+BaseScene *Game::InitMainMenu() {
+    auto *menu = new MainMenu();
+    menu->Create(engine, this);
+    menu->AddReceiver(this);
+    menu->Init();
+    return menu;
 }
 

@@ -65,7 +65,6 @@ public:
         Enable();
         Reset();
         players = 1;
-        currentScene->Init();
     }
 
 
@@ -105,4 +104,7 @@ public:
     void Receive(Message m) override;
 
     void Destroy() override;
+
+private:
+    BaseScene *InitMainMenu();
 };
