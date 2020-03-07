@@ -44,6 +44,9 @@ public:
 
     void Destroy() override {
         BaseScene::Destroy();
+        selector->Destroy();
+        delete selector;
+        selector = nullptr;
     }
 };
 

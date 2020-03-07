@@ -76,15 +76,29 @@ void Level::Destroy() {
     default_bullets->Destroy();
     delete default_bullets;
     default_bullets = nullptr;
+
+    machine_gun_bullets->Destroy();
+    delete machine_gun_bullets;
+    machine_gun_bullets = nullptr;
+
+    spread_bullets->Destroy();
+    delete spread_bullets;
+    spread_bullets = nullptr;
+
+    fire_bullets->Destroy();
+    delete fire_bullets;
+    fire_bullets = nullptr;
+
+    laser_bullets->Destroy();
+    delete laser_bullets;
+    laser_bullets = nullptr;
+
     enemy_bullets->Destroy();
     delete enemy_bullets;
     enemy_bullets = nullptr;
+
     for (auto pair: shared_sounds) {
         delete pair.second;
-    }
-    for (auto *player: players) {
-        delete player;
-        player = nullptr;
     }
 }
 
