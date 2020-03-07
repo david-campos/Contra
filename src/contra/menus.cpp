@@ -39,7 +39,7 @@ void MainMenu::Update(float dt) {
         if (started != 0.f) {
             if (!m_engine->isMusicPlaying()) {
                 game->SetPlayers(selected + 1);
-                game->SetCurrentLevel(0/*TODO: restore to -1*/);
+                game->SetCurrentLevel(-1/*TODO: restore to -1*/);
                 game->Reset();
                 Send(NEXT_LEVEL);
             }
@@ -122,7 +122,7 @@ void ContinueLevel::Update(float dt) {
             if (m_game->GetCurrentLevel() == 0) {
                 m_game->Reset();
             } else {
-                m_game->ResetPlayerStats(); // Restore previous score
+                m_game->RollbackPlayerStats(); // Restore previous score
             }
             m_game->Start(m_level);
         } else {

@@ -146,10 +146,6 @@ public:
         return m_enemyBulletsCollisionCheckLayer;
     }
 
-    int GetPlayerColliderCheckLayer() {
-        return m_enemyBulletsCollisionLayer;
-    }
-
     const std::vector<PlayerControl *> &GetPlayerControls() const {
         return playerControls;
     }

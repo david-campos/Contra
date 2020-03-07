@@ -61,7 +61,7 @@ void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     go->position = Vector2D(level->GetCameraX() + 50 * PIXELS_ZOOM, 0);
     m_gravity->SetFallThoughWater(false);
-    m_currentWeapon = std::make_unique<DefaultWeapon>(level);
+    m_currentWeapon.reset(new DefaultWeapon(level));
     m_facingRight = true;
     m_hasInertia = false;
     m_gravity->SetVelocity(0);
@@ -97,14 +97,13 @@ void PlayerControl::OnCollision(const CollideComponent &collider) {
 }
 
 void PlayerControl::PickUp(PickUpType type) {
-    go->Send(SCORE1_1000);
     level->GetSound(SOUND_PICKUP)->Play(1);
     switch (type) {
         case PICKUP_MACHINE_GUN:
             m_currentWeapon.reset(new MachineGun(level));
             break;
         case PICKUP_RAPID_FIRE:
-            m_currentWeapon->SetBulletSpeedMultiplier(1.5);
+            m_currentWeapon->SetBulletSpeedMultiplier(1.5f);
             break;
         case PICKUP_SPREAD:
             m_currentWeapon.reset(new SpreadGun(level));
@@ -119,11 +118,34 @@ void PlayerControl::PickUp(PickUpType type) {
             // TODO: Do barrier
             break;
     }
+    go->Send(SCORE1_1000);
+    go->Send(PLAYER_WEAPON_UPDATE);
 }
 
-void PlayerControl::Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon) {
+void PlayerControl::Create(Level *level, GameObject *go, short index, const PlayerStats &stats) {
     LevelComponent::Create(level, go);
-    m_remainingLives = lives;
+    m_remainingLives = stats.lives;
+    Weapon *weapon = nullptr;
+    switch (stats.weapon) {
+        case RIFLE:
+            weapon = new DefaultWeapon(level);
+            break;
+        case MACHINE_GUN:
+            weapon = new MachineGun(level);
+            break;
+        case FIRE_GUN:
+            weapon = new FireGun(level);
+            break;
+        case SPREAD_GUN:
+            weapon = new SpreadGun(level);
+            break;
+        case LASER_GUN:
+            weapon = new LaserGun(level);
+            break;
+    }
+    if (stats.hasRapid) {
+        weapon->SetBulletSpeedMultiplier(1.5f);
+    }
     m_currentWeapon.reset(weapon);
     m_index = index;
     m_jumpBox = {
@@ -164,7 +186,8 @@ void PlayerControl::Update(float dt) {
     AvancezLib::KeyStatus keyStatus{};
     if (level->IsComplete()) {
         bool moving = level->GetTimeSinceComplete() > 1.0;
-        bool jumping = moving && go->position.x >= level->GetLevelWidth() - 112.f * PIXELS_ZOOM;
+        bool jumping = moving && (m_previousKeyStatus.jump || m_gravity->IsOnFloor())
+                       && go->position.x >= level->GetLevelWidth() - 125.f * PIXELS_ZOOM;
         keyStatus = {
                 false, jumping, false, moving, false, false, false,
                 false, false
@@ -344,10 +367,17 @@ void PlayerControlScrolling::AnimationUpdate(bool shooting, const AvancezLib::Ke
 }
 
 PlayerControl::PlayerBoundaries PlayerControlScrolling::GetPlayerMovementBoundaries() {
-    return {
-            level->GetCameraX() + SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM,
-            std::min(level->GetCameraX() + WINDOW_WIDTH * 0.7f + 1, level->GetLevelWidth() - 112.f * PIXELS_ZOOM)
-    };
+    if (!level->IsComplete()) {
+        return {
+                level->GetCameraX() + SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM,
+                std::min(level->GetCameraX() + WINDOW_WIDTH * 0.7f + 1, level->GetLevelWidth() - 112.f * PIXELS_ZOOM)
+        };
+    } else {
+        return {
+                level->GetCameraX() + SCREEN_PLAYER_LEFT_MARGIN * PIXELS_ZOOM,
+                static_cast<float>(level->GetLevelWidth() + 20 * PIXELS_ZOOM)
+        };
+    }
 }
 
 bool PlayerControlScrolling::Fire(const AvancezLib::KeyStatus &keyStatus) {

@@ -7,6 +7,7 @@
 
 #include "../../consts.h"
 #include "bullets.h"
+#include "weapon_types.h"
 
 class Weapon {
 protected:
@@ -30,6 +31,8 @@ public:
     void SetBulletSpeedMultiplier(float bulletSpeedMultiplier) {
         m_bulletSpeedMultiplier = bulletSpeedMultiplier;
     }
+
+    virtual WeaponType GetWeaponType() = 0;
 
     /**
      * Called each frame to check if we should fire or not
@@ -90,6 +93,10 @@ public:
     bool IsAutomatic() override {
         return false;
     }
+
+    WeaponType GetWeaponType() override {
+        return RIFLE;
+    }
 };
 
 class FireGun : public DefaultWeapon {
@@ -100,6 +107,10 @@ public:
 
     ObjectPool<Bullet> *GetBulletPool() const override {
         return m_level->GetFireBullets();
+    }
+
+    WeaponType GetWeaponType() override {
+        return FIRE_GUN;
     }
 };
 
@@ -152,6 +163,10 @@ public:
         m_nextBullet++;
         m_shootDowntime = 0.02;
     }
+
+    WeaponType GetWeaponType() override {
+        return LASER_GUN;
+    }
 };
 
 class MachineGun : public Weapon {
@@ -194,6 +209,10 @@ public:
     bool IsAutomatic() override {
         return true;
     }
+
+    WeaponType GetWeaponType() override {
+        return MACHINE_GUN;
+    }
 };
 
 class SpreadGun : public Weapon {
@@ -233,6 +252,10 @@ public:
 
     bool IsAutomatic() override {
         return false;
+    }
+
+    WeaponType GetWeaponType() override {
+        return SPREAD_GUN;
     }
 };
 

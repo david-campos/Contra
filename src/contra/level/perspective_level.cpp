@@ -54,8 +54,7 @@ Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
     player->position = Vector2D(WINDOW_WIDTH / 2, PIXELS_ZOOM * PERSP_PLAYER_Y);
 
     auto *playerControl = new PlayerControlPerspective();
-    // TODO: add weapon to the stats and change this
-    playerControl->Create(this, player, index, stats->lives, new DefaultWeapon(this));
+    playerControl->Create(this, player, index, *stats);
 
     auto *gravity = player->GetComponent<Gravity *>();
     gravity->SetBaseFloor(PIXELS_ZOOM * PERSP_PLAYER_Y);
@@ -141,15 +140,15 @@ void PerspectiveLevel::InitScreen() {
 //    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
 //    m_screens.insert({m_currentScreen, ledder});
 //
-//    PickUp *pickUp = new PickUp();
-//    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
-//            PERSP_PLAYER_Y * PIXELS_ZOOM);
-//    ledder = new PerspectiveLedder();
-//    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
-//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 60) * PIXELS_ZOOM,
-//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-//    m_screens.insert({m_currentScreen, ledder});
+    PickUp *pickUp = new PickUp();
+    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
+            PERSP_PLAYER_Y * PIXELS_ZOOM);
+    ledder = new PerspectiveLedder();
+    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
+    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 20) * PIXELS_ZOOM,
+            PERSP_ENEMIES_Y * PIXELS_ZOOM));
+    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+    m_screens.insert({m_currentScreen, ledder});
 }
 
 void PerspectiveLevel::KillScreen() {

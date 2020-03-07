@@ -57,7 +57,7 @@ public:
     /**
      * Resets the player stats to the last saved ones
      */
-    void ResetPlayerStats() {
+    void RollbackPlayerStats() {
         memcpy(stats, lastSavedStats, sizeof(PlayerStats) * 2);
     }
 

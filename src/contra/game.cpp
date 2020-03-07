@@ -92,12 +92,30 @@ void Game::Receive(Message m) {
         }
         case LIFE_LOST_1:
             stats[0].lives -= 1;
+            stats[0].weapon = RIFLE;
+            stats[0].hasRapid = false;
             break;
         case LIFE_LOST_2:
             if (players > 1) {
                 stats[1].lives -= 1;
+                stats[1].weapon = RIFLE;
+                stats[1].hasRapid = false;
             }
             break;
+        case PLAYER_WEAPON_UPDATE: {
+            auto *level = dynamic_cast<Level *>(currentScene);
+            if (level) {
+                auto controls = level->GetPlayerControls();
+                stats[0].weapon = controls[0]->GetWeaponType();
+                stats[0].hasRapid = abs(controls[0]->GetBulletSpeedMultiplier() - 1.f) > 0.01f;
+                if (players > 1) {
+                    stats[1].weapon = controls[1]->GetWeaponType();
+                    stats[1].hasRapid = abs(controls[1]->GetBulletSpeedMultiplier() - 1.f) > 0.01f;
+                }
+                SDL_Log("Updated weapons %d %c", stats[0].weapon, stats[0].hasRapid ? 'R' : ' ');
+            }
+            break;
+        }
     }
 }
 

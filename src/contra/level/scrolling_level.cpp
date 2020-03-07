@@ -366,8 +366,7 @@ Player *ScrollingLevel::CreatePlayer(int index, PlayerStats *stats) {
     player->Create(this, index);
 
     auto *playerControl = new PlayerControlScrolling();
-    // TODO: add weapon to the stats and change this
-    playerControl->Create(this, player, index, stats->lives, new DefaultWeapon(this));
+    playerControl->Create(this, player, index, *stats);
 
     player->AddComponent(playerControl);
     player->GetComponent<CollideComponent *>()->SetListener(playerControl);

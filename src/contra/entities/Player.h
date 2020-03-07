@@ -20,7 +20,7 @@ public:
 
 class PlayerControl : public LevelComponent, public CollideComponentListener, public Hittable {
 public:
-    virtual void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon);
+    virtual void Create(Level *level, GameObject *go, short index, const PlayerStats &stats);
 
     void Init() override;
 
@@ -45,6 +45,10 @@ public:
     [[nodiscard]] bool IsOnFloor() const { return m_gravity->IsOnFloor(); }
 
     void SetBaseFloor(float floor) { m_gravity->SetBaseFloor(floor); }
+
+    WeaponType GetWeaponType() { return m_currentWeapon->GetWeaponType(); }
+
+    float GetBulletSpeedMultiplier() { return m_currentWeapon->GetBulletSpeedMultiplier(); }
 
 protected:
     AnimationRenderer *m_animator;
@@ -110,8 +114,8 @@ protected:
 
 class PlayerControlPerspective : public PlayerControl {
 public:
-    void Create(Level *level, GameObject *go, short index, int lives, Weapon *weapon) override {
-        PlayerControl::Create(level, go, index, lives, weapon);
+    void Create(Level *level, GameObject *go, short index, const PlayerStats &stats) override {
+        PlayerControl::Create(level, go, index, stats);
         m_perspectiveLevel = dynamic_cast<PerspectiveLevel *>(level);
         if (!m_perspectiveLevel) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
