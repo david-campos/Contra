@@ -59,14 +59,13 @@ void PlayerControl::Hit() {
 
 void PlayerControl::Respawn() {
     if (!m_isDeath) return;
-    go->position = Vector2D(level->GetCameraX() + 50 * PIXELS_ZOOM, 0);
     m_gravity->SetFallThoughWater(false);
     m_currentWeapon.reset(new DefaultWeapon(level));
     m_facingRight = true;
     m_hasInertia = false;
-    m_gravity->SetVelocity(0);
     m_invincibleTime = 2.f;
     m_isDeath = false;
+    OnSpawn();
 }
 
 void PlayerControl::OnCollision(const CollideComponent &collider) {
@@ -425,6 +424,11 @@ bool PlayerControlScrolling::Fire(const AvancezLib::KeyStatus &keyStatus) {
     return m_currentWeapon->Fire(go->position + displacement * PIXELS_ZOOM, direction);
 }
 
+void PlayerControlScrolling::OnSpawn() {
+    go->position = Vector2D(level->GetCameraX() + 50 * PIXELS_ZOOM, 0);
+    m_gravity->SetVelocity(0);
+}
+
 void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
                                                float dt) {
     m_fryingFor -= dt;
@@ -452,7 +456,7 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
     } else {
         *box = &m_jumpBox;
         if (!m_animator->IsCurrent(m_jumpAnim)) {
-            m_animator->PlayAnimation(m_fallAnim);
+            m_animator->PlayAnimation(m_jumpAnim);
         }
     }
 
@@ -507,6 +511,11 @@ void PlayerControlPerspective::VerticalMovementUpdate(const AvancezLib::KeyStatu
 
 bool PlayerControlPerspective::IsBlocked() {
     return m_fryingFor > 0.f;
+}
+
+void PlayerControlPerspective::OnSpawn() {
+    go->position = Vector2D(level->GetCameraX() + WINDOW_WIDTH / 2, m_gravity->GetBaseFloor());
+    m_gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
 }
 
 void

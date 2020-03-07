@@ -97,6 +97,10 @@ public:
         return m_lives > 0;
     }
 
+    bool HitLast() override {
+        return true; // Give preference to enemies in front and so
+    }
+
     void Kill() {
         if (m_lives > 0) {
             m_lives = 1;

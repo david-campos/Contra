@@ -223,3 +223,13 @@ bool PerspectiveLevel::AllPlayersOnFloor() {
     }
     return true;
 }
+
+void PerspectiveLevel::Destroy() {
+    // Before calling Destroy on the level, lets move
+    // all our pendent elements into game_objects so they
+    // will be destroyed too
+    for (auto pair: m_screens) {
+        AddGameObject(pair.second, RENDERING_LAYER_BRIDGES);
+    }
+    Level::Destroy();
+}

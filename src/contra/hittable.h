@@ -17,6 +17,8 @@ public:
     virtual void Hit() = 0;
 
     virtual bool CanBeHit() = 0;
+
+    virtual bool HitLast() { return false; }
 };
 
 #endif //CONTRA_HITTABLE_H

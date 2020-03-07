@@ -57,6 +57,8 @@ public:
         return m_laserOn;
     }
 
+    void Destroy() override;
+
     Vector2D ProjectFromFrontToBack(Vector2D &point) {
         return Vector2D(
                 (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE / PERSP_FRONT_X_RANGE

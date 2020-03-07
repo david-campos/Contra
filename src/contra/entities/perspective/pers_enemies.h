@@ -246,8 +246,8 @@ public:
         gravity->SetBaseFloor(PERSP_ENEMIES_Y * PIXELS_ZOOM);
         auto *collider = new BoxCollider();
         collider->Create(level, this,
-                -7 * PIXELS_ZOOM, (jumps ? -15 : -23) * PIXELS_ZOOM,
-                14 * PIXELS_ZOOM, (jumps ? 15 : 23) * PIXELS_ZOOM,
+                (jumps ? -7 : -5) * PIXELS_ZOOM, (jumps ? -15 : -23) * PIXELS_ZOOM,
+                (jumps ? 14 : 9) * PIXELS_ZOOM, (jumps ? 15 : 23) * PIXELS_ZOOM,
                 NPCS_COLLISION_LAYER, -1);
 
         AddComponent(behaviour);

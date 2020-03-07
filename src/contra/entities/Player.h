@@ -97,6 +97,7 @@ protected:
 
     virtual PlayerBoundaries GetPlayerMovementBoundaries() = 0;
 
+    virtual void OnSpawn() = 0;
     virtual void VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {}
 
     [[nodiscard]] virtual int PickDieAnimation() const { return m_dieAnim; }
@@ -105,6 +106,8 @@ protected:
 class PlayerControlScrolling : public PlayerControl {
 protected:
     PlayerBoundaries GetPlayerMovementBoundaries() override;
+
+    void OnSpawn() override;
 
     void
     AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out, float dt) override;
@@ -127,6 +130,8 @@ protected:
     PlayerBoundaries GetPlayerMovementBoundaries() override;
 
     bool Fire(const AvancezLib::KeyStatus &keyStatus) override;
+
+    void OnSpawn() override;
 
     int PickDieAnimation() const override {
         return m_persDyingAnim;

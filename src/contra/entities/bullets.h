@@ -74,22 +74,26 @@ public:
             if ((hits_min || go->position.y > m_maxY) && !IsKilled()) {
                 std::set<CollideComponent *> colliding;
                 m_collider->GetCurrentCollisions(&colliding);
-                bool has_hit = false;
-                // Kill the first destroyable we found
+                // Kill the first destroyable we found, if HitLast reserve as last option
+                Hittable *chosen = nullptr;
                 for (auto collider: colliding) {
                     auto *hittable = collider->GetGameObject()->GetComponent<Hittable *>();
                     if (hittable && hittable->CanBeHit()) {
-                        hittable->Hit();
-                        has_hit = true;
-                        break;
+                        chosen = hittable;
+                        if (!hittable->HitLast()) {
+                            break;
+                        }
                     }
                 }
+                if (chosen) {
+                    chosen->Hit();
+                }
                 // When hitting max we give it some margin in which it still can kill you
-                if (hits_min || has_hit || go->position.y > m_maxY + 20 * PIXELS_ZOOM) {
+                if (hits_min || chosen || go->position.y > m_maxY + 20 * PIXELS_ZOOM) {
                     // If we hit something it shows the explosion animation,
                     // if we don't but we are hitting the min with the laser on we show it too
                     // bc it means we hit the "wall".
-                    Kill((hits_min && perspectiveLevel && perspectiveLevel->IsLaserOn()) || has_hit);
+                    Kill((hits_min && perspectiveLevel && perspectiveLevel->IsLaserOn()) || chosen);
                 }
             }
         }
