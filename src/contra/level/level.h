@@ -57,7 +57,7 @@ public:
 
     void Init() override;
 
-    void Update(float dt) override;
+    void Update(float dt) final;
 
     [[nodiscard]] bool IsComplete() const {
         return complete;
@@ -104,7 +104,7 @@ public:
 
     float PlayersTopY() const;
 
-    float PlayersMinY() const;
+    float PlayersMinY(bool *alive_players = nullptr) const;
 
     ObjectPool<Bullet> *GetDefaultBullets() const {
         return default_bullets;
@@ -164,6 +164,7 @@ private:
 protected:
     virtual Player *CreatePlayer(int index, PlayerStats *stats) = 0;
 
+    virtual void SubUpdate(float dt) = 0;
     int m_playerBulletsCollisionLayer = NPCS_COLLISION_LAYER, m_playerBulletsCollisionCheckLayer = -1,
             m_enemyBulletsCollisionLayer = PLAYER_COLLISION_LAYER, m_enemyBulletsCollisionCheckLayer = -1;
 };

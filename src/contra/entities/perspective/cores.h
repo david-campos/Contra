@@ -55,6 +55,7 @@ public:
         if (m_animOpen >= 0) {
             m_collider->Disable();
             m_state = DEST_STATE_CLOSED;
+            m_animator->CurrentAndPause(m_animOpen);
         } else {
             m_collider->Enable();
             m_state = DEST_STATE_OPEN;
@@ -235,8 +236,8 @@ public:
         Vector2D dir = player_pos - Vector2D(0, 10 * PIXELS_ZOOM) - go->position;
         auto *bullet = level->GetEnemyBullets()->FirstAvailable();
         if (bullet) {
-            bullet->Init(go->position, dir, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
-                    -9999, player_pos.y - 15 * PIXELS_ZOOM);
+            bullet->Init(go->position, dir, 0.65f * BULLET_SPEED * PIXELS_ZOOM,
+                    -9999, (PERSP_PLAYER_Y - 25) * PIXELS_ZOOM);
             level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
         }
     }

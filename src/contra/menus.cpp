@@ -39,7 +39,7 @@ void MainMenu::Update(float dt) {
         if (started != 0.f) {
             if (!m_engine->isMusicPlaying()) {
                 game->SetPlayers(selected + 1);
-                game->SetCurrentLevel(-1/*TODO: restore to -1*/);
+                game->SetCurrentLevel(0/*TODO: restore to -1*/);
                 game->Reset();
                 Send(NEXT_LEVEL);
             }
@@ -137,6 +137,7 @@ void ContinueLevel::Update(float dt) {
             menu->AddReceiver(m_game);
             m_game->Start(menu);
         }
+        return;
     }
     if (!previousKeys.up && keyStatus.up) {
         selected -= 1;

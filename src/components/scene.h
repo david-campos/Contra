@@ -84,19 +84,19 @@ public:
         }
 
         m_grid.ClearCollisionCache(); // Clear collision cache
-        for (const auto &layer: game_objects) {
+        for (auto *layer = game_objects; layer != game_objects + RENDERING_LAYERS; layer++) {
             // Update objects which are enabled and not to be removed
-            for (auto *game_object : *layer)
+            for (auto *game_object : **layer)
                 if (game_object->IsEnabled() && !game_object->IsMarkedToRemove())
                     game_object->Update(dt);
         }
         // Delete objects marked to remove
-        for (const auto &layer: game_objects) {
-            std::set<GameObject *>::iterator it = layer->begin();
-            while (it != layer->end()) {
+        for (auto *layer = game_objects; layer != game_objects + RENDERING_LAYERS; layer++) {
+            std::set<GameObject *>::iterator it = (*layer)->begin();
+            while (it != (*layer)->end()) {
                 auto *game_object = *it;
                 if (game_object->IsMarkedToRemove()) {
-                    it = layer->erase(it);
+                    it = (*layer)->erase(it);
                     game_object->UnmarkToRemove();
                     if (game_object->onRemoval == DESTROY) {
                         game_object->Destroy();
@@ -125,8 +125,8 @@ public:
             game_objects_to_add.front().first->Destroy();
             game_objects_to_add.pop();
         }
-        for (const auto &layer: game_objects) {
-            for (auto game_object : *layer)
+        for (auto *layer = game_objects; layer != game_objects + RENDERING_LAYERS; layer++) {
+            for (auto game_object : **layer)
                 game_object->Destroy();
         }
         m_background.reset();

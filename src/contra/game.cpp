@@ -33,7 +33,7 @@ void Game::Receive(Message m) {
             if (can_continue) {
                 can_continue = false;
 
-                auto *level = levelFactory->LoadLevel("data/level1/", players);
+                auto *level = levelFactory->LoadLevel("data/level" + std::to_string(current_level + 1) + "/", players);
                 level->AddReceiver(this);
                 auto continue_menu = new ContinueLevel();
                 continue_menu->Create(engine, this);

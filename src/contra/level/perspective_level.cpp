@@ -7,6 +7,35 @@
 #include "../entities/perspective/cores.h"
 #include "../entities/perspective/pers_enemies.h"
 
+namespace YAML {
+    template<>
+    struct convert<PerspectiveLedderSpawn> {
+        static bool decode(const Node &node, PerspectiveLedderSpawn &rhs) {
+            rhs.jumps = node["jumps"] && node["jumps"].as<bool>();
+            rhs.stopToShootChance = node["stop_to_shoot_prob"] ? node["stop_to_shoot_prob"].as<float>() : 0.f;
+            rhs.changeDirectionChance = node["change_dir_prob"] ? node["change_dir_prob"].as<float>() : 0.f;
+            rhs.speedFactor = node["speed_factor"] ? node["speed_factor"].as<float>() : (rhs.jumps ? 0.5 : 1.0);
+            if (node["pickup"]) {
+                rhs.pickupToDrop = node["pickup"].as<PickUpType>();
+                rhs.doesDrop = true;
+            } else {
+                rhs.doesDrop = false;
+            }
+            rhs.shootsPills = node["shoots_pills"] && node["shoots_pills"].as<bool>();
+            rhs.cooldownMin = node["cooldown_min"] ? node["cooldown_min"].as<float>() : 0.5f;
+            rhs.cooldownMax = node["cooldown_max"] ? node["cooldown_max"].as<float>() : 1.f;
+            rhs.entrance = node["entrance"].as<std::string>() == "right" ? PerspectiveLedderSpawn::RIGHT
+                                                                         : PerspectiveLedderSpawn::LEFT;
+            if (rhs.entrance == PerspectiveLedderSpawn::RIGHT) {
+                rhs.speedFactor *= -1;
+            }
+            rhs.secsUntilNext = node["secs_next"].as<float>();
+            rhs.timesUsed = 0;
+            return true;
+        }
+    };
+}
+
 void PerspectiveLevel::Create(const std::string &folder,
                               const std::unordered_map<int, std::shared_ptr<Sprite>> *spritesheets,
                               YAML::Node scene_root, short num_players, PlayerStats *stats, AvancezLib *engine) {
@@ -41,6 +70,16 @@ void PerspectiveLevel::Create(const std::string &folder,
                 canon
         });
     }
+    auto spawn_patterns = scene_root["spawn_patterns"];
+    for (int i = 0; i < spawn_patterns.size(); i++) {
+        std::vector<PerspectiveLedderSpawn> pattern;
+        float pretime = spawn_patterns[i]["pretime"].as<float>();
+        m_pretimes.insert({i, pretime});
+        for (const auto &spawn_node: spawn_patterns[i]["pattern"]) {
+            pattern.push_back(spawn_node.as<PerspectiveLedderSpawn>());
+        }
+        m_spawnPatterns.insert({i, pattern});
+    }
 }
 
 void PerspectiveLevel::Init() {
@@ -68,8 +107,8 @@ Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
 
 void PerspectiveLevel::Receive(Message m) {
     if (m == SCREEN_CLEARED) {
-        ClearScreen();
         m_laserOn = false;
+        ClearScreen();
         m_currentScreen++;
         m_onTransition = 0;
         for (auto pos: {
@@ -88,67 +127,77 @@ void PerspectiveLevel::Receive(Message m) {
     }
 }
 
-void PerspectiveLevel::Update(float dt) {
-    Level::Update(dt);
-
-    float new_x = (m_onTransition < 0 ? m_currentScreen + 4 : m_onTransition) * WINDOW_WIDTH;
+void PerspectiveLevel::SubUpdate(float dt) {
+    float new_x = (m_onTransition < 0 ? m_currentScreen + 4 : m_onTransition) *
+                  WINDOW_WIDTH;  // The first 4 are the transitions
     if (abs(new_x - m_camera.x) > 0.001) {
-        for (auto *player: players) {
-            player->position.x = player->position.x - m_camera.x + new_x;
+        for (auto *layer = game_objects; layer != game_objects + RENDERING_LAYERS; layer++) {
+            for (auto *game_object: **layer)
+                game_object->position.x = game_object->position.x - m_camera.x + new_x;
         }
         if (m_onTransition < 0) InitScreen();
-        m_camera = Vector2D(new_x, 0); // The first 4 are the transitions
+        m_camera = Vector2D(new_x, 0);
     }
 
-    if (m_onTransition >= 0 && PlayersMinY() < PIXELS_ZOOM * (182 - 35) && AllPlayersOnFloor()) {
-        m_onTransition++;
-        for (int i = 0; i < players.size(); i++) {
-            players[i]->position.y = PIXELS_ZOOM * 182;
-            playerControls[i]->SetBaseFloor(PIXELS_ZOOM * 182);
+    if (m_onTransition >= 0) {
+        bool some_alive;
+        float min_y = PlayersMinY(&some_alive);
+        if (some_alive && min_y < PIXELS_ZOOM * (182 - 35) && AllPlayersOnFloor()) {
+            m_onTransition++;
+            for (int i = 0; i < players.size(); i++) {
+                players[i]->position.y = PIXELS_ZOOM * 182;
+                playerControls[i]->SetBaseFloor(PIXELS_ZOOM * 182);
+            }
+            if (m_onTransition == 4) {
+                m_onTransition = -1;
+                m_laserOn = true;
+            }
         }
-        if (m_onTransition == 4) {
-            m_onTransition = -1;
-            m_laserOn = true;
+    } else if (m_spawnPatterns.count(m_currentScreen) > 0) {
+        m_nextSpawn -= dt;
+        while (m_nextSpawn <= 0.f) {
+            auto &screen_pattern = m_spawnPatterns[m_currentScreen];
+            m_currentSpawn = (m_currentSpawn + 1) % screen_pattern.size();
+            auto *spawn = &screen_pattern[m_currentSpawn];
+
+            PickUp *pickUp = nullptr;
+            if (spawn->doesDrop && spawn->timesUsed == 0) {
+                pickUp = new PickUp();
+                pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid,
+                        level_floor, spawn->pickupToDrop,
+                        PERSP_PLAYER_Y * PIXELS_ZOOM);
+            }
+            auto *ledder = new PerspectiveLedder();
+            ledder->Create(this, spawn->jumps, spawn->stopToShootChance,
+                    spawn->speedFactor * PLAYER_SPEED * PIXELS_ZOOM,
+                    pickUp, spawn->shootsPills, spawn->cooldownMin, spawn->cooldownMax,
+                    spawn->changeDirectionChance);
+            float x_pos = spawn->entrance == PerspectiveLedderSpawn::LEFT ?
+                          PERSP_ENEMIES_MARGINS * PIXELS_ZOOM : WINDOW_WIDTH - PERSP_ENEMIES_MARGINS * PIXELS_ZOOM;
+            ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + x_pos,
+                    PERSP_ENEMIES_Y * PIXELS_ZOOM));
+            AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+            m_screens.insert({m_currentScreen, ledder});
+
+            spawn->timesUsed++;
+            m_nextSpawn = spawn->secsUntilNext;
         }
     }
 }
 
 void PerspectiveLevel::InitScreen() {
+    m_currentSpawn = -1;
+    if (m_pretimes.count(m_currentScreen) > 1) {
+        m_nextSpawn = m_pretimes[m_currentScreen];
+    } else {
+        m_nextSpawn = 1.f;
+    }
     auto ret = m_screens.equal_range(m_currentScreen);
     for (auto it = ret.first; it != ret.second; ++it) {
         it->second->Init();
         AddGameObject(it->second, RENDERING_LAYER_BRIDGES);
     }
 
-    auto *ledder = new PerspectiveLedder();
-    ledder->Create(this, false, 1.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, nullptr,
-            true, 2.f);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-    m_screens.insert({m_currentScreen, ledder});
-//    ledder = new PerspectiveLedder();
-//    ledder->Create(this, false, 0.5f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
-//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 20) * PIXELS_ZOOM,
-//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-//    m_screens.insert({m_currentScreen, ledder});
-//    ledder = new PerspectiveLedder();
-//    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM);
-//    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 40) * PIXELS_ZOOM,
-//            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-//    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-//    m_screens.insert({m_currentScreen, ledder});
-//
-    PickUp *pickUp = new PickUp();
-    pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid, level_floor, PICKUP_SPREAD,
-            PERSP_PLAYER_Y * PIXELS_ZOOM);
-    ledder = new PerspectiveLedder();
-    ledder->Create(this, true, 0.f, 0.1 * PLAYER_SPEED * PIXELS_ZOOM, pickUp);
-    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + (PERSP_ENEMIES_MARGINS + 20) * PIXELS_ZOOM,
-            PERSP_ENEMIES_Y * PIXELS_ZOOM));
-    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-    m_screens.insert({m_currentScreen, ledder});
 }
 
 void PerspectiveLevel::KillScreen() {
@@ -170,7 +219,7 @@ void PerspectiveLevel::ClearScreen() {
 
 bool PerspectiveLevel::AllPlayersOnFloor() {
     for (auto *player: playerControls) {
-        if (!player->IsOnFloor()) return false;
+        if (player->IsAlive() && !player->IsOnFloor()) return false;
     }
     return true;
 }

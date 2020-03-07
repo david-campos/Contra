@@ -84,10 +84,13 @@ public:
                         break;
                     }
                 }
-                // If we hit something it shows the explosion animation,
-                // if we don't but we are hitting the min with the laser on we show it too
-                // bc it means we hit the "wall".
-                Kill((hits_min && perspectiveLevel && perspectiveLevel->IsLaserOn()) || has_hit);
+                // When hitting max we give it some margin in which it still can kill you
+                if (hits_min || has_hit || go->position.y > m_maxY + 20 * PIXELS_ZOOM) {
+                    // If we hit something it shows the explosion animation,
+                    // if we don't but we are hitting the min with the laser on we show it too
+                    // bc it means we hit the "wall".
+                    Kill((hits_min && perspectiveLevel && perspectiveLevel->IsLaserOn()) || has_hit);
+                }
             }
         }
     }

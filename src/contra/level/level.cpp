@@ -36,6 +36,8 @@ void Level::Update(float dt) {
             );
         }
     }
+
+    SubUpdate(dt);
 }
 
 void Level::Create(const std::string &folder, const std::unordered_map<int, std::shared_ptr<Sprite>> *spritesheets_map,
@@ -269,7 +271,7 @@ float Level::PlayersMinX() const {
     return min_x;
 }
 
-float Level::PlayersMinY() const {
+float Level::PlayersMinY(bool *alive_players) const {
     float min_y = 0;
     bool found_alive = false;
     for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
@@ -280,6 +282,7 @@ float Level::PlayersMinY() const {
             found_alive = true;
         }
     }
+    if (alive_players) *alive_players = found_alive;
     return min_y;
 }
 

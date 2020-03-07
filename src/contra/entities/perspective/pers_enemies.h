@@ -20,6 +20,7 @@ private:
     int m_duckAnim, m_jumpAnim, m_runAnim, m_standAnim, m_dyingAnim;
     bool m_goesJumping;
     bool m_shootsPills;
+    bool m_hasChangedDir;
     float m_speed;
     float m_stopToShootChance, m_changeDirectionChance;
     float m_timeOnFloor;
@@ -27,6 +28,7 @@ private:
     float m_timeStanding;
     float m_deadFor;
     float m_cooldownMin;
+    float m_cooldownMax;
     PickUp *m_droppedPickup;
     enum MovementState {
         MOVING,
@@ -41,7 +43,8 @@ private:
 public:
     void
     Create(PerspectiveLevel *level, GameObject *go, bool jumps, bool stopToShootChance, float speed,
-           PickUp *droppedPickup, bool shoots_pills, float cooldown_min, float change_direction_chance) {
+           PickUp *droppedPickup, bool shoots_pills, float cooldown_min, float cooldown_max,
+           float change_direction_chance) {
         LevelComponent::Create(level, go);
         m_perspectiveLevel = level;
         m_goesJumping = jumps;
@@ -49,6 +52,7 @@ public:
         m_changeDirectionChance = change_direction_chance;
         m_stopToShootChance = stopToShootChance;
         m_cooldownMin = cooldown_min;
+        m_cooldownMax = cooldown_max;
         m_speed = speed;
         m_droppedPickup = droppedPickup;
     }
@@ -69,6 +73,7 @@ public:
         m_state = MOVING;
         m_nextShoot = m_random_dist(m_mt);
         m_deadFor = 0;
+        m_hasChangedDir = false;
         m_animator->mirrorHorizontal = m_speed > 0;
     }
 
@@ -83,7 +88,7 @@ public:
                         }
                         m_timeOnFloor += dt;
                         if (m_timeOnFloor > 0.3f) {
-                            m_gravity->AddVelocity(-PLAYER_JUMP * 0.7f * PIXELS_ZOOM);
+                            m_gravity->AddVelocity(-0.9f * PLAYER_JUMP * PIXELS_ZOOM);
                         }
                     } else {
                         m_timeOnFloor = 0.f;
@@ -98,8 +103,13 @@ public:
                 m_animator->PlayAnimation(m_standAnim);
                 m_timeStanding += dt;
                 if (m_timeStanding > 0.5f) {
-                    if (m_random_dist(m_mt) < m_changeDirectionChance) {
+                    // Change direction once, after the middle of the screen and by chance
+                    if (!m_hasChangedDir
+                        && ((m_speed > 0 && go->position.x > level->GetCameraX() + WINDOW_WIDTH / 2)
+                            || (m_speed < 0 && go->position.x < level->GetCameraX() - WINDOW_WIDTH / 2))
+                        && m_random_dist(m_mt) < m_changeDirectionChance) {
                         m_speed *= -1.f;
+                        m_hasChangedDir = true;
                         m_animator->mirrorHorizontal = !m_animator->mirrorHorizontal;
                     }
                     m_state = MOVING;
@@ -114,6 +124,7 @@ public:
                     m_deadFor += dt;
                     if (m_deadFor >= 0.25f) {
                         Kill();
+                        level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
                     }
                 }
                 if (!m_animator->IsPlaying()) {
@@ -123,7 +134,7 @@ public:
                 break;
 
         }
-        if (!m_goesJumping) {
+        if (!m_goesJumping && m_state != DEAD) {
             m_nextShoot -= dt;
             if (m_nextShoot < 0.25f && m_state == MOVING && m_random_dist(m_mt) < m_stopToShootChance) {
                 m_timeStanding = 0;
@@ -131,7 +142,7 @@ public:
             }
             if (m_nextShoot < 0.f) {
                 Fire();
-                m_nextShoot = m_random_dist(m_mt) * 1.0f + m_cooldownMin;
+                m_nextShoot = m_random_dist(m_mt) * (m_cooldownMax - m_cooldownMin) + m_cooldownMin;
             }
         }
         if (go->position.x < level->GetCameraX() + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM ||
@@ -145,9 +156,13 @@ public:
         if (!m_shootsPills) {
             auto *bullet = level->GetEnemyBullets()->FirstAvailable();
             Vector2D target = m_perspectiveLevel->ProjectFromBackToFront(fire_pos);
+            auto *player = level->GetClosestPlayer(target);
+            if (player && abs(player->position.x - target.x) < 17 * PIXELS_ZOOM) {
+                target.x = player->position.x; // Correct slightly to shoot at player! :d
+            }
             if (bullet) {
-                bullet->Init(fire_pos, target - fire_pos, 0.5 * BULLET_SPEED * PIXELS_ZOOM,
-                        -9999, (PERSP_PLAYER_Y - 15) * PIXELS_ZOOM);
+                bullet->Init(fire_pos, target - fire_pos, 0.65f * BULLET_SPEED * PIXELS_ZOOM,
+                        -9999, (PERSP_PLAYER_Y - 25) * PIXELS_ZOOM);
                 level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             }
         } else if (abs(go->position.x - level->GetClosestPlayer(go->position)->position.x) < 20 * PIXELS_ZOOM) {
@@ -160,8 +175,16 @@ public:
 
     void Kill() override {
         m_state = DEAD;
+        m_deadFor = 0.25;
         m_animator->PlayAnimation(m_dyingAnim);
-        level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
+    }
+
+    void Destroy() override {
+        Component::Destroy();
+        if (m_droppedPickup) {
+            m_droppedPickup->Destroy();
+            m_droppedPickup = nullptr;
+        }
     }
 
     void Hit() override {
@@ -170,6 +193,7 @@ public:
             m_droppedPickup->position = go->position;
             m_droppedPickup->Init(Vector2D(0.f, 0.f));
             level->AddGameObject(m_droppedPickup, RENDERING_LAYER_ENEMIES);
+            m_droppedPickup = nullptr;
         }
     }
 
@@ -181,12 +205,13 @@ public:
 class PerspectiveLedder : public GameObject {
 public:
     void Create(PerspectiveLevel *level, bool jumps, float stopToShootChance, float speed,
-                PickUp *dropped = nullptr, bool shoots_pills = false, float cooldown_min = 0.5f,
+                PickUp *dropped = nullptr, bool shoots_pills = false,
+                float cooldown_min = 0.5f, float cooldown_max = 1.f,
                 float change_dir_chance = 0.f) {
         GameObject::Create();
         auto *behaviour = new PerspectiveLedderBehaviour();
         behaviour->Create(level, this, jumps, stopToShootChance, speed, dropped,
-                shoots_pills, cooldown_min, change_dir_chance);
+                shoots_pills, cooldown_min, cooldown_max, change_dir_chance);
         auto *renderer = new AnimationRenderer();
         auto shift = dropped ? 110 : 0;
         renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
@@ -217,6 +242,7 @@ public:
         });
         auto *gravity = new Gravity();
         gravity->Create(level, this);
+        gravity->SetAcceleration(500 * PIXELS_ZOOM);
         gravity->SetBaseFloor(PERSP_ENEMIES_Y * PIXELS_ZOOM);
         auto *collider = new BoxCollider();
         collider->Create(level, this,

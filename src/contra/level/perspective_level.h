@@ -9,6 +9,24 @@
 #include "../hittable.h"
 #include "perspective_const.h"
 
+struct PerspectiveLedderSpawn {
+    enum Entrance {
+        LEFT, RIGHT
+    };
+    bool jumps;
+    float stopToShootChance;
+    float changeDirectionChance;
+    float speedFactor;
+    bool doesDrop;
+    PickUpType pickupToDrop;
+    Entrance entrance;
+    bool shootsPills;
+    float cooldownMin;
+    float cooldownMax;
+    float secsUntilNext;
+    unsigned timesUsed;
+};
+
 class PerspectiveLevel : public Level {
 public:
     PerspectiveLevel() : Level() {
@@ -31,7 +49,7 @@ public:
 
     void ClearScreen();
 
-    void Update(float dt) override;
+    void SubUpdate(float dt) override;
 
     void Receive(Message m) override;
 
@@ -62,6 +80,10 @@ protected:
     short m_currentScreen = 0;
     short m_onTransition = -1;
     std::multimap<int, GameObject *> m_screens;
+    std::unordered_map<int, std::vector<PerspectiveLedderSpawn>> m_spawnPatterns;
+    std::unordered_map<int, float> m_pretimes;
+    int m_currentSpawn;
+    float m_nextSpawn;
 
     bool AllPlayersOnFloor();
 };

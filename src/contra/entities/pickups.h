@@ -109,8 +109,17 @@ public:
         }
     }
 
+    void Destroy() override {
+        Component::Destroy();
+        if (m_powerUp) {
+            // Make sure it gets destroyed if it has not been added to the level
+            m_powerUp->Destroy();
+            m_powerUp = nullptr;
+        }
+    }
+
     void OnCollision(const CollideComponent &collider) override {
-        if (m_canBeHit && m_lives > 0) {
+        if (m_canBeHit && m_lives > 0 && m_powerUp) {
             auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
             if (bullet && !bullet->IsKilled()) {
                 m_lives--;
@@ -122,6 +131,7 @@ public:
                     go->Send(SCORE1_500);
                     m_powerUp->Init();
                     level->AddGameObject(m_powerUp, RENDERING_LAYER_ENEMIES);
+                    m_powerUp = nullptr; // So we don't destroy it, level will do
                 }
             }
         }
