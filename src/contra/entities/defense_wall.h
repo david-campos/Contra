@@ -67,32 +67,22 @@ public:
 
                 m_lives--;
                 if (m_lives == 0) {
-                    go->Send(SCORE1_1000);
-
-                    auto *explosion = new GameObject();
-                    explosion->Create();
-                    auto *renderer = new AnimationRenderer();
-                    renderer->Create(level, explosion, level->GetSpritesheet(SPRITESHEET_ENEMIES));
-                    renderer->AddAnimation({
-                            92, 611, 0.15, 3,
-                            30, 30, 15, 15,
-                            "Explosion", AnimationRenderer::BOUNCE_AND_STOP});
-                    renderer->Play();
-                    auto *self_destroy = new DestroyOnAnimationStop();
-                    self_destroy->Create(level, explosion);
-                    explosion->AddComponent(renderer);
-                    explosion->AddComponent(self_destroy);
-                    explosion->position = go->position + Vector2D(3, 3) * PIXELS_ZOOM;
-
-                    explosion->Init();
-                    level->GetSound(SOUND_ENEMY_DEATH)->Play(1);
-                    level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
-                    level->RemoveGameObject(go);
+                    OnKill();
                 } else {
                     level->GetSound(SOUND_ENEMY_HIT)->Play(1);
                 }
             }
         }
+    }
+
+    void OnKill() {
+        go->Send(SCORE1_1000);
+
+        auto *explosion = new Explosion();
+        explosion->Create(level, go->position + Vector2D(3, 3) * PIXELS_ZOOM);
+        explosion->Init();
+        level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
+        go->Disable();
     }
 
     void Destroy() override {
@@ -107,6 +97,7 @@ private:
     float m_nextExplosion;
     AnimationRenderer *m_doorAnimator;
     SimpleRenderer *m_background;
+    std::vector<BlasterCanonBehaviour *> canons;
 public:
     void Init() override {
         Component::Init();
@@ -117,6 +108,10 @@ public:
         if (!m_background) {
             m_background = go->GetComponent<SimpleRenderer *>();
         }
+    }
+
+    void AddCanon(BlasterCanonBehaviour *canonBehaviour) {
+        this->canons.push_back(canonBehaviour);
     }
 
     void Update(float dt) override {
@@ -133,12 +128,14 @@ public:
                 m_nextExplosion = TIME_BETWEEN_EXPLOSIONS;
 
                 if (m_explosionSteps <= 0) {
-                    level->RemoveGameObject(go);
+                    go->MarkToRemove();
+                    canons[0]->GetGameObject()->MarkToRemove();
+                    canons[1]->GetGameObject()->MarkToRemove();
                     go->Send(LEVEL_END);
 
-                    auto* broken_wall = new GameObject();
+                    auto *broken_wall = new GameObject();
                     broken_wall->Create();
-                    auto* renderer = new SimpleRenderer();
+                    auto *renderer = new SimpleRenderer();
                     renderer->Create(level, broken_wall, m_background->GetSprite(),
                             2, 116, 110, 120, 0, 0);
                     broken_wall->AddComponent(renderer);
@@ -161,6 +158,8 @@ public:
                     CreateExplosion(go->position + Vector2D(18, 32) * PIXELS_ZOOM);
                     level->FadeOutMusic(EXPLOSION_STEPS * floor(TIME_BETWEEN_EXPLOSIONS * 1000));
                     go->Send(SCORE1_10000);
+                    canons[0]->OnKill();
+                    canons[1]->OnKill();
                     m_nextExplosion = 2 * TIME_BETWEEN_EXPLOSIONS;
                     m_explosionSteps = EXPLOSION_STEPS;
                     m_doorAnimator->enabled = false;

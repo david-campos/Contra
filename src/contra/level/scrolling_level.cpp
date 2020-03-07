@@ -300,6 +300,7 @@ void ScrollingLevel::CreateDefenseWall() {
     canon->AddComponent(collider);
     canon->position = Vector2D(3217, 120) * PIXELS_ZOOM;
     AddNotFoundEnemy(canon, RENDERING_LAYER_BRIDGES);
+    door_behaviour->AddCanon(behaviour);
 
     pool = CreateBlasterBulletPool();
     canon = new GameObject();
@@ -323,6 +324,7 @@ void ScrollingLevel::CreateDefenseWall() {
     canon->AddComponent(collider);
     canon->position = Vector2D(3239, 120) * PIXELS_ZOOM;
     AddNotFoundEnemy(canon, RENDERING_LAYER_PLAYER);
+    door_behaviour->AddCanon(behaviour);
 }
 
 ObjectPool<Bullet> *ScrollingLevel::CreateBlasterBulletPool() {
