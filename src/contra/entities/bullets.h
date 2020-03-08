@@ -116,6 +116,14 @@ public:
     float GetMinY() const {
         return m_minY;
     }
+
+    void SetMinY(int y) {
+        m_minY = y;
+    }
+
+    void SetMaxY(int y) {
+        m_maxY = y;
+    }
 };
 
 class BulletStraightMovement : public BulletBehaviour {
@@ -131,7 +139,7 @@ private:
     float m_currentAngle;
 public:
     void Init(const Vector2D &direction, int speed, int damage, float y_min = -9999, float y_max = 9999) override {
-        BulletBehaviour::Init(direction, speed, damage, y_min);
+        BulletBehaviour::Init(direction, speed, damage, y_min, y_max);
         m_theoricalPos = go->position;
         m_currentAngle = 3.1416;
     }

@@ -40,7 +40,7 @@ public:
         go->position = go->position + m_speed * dt;
 
         if (go->position.y > PERSP_PLAYER_Y * PIXELS_ZOOM) {
-            go->MarkToRemove();
+            go->Disable();
         } else if (go->position.y > (PERSP_PLAYER_Y - 10) * PIXELS_ZOOM) {
             std::set<CollideComponent *> colliding;
             m_collider->GetCurrentCollisions(&colliding, PLAYER_COLLISION_LAYER);
@@ -77,7 +77,7 @@ public:
         explosion->Create(level, go->position);
         explosion->Init();
         level->AddGameObject(explosion, RENDERING_LAYER_ENEMIES);
-        go->MarkToRemove();
+        go->Disable();
     }
 
     void OnCollision(const CollideComponent &collider) override {

@@ -129,7 +129,6 @@ public:
                 }
                 if (!m_animator->IsPlaying()) {
                     go->Disable();
-                    go->MarkToRemove();
                 }
                 break;
 
@@ -147,7 +146,7 @@ public:
         }
         if (go->position.x < level->GetCameraX() + PERSP_ENEMIES_MARGINS * PIXELS_ZOOM ||
             go->position.x > level->GetCameraX() + WINDOW_WIDTH - PERSP_ENEMIES_MARGINS * PIXELS_ZOOM) {
-            go->MarkToRemove();
+            go->Disable();
         }
     }
 

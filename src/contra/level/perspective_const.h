@@ -10,6 +10,7 @@
 // Positions for enemies and player
 #define PERSP_ENEMIES_Y 112
 #define PERSP_PLAYER_Y 182
+#define PERSP_BOSS_PLAYER_Y 208
 #define PERSP_ENEMIES_MARGINS 95
 
 // The following constants are used to project bullet targets

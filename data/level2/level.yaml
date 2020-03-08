@@ -5,6 +5,7 @@ music: music.wav
 background: background.png
 background_animation_shift: [0, 224]
 background_animation_shift_time: 0.05
+screens: 6
 weak_cores:
   - pos: [1152, 96]
   - pos: [1384, 96]

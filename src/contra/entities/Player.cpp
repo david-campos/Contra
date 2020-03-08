@@ -487,10 +487,13 @@ bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
     Vector2D shooting_point = go->position + (lying_down ? displacement * 0.5 : displacement);
     Vector2D target = m_perspectiveLevel->ProjectFromFrontToBack(shooting_point);
     Vector2D direction = target - go->position - displacement;
-    return m_currentWeapon->Fire(go->position + displacement, direction, target.y);
+    return m_currentWeapon->Fire(go->position + displacement, direction,
+            m_perspectiveLevel->IsInBossBattle() ? -9999 : target.y);
 }
 
 void PlayerControlPerspective::VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {
+    if (m_perspectiveLevel->IsInBossBattle()) return;
+
     if (m_gravity->IsOnFloor()) {
         if (keyStatus.up && !keyStatus.down) {
             if (m_perspectiveLevel->IsLaserOn()) {

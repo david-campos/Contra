@@ -7,6 +7,7 @@
 #include "../entities/perspective/cores.h"
 #include "../entities/perspective/pers_enemies.h"
 #include "../entities/perspective/darr.h"
+#include "../entities/perspective/garmakilma.h"
 
 namespace YAML {
     template<>
@@ -50,35 +51,24 @@ void PerspectiveLevel::Create(const std::string &folder,
                               const std::unordered_map<int, std::shared_ptr<Sprite>> *spritesheets,
                               YAML::Node scene_root, short num_players, PlayerStats *stats, AvancezLib *engine) {
     Level::Create(folder, spritesheets, scene_root, num_players, stats, engine);
+    m_screenCount = scene_root["screens"].as<int>();
     for (const auto &rc_node: scene_root["weak_cores"]) {
         auto *core = new WeakCore();
         core->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
-        core->Init();
         core->AddReceiver(this);
-        m_screens.insert({
-                floor(core->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
-                core
-        });
+        AddToScreens(core);
     }
     for (const auto &rc_node: scene_root["strong_cores"]) {
         auto *core = new StrongCore();
         core->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
-        core->Init();
         core->AddReceiver(this);
-        m_screens.insert({
-                floor(core->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
-                core
-        });
+        AddToScreens(core);
     }
     for (const auto &rc_node: scene_root["core_canons"]) {
         auto *canon = new CoreCannon();
         canon->Create(this, rc_node["pos"].as<Vector2D>() * PIXELS_ZOOM);
-        canon->Init();
         canon->AddReceiver(this);
-        m_screens.insert({
-                floor(canon->position.x / WINDOW_WIDTH) - 4, // First 4 are the transition screens
-                canon
-        });
+        AddToScreens(canon);
     }
     auto spawn_patterns = scene_root["spawn_patterns"];
     for (int i = 0; i < spawn_patterns.size(); i++) {
@@ -100,7 +90,6 @@ void PerspectiveLevel::Create(const std::string &folder,
 void PerspectiveLevel::Init() {
     Level::Init();
     m_laserOn = true;
-    m_currentScreen = 3;
 }
 
 Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
@@ -134,7 +123,7 @@ void PerspectiveLevel::Receive(Message m) {
                 Vector2D(151, 102)
         }) {
             auto *explosion = new Explosion();
-            explosion->Create(this, pos * PIXELS_ZOOM);
+            explosion->Create(this, m_camera + pos * PIXELS_ZOOM);
             explosion->Init();
             AddGameObject(explosion, RENDERING_LAYER_ENEMIES);
         }
@@ -151,18 +140,20 @@ void PerspectiveLevel::SubUpdate(float dt) {
             for (auto *game_object: **layer)
                 game_object->position.x = game_object->position.x - m_camera.x + new_x;
         }
-        if (m_onTransition < 0) InitScreen();
+        if (m_onTransition < 0) {
+            InitScreen();
+        }
         m_camera = Vector2D(new_x, 0);
     }
 
     if (m_onTransition >= 0) {
         bool some_alive;
         float min_y = PlayersMinY(&some_alive);
-        if (some_alive && min_y < PIXELS_ZOOM * (182 - 35) && AllPlayersOnFloor()) {
+        if (some_alive && min_y < PIXELS_ZOOM * (PERSP_PLAYER_Y - 35) && AllPlayersOnFloor()) {
             m_onTransition++;
             for (int i = 0; i < players.size(); i++) {
-                players[i]->position.y = PIXELS_ZOOM * 182;
-                playerControls[i]->SetBaseFloor(PIXELS_ZOOM * 182);
+                players[i]->position.y = PIXELS_ZOOM * PERSP_PLAYER_Y;
+                playerControls[i]->SetBaseFloor(PIXELS_ZOOM * PERSP_PLAYER_Y);
             }
             if (m_onTransition == 4) {
                 m_onTransition = -1;
@@ -185,6 +176,14 @@ void PerspectiveLevel::SubUpdate(float dt) {
 }
 
 void PerspectiveLevel::InitScreen() {
+    if (IsInBossBattle()) {
+        for (int i = 0; i < players.size(); i++) {
+            players[i]->position.y = PIXELS_ZOOM * PERSP_BOSS_PLAYER_Y;
+            playerControls[i]->SetBaseFloor(PIXELS_ZOOM * PERSP_BOSS_PLAYER_Y);
+        }
+        m_animationShiftTime = 0.5f;
+    }
+
     m_currentSpawn = -1;
     if (m_pretimes.count(m_currentScreen) > 1) {
         m_nextSpawn = m_pretimes[m_currentScreen];
@@ -195,18 +194,26 @@ void PerspectiveLevel::InitScreen() {
     m_nextDarrsStart = 1;
     m_nextDarrsEnd = 5;
 
-    auto ret = m_screens.equal_range(m_currentScreen);
-    for (auto it = ret.first; it != ret.second; ++it) {
-        it->second->Init();
-        AddGameObject(it->second, RENDERING_LAYER_BRIDGES);
+    for (auto *go: m_screens[m_currentScreen]) {
+        go->Init();
+        AddGameObject(go, RENDERING_LAYER_BRIDGES);
+        m_onScreen.insert(go);
     }
+    m_screens.erase(m_currentScreen);
 
+    if (IsInBossBattle()) {
+        auto *boss = new Garmakilma();
+        boss->Create(this, Vector2D((m_currentScreen + 4) * WINDOW_WIDTH, 0) + Vector2D(64, 24) * PIXELS_ZOOM);
+        boss->Init();
+        AddGameObject(boss, RENDERING_LAYER_BRIDGES);
+        m_onScreen.insert(boss);
+    }
 }
 
 void PerspectiveLevel::KillScreen() {
-    auto ret = m_screens.equal_range(m_currentScreen);
-    for (auto it = ret.first; it != ret.second; ++it) {
-        auto *killable = it->second->GetComponent<Killable *>();
+    for (auto *go: m_onScreen) {
+        if (!go->IsEnabled()) continue;
+        auto *killable = go->GetComponent<Killable *>();
         if (killable) {
             killable->Kill();
         }
@@ -214,10 +221,10 @@ void PerspectiveLevel::KillScreen() {
 }
 
 void PerspectiveLevel::ClearScreen() {
-    auto ret = m_screens.equal_range(m_currentScreen);
-    for (auto it = ret.first; it != ret.second; ++it) {
-        it->second->MarkToRemove();
+    for (auto *go: m_onScreen) {
+        go->MarkToRemove();
     }
+    m_onScreen.clear();
 }
 
 bool PerspectiveLevel::AllPlayersOnFloor() {
@@ -228,12 +235,15 @@ bool PerspectiveLevel::AllPlayersOnFloor() {
 }
 
 void PerspectiveLevel::Destroy() {
-    // Before calling Destroy on the level, lets move
-    // all our pendent elements into game_objects so they
-    // will be destroyed too
-    for (auto pair: m_screens) {
-        AddGameObject(pair.second, RENDERING_LAYER_BRIDGES);
+    // All the stuff left in m_screens
+    // has not been added to the game objects
+    // list so it needs to be destroyed here
+    for (const auto &screen: m_screens) {
+        for (auto *go: screen.second) {
+            go->Destroy();
+        }
     }
+    m_screens.clear();
     Level::Destroy();
 }
 
@@ -259,7 +269,7 @@ float PerspectiveLevel::SpawnLedders() {
     ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + x_pos,
             PERSP_ENEMIES_Y * PIXELS_ZOOM));
     AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-    m_screens.insert({m_currentScreen, ledder});
+    m_onScreen.insert(ledder);
 
     spawn->timesUsed++;
     return spawn->secsUntilNext;
@@ -279,6 +289,7 @@ void PerspectiveLevel::SpawnDarrs() {
         Vector2D target = ProjectFromBackToFront(pos);
         darr->Init(pos, (target - pos) * 0.4f);
         AddGameObject(darr, RENDERING_LAYER_BRIDGES);
+        m_onScreen.insert(darr);
     }
     m_nextDarrsStart = 1 - m_nextDarrsStart;
     m_nextDarrsEnd = 2 * total - 3 - m_nextDarrsEnd;

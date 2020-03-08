@@ -63,22 +63,46 @@ public:
         return m_laserOn;
     }
 
+    [[nodiscard]] bool IsInBossBattle() const {
+        return m_currentScreen == m_screenCount - 1 && m_onTransition < 0;
+    }
+
     void Destroy() override;
 
     Vector2D ProjectFromFrontToBack(const Vector2D &point) {
-        return Vector2D(
-                (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE / PERSP_FRONT_X_RANGE
-                + PERSP_BACK_X_START * PIXELS_ZOOM + m_camera.x,
-                (point.y - PERSP_FRONT_Y_START * PIXELS_ZOOM) * PERSP_BACK_Y_RANGE / PERSP_FRONT_Y_RANGE +
-                PERSP_BACK_Y_START * PIXELS_ZOOM);
+        if (IsInBossBattle()) {
+            return Vector2D(point.x, PERSP_BACK_Y_START + point.y - PERSP_FRONT_Y_START);
+        } else {
+            return Vector2D(
+                    (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE /
+                    PERSP_FRONT_X_RANGE
+                    + PERSP_BACK_X_START * PIXELS_ZOOM + m_camera.x,
+                    (point.y - PERSP_FRONT_Y_START * PIXELS_ZOOM) * PERSP_BACK_Y_RANGE / PERSP_FRONT_Y_RANGE +
+                    PERSP_BACK_Y_START * PIXELS_ZOOM);
+        }
     }
 
     Vector2D ProjectFromBackToFront(const Vector2D &point) {
-        return Vector2D(
-                (point.x - m_camera.x - PERSP_BACK_X_START * PIXELS_ZOOM) * PERSP_FRONT_X_RANGE / PERSP_BACK_X_RANGE
-                + PERSP_FRONT_X_START * PIXELS_ZOOM + m_camera.x,
-                (point.y - PERSP_BACK_Y_START * PIXELS_ZOOM) * PERSP_FRONT_Y_RANGE / PERSP_BACK_Y_RANGE +
-                PERSP_FRONT_Y_START * PIXELS_ZOOM);
+        if (IsInBossBattle()) {
+            return Vector2D(point.x, PERSP_FRONT_Y_START + point.y - PERSP_BACK_Y_START);
+        } else {
+            return Vector2D(
+                    (point.x - m_camera.x - PERSP_BACK_X_START * PIXELS_ZOOM) * PERSP_FRONT_X_RANGE / PERSP_BACK_X_RANGE
+                    + PERSP_FRONT_X_START * PIXELS_ZOOM + m_camera.x,
+                    (point.y - PERSP_BACK_Y_START * PIXELS_ZOOM) * PERSP_FRONT_Y_RANGE / PERSP_BACK_Y_RANGE +
+                    PERSP_FRONT_Y_START * PIXELS_ZOOM);
+        }
+    }
+
+    void AddToScreens(GameObject *object) {
+        int screen_idx = floor(object->position.x / WINDOW_WIDTH) - 4; // First 4 are the transition screens
+
+        std::vector<GameObject *> *screen = nullptr;
+        if (m_screens.count(screen_idx) == 0) {
+            m_screens.insert({screen_idx, {object}});
+        } else {
+            m_screens[screen_idx].push_back(object);
+        }
     }
 
 protected:
@@ -91,7 +115,9 @@ protected:
     bool m_laserOn;
     short m_currentScreen = 0;
     short m_onTransition = -1;
-    std::multimap<int, GameObject *> m_screens;
+    int m_screenCount;
+    std::unordered_map<int, std::vector<GameObject *>> m_screens;
+    std::set<GameObject *> m_onScreen;
     std::unordered_map<int, std::vector<PerspectiveLedderSpawn>> m_spawnPatterns;
     std::unordered_map<int, float> m_pretimes;
     std::unordered_map<int, DarrSpawn> m_darrs;
