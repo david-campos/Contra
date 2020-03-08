@@ -11,7 +11,7 @@
 
 class CollideComponent;
 
-#define GRID_CELL_LAYERS 2
+#define GRID_CELL_LAYERS 3
 
 class GridCell {
     // We can't use std::set because, after loosing a WHOLE day debugging random errors

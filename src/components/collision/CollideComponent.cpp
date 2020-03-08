@@ -22,15 +22,16 @@ void CollideComponent::Update(float dt) {
     if (m_layer >= 0) scene->GetGrid()->Update(this);
 }
 
-void CollideComponent::GetCurrentCollisions(std::set<CollideComponent *> *out_set) {
+void CollideComponent::GetCurrentCollisions(std::set<CollideComponent *> *out_set, int check_layer) {
     auto *grid = scene->GetGrid();
-    if (m_checkLayer >= 0) {
+    if (check_layer < 0) check_layer = m_checkLayer;
+    if (check_layer >= 0) {
         Grid::CellsSquare square{};
         GetOccupiedCells(square);
         // Check collisions with our layer
         for (int y = square.min_cell_y; y <= square.max_cell_y; y++) {
             for (int x = square.min_cell_x; x <= square.max_cell_x; x++) {
-                auto *layer = grid->GetCell(x, y)->GetLayer(m_checkLayer);
+                auto *layer = grid->GetCell(x, y)->GetLayer(check_layer);
                 for (auto *collider: *layer) {
                     if (collider == this) continue;
                     // Check if the other collider had already registered a collision with me

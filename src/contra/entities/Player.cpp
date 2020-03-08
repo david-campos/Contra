@@ -467,7 +467,7 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
 PlayerControl::PlayerBoundaries PlayerControlPerspective::GetPlayerMovementBoundaries() {
     float distance_factor =
             (PIXELS_ZOOM * 182 - m_gravity->GetBaseFloor()) / (35.f * PIXELS_ZOOM);
-    float margin = 35 * PIXELS_ZOOM + 35 * PIXELS_ZOOM * distance_factor;
+    float margin = 40 * PIXELS_ZOOM + 35 * PIXELS_ZOOM * distance_factor;
     if (margin > WINDOW_WIDTH / 2) {
         margin = WINDOW_WIDTH / 2;
     }

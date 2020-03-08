@@ -94,6 +94,7 @@ spawn_patterns:
         shoots_pills: true
 
   - pretime: 1
+    darrs: {start: 2.5, interval: 8}
     pattern:
       - jumps: true
         entrance: right

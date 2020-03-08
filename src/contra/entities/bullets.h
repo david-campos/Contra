@@ -112,6 +112,10 @@ public:
     virtual void UpdatePosition(float dt) = 0;
 
     [[nodiscard]] int GetDamage() const { return m_damage; }
+
+    float GetMinY() const {
+        return m_minY;
+    }
 };
 
 class BulletStraightMovement : public BulletBehaviour {

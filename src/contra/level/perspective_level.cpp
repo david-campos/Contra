@@ -6,6 +6,7 @@
 #include "../entities/Player.h"
 #include "../entities/perspective/cores.h"
 #include "../entities/perspective/pers_enemies.h"
+#include "../entities/perspective/darr.h"
 
 namespace YAML {
     template<>
@@ -31,6 +32,15 @@ namespace YAML {
             }
             rhs.secsUntilNext = node["secs_next"].as<float>();
             rhs.timesUsed = 0;
+            return true;
+        }
+    };
+
+    template<>
+    struct convert<DarrSpawn> {
+        static bool decode(const Node &node, DarrSpawn &rhs) {
+            rhs.start = node["start"].as<float>();
+            rhs.interval = node["interval"].as<float>();
             return true;
         }
     };
@@ -75,6 +85,11 @@ void PerspectiveLevel::Create(const std::string &folder,
         std::vector<PerspectiveLedderSpawn> pattern;
         float pretime = spawn_patterns[i]["pretime"].as<float>();
         m_pretimes.insert({i, pretime});
+        if (spawn_patterns[i]["darrs"]) {
+            m_darrs.insert({i, spawn_patterns[i]["darrs"].as<DarrSpawn>()});
+        } else {
+            m_darrs.insert({i, {-1.f, -1.f}});
+        }
         for (const auto &spawn_node: spawn_patterns[i]["pattern"]) {
             pattern.push_back(spawn_node.as<PerspectiveLedderSpawn>());
         }
@@ -85,6 +100,7 @@ void PerspectiveLevel::Create(const std::string &folder,
 void PerspectiveLevel::Init() {
     Level::Init();
     m_laserOn = true;
+    m_currentScreen = 3;
 }
 
 Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
@@ -156,31 +172,14 @@ void PerspectiveLevel::SubUpdate(float dt) {
     } else if (m_spawnPatterns.count(m_currentScreen) > 0) {
         m_nextSpawn -= dt;
         while (m_nextSpawn <= 0.f) {
-            auto &screen_pattern = m_spawnPatterns[m_currentScreen];
-            m_currentSpawn = (m_currentSpawn + 1) % screen_pattern.size();
-            auto *spawn = &screen_pattern[m_currentSpawn];
-
-            PickUp *pickUp = nullptr;
-            if (spawn->doesDrop && spawn->timesUsed == 0) {
-                pickUp = new PickUp();
-                pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid,
-                        level_floor, spawn->pickupToDrop,
-                        PERSP_PLAYER_Y * PIXELS_ZOOM);
+            m_nextSpawn = SpawnLedders();
+        }
+        if (m_nextDarrs > 0) {
+            m_nextDarrs -= dt;
+            if (m_nextDarrs <= 0) {
+                SpawnDarrs();
+                m_nextDarrs = m_darrs[m_currentScreen].interval;
             }
-            auto *ledder = new PerspectiveLedder();
-            ledder->Create(this, spawn->jumps, spawn->stopToShootChance,
-                    spawn->speedFactor * PLAYER_SPEED * PIXELS_ZOOM,
-                    pickUp, spawn->shootsPills, spawn->cooldownMin, spawn->cooldownMax,
-                    spawn->changeDirectionChance);
-            float x_pos = spawn->entrance == PerspectiveLedderSpawn::LEFT ?
-                          PERSP_ENEMIES_MARGINS * PIXELS_ZOOM : WINDOW_WIDTH - PERSP_ENEMIES_MARGINS * PIXELS_ZOOM;
-            ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + x_pos,
-                    PERSP_ENEMIES_Y * PIXELS_ZOOM));
-            AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
-            m_screens.insert({m_currentScreen, ledder});
-
-            spawn->timesUsed++;
-            m_nextSpawn = spawn->secsUntilNext;
         }
     }
 }
@@ -192,6 +191,10 @@ void PerspectiveLevel::InitScreen() {
     } else {
         m_nextSpawn = 1.f;
     }
+    m_nextDarrs = m_darrs[m_currentScreen].start;
+    m_nextDarrsStart = 1;
+    m_nextDarrsEnd = 5;
+
     auto ret = m_screens.equal_range(m_currentScreen);
     for (auto it = ret.first; it != ret.second; ++it) {
         it->second->Init();
@@ -232,4 +235,51 @@ void PerspectiveLevel::Destroy() {
         AddGameObject(pair.second, RENDERING_LAYER_BRIDGES);
     }
     Level::Destroy();
+}
+
+float PerspectiveLevel::SpawnLedders() {
+    auto &screen_pattern = m_spawnPatterns[m_currentScreen];
+    m_currentSpawn = (m_currentSpawn + 1) % screen_pattern.size();
+    auto *spawn = &screen_pattern[m_currentSpawn];
+
+    PickUp *pickUp = nullptr;
+    if (spawn->doesDrop && spawn->timesUsed == 0) {
+        pickUp = new PickUp();
+        pickUp->Create(this, GetSpritesheet(SPRITESHEET_PICKUPS), &m_grid,
+                level_floor, spawn->pickupToDrop,
+                PERSP_PLAYER_Y * PIXELS_ZOOM);
+    }
+    auto *ledder = new PerspectiveLedder();
+    ledder->Create(this, spawn->jumps, spawn->stopToShootChance,
+            spawn->speedFactor * PLAYER_SPEED * PIXELS_ZOOM,
+            pickUp, spawn->shootsPills, spawn->cooldownMin, spawn->cooldownMax,
+            spawn->changeDirectionChance);
+    float x_pos = spawn->entrance == PerspectiveLedderSpawn::LEFT ?
+                  PERSP_ENEMIES_MARGINS * PIXELS_ZOOM : WINDOW_WIDTH - PERSP_ENEMIES_MARGINS * PIXELS_ZOOM;
+    ledder->Init(Vector2D((m_currentScreen + 4) * WINDOW_WIDTH + x_pos,
+            PERSP_ENEMIES_Y * PIXELS_ZOOM));
+    AddGameObject(ledder, RENDERING_LAYER_ENEMIES);
+    m_screens.insert({m_currentScreen, ledder});
+
+    spawn->timesUsed++;
+    return spawn->secsUntilNext;
+}
+
+void PerspectiveLevel::SpawnDarrs() {
+    const int total = 6;
+    const int extra_margin = 10;
+    for (int i = m_nextDarrsStart; i <= m_nextDarrsEnd; i++) {
+        auto *darr = new Darr();
+        darr->Create(this);
+        Vector2D pos = Vector2D(
+                (PERSP_ENEMIES_MARGINS + extra_margin) * PIXELS_ZOOM
+                + ((WINDOW_WIDTH - (PERSP_ENEMIES_MARGINS + extra_margin) * 2 * PIXELS_ZOOM) /
+                   float(total - 1)) * i,
+                PERSP_ENEMIES_Y * PIXELS_ZOOM) + m_camera;
+        Vector2D target = ProjectFromBackToFront(pos);
+        darr->Init(pos, (target - pos) * 0.4f);
+        AddGameObject(darr, RENDERING_LAYER_BRIDGES);
+    }
+    m_nextDarrsStart = 1 - m_nextDarrsStart;
+    m_nextDarrsEnd = 2 * total - 3 - m_nextDarrsEnd;
 }

@@ -73,7 +73,12 @@ public:
 
     virtual void Update(float dt) override;
 
-    void GetCurrentCollisions(std::set<CollideComponent *> *out_set);
+    /**
+     * Gets all the current collisions with this collider in the specified layer
+     * @param out_set
+     * @param layer A value of -1 will be replaced with the checkLayer property of the collider (set on Create)
+     */
+    void GetCurrentCollisions(std::set<CollideComponent *> *out_set, int layer = -1);
 
     void SendCollision(const CollideComponent &other) {
         if (listener) listener->OnCollision(other);

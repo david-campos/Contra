@@ -27,12 +27,18 @@ struct PerspectiveLedderSpawn {
     unsigned timesUsed;
 };
 
+struct DarrSpawn {
+    float start;
+    float interval;
+};
+
+
 class PerspectiveLevel : public Level {
 public:
     PerspectiveLevel() : Level() {
         // We adjust the collision layers as bullets here work by the minimum Y instead of the
         // objects checking collision
-        m_playerBulletsCollisionLayer = -1;
+        m_playerBulletsCollisionLayer = PERSP_PLAYER_BULLETS_COLLISION_LAYER;
         m_playerBulletsCollisionCheckLayer = NPCS_COLLISION_LAYER;
         m_enemyBulletsCollisionLayer = -1;
         m_enemyBulletsCollisionCheckLayer = PLAYER_COLLISION_LAYER;
@@ -59,7 +65,7 @@ public:
 
     void Destroy() override;
 
-    Vector2D ProjectFromFrontToBack(Vector2D &point) {
+    Vector2D ProjectFromFrontToBack(const Vector2D &point) {
         return Vector2D(
                 (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE / PERSP_FRONT_X_RANGE
                 + PERSP_BACK_X_START * PIXELS_ZOOM + m_camera.x,
@@ -67,7 +73,7 @@ public:
                 PERSP_BACK_Y_START * PIXELS_ZOOM);
     }
 
-    Vector2D ProjectFromBackToFront(Vector2D &point) {
+    Vector2D ProjectFromBackToFront(const Vector2D &point) {
         return Vector2D(
                 (point.x - m_camera.x - PERSP_BACK_X_START * PIXELS_ZOOM) * PERSP_FRONT_X_RANGE / PERSP_BACK_X_RANGE
                 + PERSP_FRONT_X_START * PIXELS_ZOOM + m_camera.x,
@@ -78,14 +84,21 @@ public:
 protected:
     Player *CreatePlayer(int index, PlayerStats *stats) override;
 
+    float SpawnLedders();
+
+    void SpawnDarrs();
+
     bool m_laserOn;
     short m_currentScreen = 0;
     short m_onTransition = -1;
     std::multimap<int, GameObject *> m_screens;
     std::unordered_map<int, std::vector<PerspectiveLedderSpawn>> m_spawnPatterns;
     std::unordered_map<int, float> m_pretimes;
+    std::unordered_map<int, DarrSpawn> m_darrs;
     int m_currentSpawn;
     float m_nextSpawn;
+    int m_nextDarrsStart, m_nextDarrsEnd;
+    float m_nextDarrs;
 
     bool AllPlayersOnFloor();
 };

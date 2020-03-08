@@ -19,6 +19,12 @@ struct Box {
                 bottom_right_y * rhs
         };
     }
+
+    int width() const { return bottom_right_x - top_left_x; }
+
+    int height() const { return bottom_right_y - top_left_y; }
+
+    Vector2D center() const { return Vector2D(width() / 2, height() / 2); }
 };
 
 #endif //CONTRA_BOX_H

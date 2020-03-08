@@ -26,8 +26,8 @@ public:
     }
 
     void Create(BaseScene *scene, GameObject *go,
-                std::shared_ptr<Sprite> sprite, int srcX, int srcY, int width, int height,
-                int anchorX, int anchorY) {
+                std::shared_ptr<Sprite> sprite, int srcX = 0, int srcY = 0, int width = 0, int height = 0,
+                int anchorX = 0, int anchorY = 0) {
         RenderComponent::Create(scene, go, std::move(sprite));
         m_srcX = srcX;
         m_srcY = srcY;
