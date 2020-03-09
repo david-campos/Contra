@@ -142,4 +142,54 @@ public:
     }
 };
 
+class HiddenDestroyableShootingKillable : public LevelComponent, public Killable {
+protected:
+    HiddenDestroyableBehaviour *m_destroyableBehaviour;
+    float m_shootDowntime, m_untilNextShoot, m_downtimeRandFactor;
+
+    std::random_device rd;
+    std::mt19937 m_mt = std::mt19937(rd());
+    std::uniform_real_distribution<float> m_random_dist = std::uniform_real_distribution<float>(0.f, 1.f);
+public:
+    void Create(Level *level, GameObject *go, float downtime, float downtime_rand_factor = 0.2f) {
+        LevelComponent::Create(level, go);
+        m_downtimeRandFactor = downtime_rand_factor;
+        m_shootDowntime = downtime;
+    }
+
+    void Init() {
+        if (!m_destroyableBehaviour) {
+            m_destroyableBehaviour = GetComponent<HiddenDestroyableBehaviour *>();
+        }
+        m_untilNextShoot = m_shootDowntime * (1 - m_downtimeRandFactor)
+                           + m_random_dist(m_mt) * m_shootDowntime * m_downtimeRandFactor;
+    }
+
+    void Kill() override {
+        m_destroyableBehaviour->Kill();
+    }
+
+    void Update(float dt) override {
+        if (m_destroyableBehaviour->GetState() == HiddenDestroyableBehaviour::DEST_STATE_OPEN) {
+            m_untilNextShoot -= dt;
+            if (m_untilNextShoot < 0) {
+                Fire();
+                m_untilNextShoot = m_shootDowntime * (1 - m_downtimeRandFactor)
+                                   + m_random_dist(m_mt) * m_shootDowntime * m_downtimeRandFactor;
+            }
+        }
+    }
+
+    virtual void Fire() {
+        Vector2D player_pos = level->GetClosestPlayer(go->position)->position;
+        Vector2D dir = player_pos - Vector2D(0, 10 * PIXELS_ZOOM) - go->position;
+        auto *bullet = level->GetEnemyBullets()->FirstAvailable();
+        if (bullet) {
+            bullet->Init(go->position, dir, 0.65f * BULLET_SPEED * PIXELS_ZOOM,
+                    -9999, (PERSP_PLAYER_Y - 25) * PIXELS_ZOOM);
+            level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
+        }
+    }
+};
+
 #endif //CONTRA_HIDDEN_DESTROYABLE_H

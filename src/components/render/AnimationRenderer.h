@@ -90,6 +90,8 @@ public:
 
     void Update(float dt) override;
 
+    [[nodiscard]] int GetAnimationsCount() { return m_animations.size(); }
+
 private:
     std::vector<AnimationRenderer::Animation> m_animations;
     Animation *m_currentAnimation = nullptr;

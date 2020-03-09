@@ -127,7 +127,8 @@ public:
         }
         for (auto *layer = game_objects; layer != game_objects + RENDERING_LAYERS; layer++) {
             for (auto game_object : **layer)
-                game_object->Destroy();
+                if (game_object->onRemoval == DESTROY)
+                    game_object->Destroy();
         }
         m_background.reset();
     }

@@ -32,6 +32,7 @@ public:
 
     virtual void Init(const Vector2D &direction, int speed = BULLET_SPEED, int damage = 1,
                       float y_min = -9999, float y_max = 9999) {
+        SDL_Log("BulletBehaviour::Init()");
         m_direction = direction.normalise();
         m_speed = speed;
         m_damage = damage;

@@ -71,7 +71,7 @@ public:
 
     Vector2D ProjectFromFrontToBack(const Vector2D &point) {
         if (IsInBossBattle()) {
-            return Vector2D(point.x, PERSP_BACK_Y_START + point.y - PERSP_FRONT_Y_START);
+            return Vector2D(point.x, PERSP_BACK_Y_START * PIXELS_ZOOM + point.y - PERSP_FRONT_Y_START * PIXELS_ZOOM);
         } else {
             return Vector2D(
                     (point.x - m_camera.x - PERSP_FRONT_X_START * PIXELS_ZOOM) * PERSP_BACK_X_RANGE /
@@ -84,7 +84,7 @@ public:
 
     Vector2D ProjectFromBackToFront(const Vector2D &point) {
         if (IsInBossBattle()) {
-            return Vector2D(point.x, PERSP_FRONT_Y_START + point.y - PERSP_BACK_Y_START);
+            return Vector2D(point.x, PERSP_FRONT_Y_START * PIXELS_ZOOM + point.y - PERSP_BACK_Y_START * PIXELS_ZOOM);
         } else {
             return Vector2D(
                     (point.x - m_camera.x - PERSP_BACK_X_START * PIXELS_ZOOM) * PERSP_FRONT_X_RANGE / PERSP_BACK_X_RANGE
