@@ -45,6 +45,7 @@ void CanonBehaviour::Update(float dt) {
         return;
     }
     auto *closestPlayer = GetClosestPlayer();
+    if (!closestPlayer) return;
     Vector2D player_dir = GetPlayerDir(closestPlayer);
     switch (m_state) {
         case HIDDEN:

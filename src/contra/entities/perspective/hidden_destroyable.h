@@ -181,7 +181,10 @@ public:
     }
 
     virtual void Fire() {
-        Vector2D player_pos = level->GetClosestPlayer(go->position)->position;
+        auto *closest = level->GetClosestPlayer(go->position);
+        if (!closest)
+            return;
+        Vector2D player_pos = closest->position;
         Vector2D dir = player_pos - Vector2D(0, 10 * PIXELS_ZOOM) - go->position;
         auto *bullet = level->GetEnemyBullets()->FirstAvailable();
         if (bullet) {

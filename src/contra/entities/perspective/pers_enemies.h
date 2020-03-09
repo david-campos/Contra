@@ -164,11 +164,14 @@ public:
                         -9999, (PERSP_PLAYER_Y - 25) * PIXELS_ZOOM);
                 level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
             }
-        } else if (abs(go->position.x - level->GetClosestPlayer(go->position)->position.x) < 20 * PIXELS_ZOOM) {
-            auto *pill = new ExplodingPill();
-            pill->Create(level);
-            pill->Init(fire_pos);
-            level->AddGameObject(pill, RENDERING_LAYER_BULLETS);
+        } else {
+            auto *closest = level->GetClosestPlayer(go->position);
+            if (closest && abs(go->position.x - closest->position.x) < 20 * PIXELS_ZOOM) {
+                auto *pill = new ExplodingPill();
+                pill->Create(level);
+                pill->Init(fire_pos);
+                level->AddGameObject(pill, RENDERING_LAYER_BULLETS);
+            }
         }
     }
 

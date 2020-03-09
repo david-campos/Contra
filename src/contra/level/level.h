@@ -40,6 +40,7 @@ protected:
     std::unique_ptr<Music> mus_stage_clear;
     std::vector<Player *> players;
     std::vector<PlayerControl *> playerControls;
+    // All the player bullet pools are arrays, the enemy_bullets is just one object pool
     ObjectPool<Bullet> *default_bullets, *fire_bullets,
             *machine_gun_bullets, *spread_bullets, *laser_bullets, *enemy_bullets;
     bool complete;
@@ -106,24 +107,39 @@ public:
 
     float PlayersMinY(bool *alive_players = nullptr) const;
 
-    ObjectPool<Bullet> *GetDefaultBullets() const {
-        return default_bullets;
+    ObjectPool<Bullet> *GetDefaultBullets(int player_idx) const {
+        if (player_idx < players.size())
+            return default_bullets + player_idx;
+        else
+            return nullptr;
     }
 
-    ObjectPool<Bullet> *GetFireBullets() const {
-        return fire_bullets;
+    ObjectPool<Bullet> *GetFireBullets(int player_idx) const {
+        if (player_idx < players.size())
+            return fire_bullets + player_idx;
+        else
+            return nullptr;
     }
 
-    ObjectPool<Bullet> *GetMachineGunBullets() const {
-        return machine_gun_bullets;
+    ObjectPool<Bullet> *GetMachineGunBullets(int player_idx) const {
+        if (player_idx < players.size())
+            return machine_gun_bullets + player_idx;
+        else
+            return nullptr;
     }
 
-    ObjectPool<Bullet> *GetSpreadBullets() const {
-        return spread_bullets;
+    ObjectPool<Bullet> *GetSpreadBullets(int player_idx) const {
+        if (player_idx < players.size())
+            return spread_bullets + player_idx;
+        else
+            return nullptr;
     }
 
-    ObjectPool<Bullet> *GetLaserBullets() const {
-        return laser_bullets;
+    ObjectPool<Bullet> *GetLaserBullets(int player_idx) const {
+        if (player_idx < players.size())
+            return laser_bullets + player_idx;
+        else
+            return nullptr;
     }
 
     ObjectPool<Bullet> *GetEnemyBullets() const {
@@ -151,13 +167,13 @@ public:
     }
 
 private:
-    void CreateBulletPools();
+    void CreateBulletPools(int num_players);
 
     void PreloadSounds();
 
     template<typename T>
-    ObjectPool<Bullet> *CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
-                                               const Box &box);
+    ObjectPool<Bullet> *CreatePlayersBulletPools(int num_bullets, const AnimationRenderer::Animation &animation,
+                                                 const Box &box, int num_players);
 
     void CreatePlayers(short num_players, PlayerStats *stats);
 

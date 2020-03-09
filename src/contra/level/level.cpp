@@ -65,82 +65,83 @@ void Level::Create(const std::string &folder, const std::unordered_map<int, std:
     levelWidth = m_background->getWidth() * PIXELS_ZOOM;
     m_grid.Create(34 * PIXELS_ZOOM, levelWidth, WINDOW_HEIGHT);
 
-    CreateBulletPools();
+    CreateBulletPools(num_players);
     CreatePlayers(num_players, stats);
     PreloadSounds();
 }
 
 void Level::Destroy() {
-    BaseScene::Destroy();
     SDL_Log("Level::Destroy");
-    default_bullets->Destroy();
-    delete default_bullets;
+    for (int i = 0; i < players.size(); i++) {
+        default_bullets[i].Destroy();
+        machine_gun_bullets[i].Destroy();
+        spread_bullets[i].Destroy();
+        fire_bullets[i].Destroy();
+        laser_bullets[i].Destroy();
+    }
+    delete[] default_bullets;
     default_bullets = nullptr;
-
-    machine_gun_bullets->Destroy();
-    delete machine_gun_bullets;
+    delete[] machine_gun_bullets;
     machine_gun_bullets = nullptr;
-
-    spread_bullets->Destroy();
-    delete spread_bullets;
+    delete[] spread_bullets;
     spread_bullets = nullptr;
-
-    fire_bullets->Destroy();
-    delete fire_bullets;
+    delete[] fire_bullets;
     fire_bullets = nullptr;
-
-    laser_bullets->Destroy();
-    delete laser_bullets;
+    delete[] laser_bullets;
     laser_bullets = nullptr;
 
     enemy_bullets->Destroy();
     delete enemy_bullets;
     enemy_bullets = nullptr;
 
+    BaseScene::Destroy();
+
     for (auto pair: shared_sounds) {
         delete pair.second;
     }
 }
 
-void Level::CreateBulletPools() {
-    // Create bullet pools for the player
-    default_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_DEFAULT_BULLETS, {
+void Level::CreateBulletPools(int num_players) {
+    // Create bullet pools for the players
+    default_bullets = CreatePlayersBulletPools<BulletStraightMovement>(MAX_DEFAULT_BULLETS, {
             82, 10, 0.2, 1,
             3, 3, 1, 1,
             "Bullet", AnimationRenderer::STOP_AND_LAST
-    }, {-1, -1, 2, 2});
-    machine_gun_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_MACHINE_GUN_BULLETS, {
+    }, {-1, -1, 2, 2}, num_players);
+    machine_gun_bullets = CreatePlayersBulletPools<BulletStraightMovement>(MAX_MACHINE_GUN_BULLETS, {
             89, 9, 0.2, 1,
             5, 5, 2, 2,
             "Bullet", AnimationRenderer::STOP_AND_LAST
-    }, {-2, -2, 2, 2});
-    spread_bullets = CreatePlayerBulletPool<BulletStraightMovement>(MAX_SPREAD_BULLETS, {
+    }, {-2, -2, 2, 2}, num_players);
+    spread_bullets = CreatePlayersBulletPools<BulletStraightMovement>(MAX_SPREAD_BULLETS, {
             88, 8, 0.2, 3,
             8, 8, 4, 4,
             "Bullet", AnimationRenderer::STOP_AND_LAST
-    }, {-2, -2, 2, 2});
-    fire_bullets = CreatePlayerBulletPool<BulletCirclesMovement>(MAX_FIRE_BULLETS, {
+    }, {-2, -2, 2, 2}, num_players);
+    fire_bullets = CreatePlayersBulletPools<BulletCirclesMovement>(MAX_FIRE_BULLETS, {
             112, 8, 0.2, 1,
             8, 8, 4, 4,
             "Bullet", AnimationRenderer::STOP_AND_LAST
-    }, {-2, -2, 2, 2});
-    laser_bullets = CreatePlayerBulletPool<LaserBulletBehaviour>(MAX_LASER_BULLETS, {
+    }, {-2, -2, 2, 2}, num_players);
+    laser_bullets = CreatePlayersBulletPools<LaserBulletBehaviour>(MAX_LASER_BULLETS, {
             121, 0, 0.2, 1,
             6, 16, 3, 8,
             "Bullet", AnimationRenderer::STOP_AND_LAST
-    }, {-3, -3, 3, 3});
-    for (auto *bullet: laser_bullets->pool) {
-        auto *renderer = bullet->GetComponent<AnimationRenderer *>();
-        renderer->AddAnimation({
-                128, 3, 0.2, 1,
-                8, 13, 4, 6,
-                "BulletDiag", AnimationRenderer::STOP_AND_LAST
-        });
-        renderer->AddAnimation({
-                136, 9, 0.2, 1,
-                16, 6, 8, 3,
-                "BulletHorizontal", AnimationRenderer::STOP_AND_LAST
-        });
+    }, {-3, -3, 3, 3}, num_players);
+    for (int i = 0; i < num_players; i++) {
+        for (auto *bullet: laser_bullets[i].pool) {
+            auto *renderer = bullet->GetComponent<AnimationRenderer *>();
+            renderer->AddAnimation({
+                    128, 3, 0.2, 1,
+                    8, 13, 4, 6,
+                    "BulletDiag", AnimationRenderer::STOP_AND_LAST
+            });
+            renderer->AddAnimation({
+                    136, 9, 0.2, 1,
+                    16, 6, 8, 3,
+                    "BulletHorizontal", AnimationRenderer::STOP_AND_LAST
+            });
+        }
     }
 
     // Create bullet pool for the npcs
@@ -193,34 +194,36 @@ void Level::CreatePlayers(short num_players, PlayerStats *stats) {
 }
 
 template<typename T>
-ObjectPool<Bullet> *Level::CreatePlayerBulletPool(int num_bullets, const AnimationRenderer::Animation &animation,
-                                                  const Box &box) {
-    auto *pool = new ObjectPool<Bullet>();
-    pool->Create(num_bullets);
-    for (auto *bullet: pool->pool) {
-        bullet->Create();
-        auto *renderer = new AnimationRenderer();
-        renderer->Create(this, bullet, GetSpritesheet(SPRITESHEET_PLAYER));
-        renderer->AddAnimation(animation);
-        renderer->AddAnimation({
-                104, 0, 0.1, 1,
-                7, 7, 3, 3,
-                "Kill", AnimationRenderer::STOP_AND_FIRST
-        });
-        renderer->Play();
-        auto *behaviour = new T();
-        behaviour->Create(this, bullet);
-        auto *box_collider = new BoxCollider();
-        box_collider->Create(this, bullet, box * PIXELS_ZOOM,
-                m_playerBulletsCollisionLayer, m_playerBulletsCollisionCheckLayer);
-        bullet->AddComponent(behaviour);
-        bullet->AddComponent(renderer);
-        bullet->AddComponent(box_collider);
-        bullet->AddReceiver(this);
+ObjectPool <Bullet> *Level::CreatePlayersBulletPools(int num_bullets, const AnimationRenderer::Animation &animation,
+                                                     const Box &box, int num_players) {
+    auto *pools = new ObjectPool<Bullet>[num_players]();
+    for (auto *pool = pools; pool < pools + num_players; pool++) {
+        pool->Create(num_bullets);
+        for (auto *bullet: pool->pool) {
+            bullet->Create();
+            auto *renderer = new AnimationRenderer();
+            renderer->Create(this, bullet, GetSpritesheet(SPRITESHEET_PLAYER));
+            renderer->AddAnimation(animation);
+            renderer->AddAnimation({
+                    104, 0, 0.1, 1,
+                    7, 7, 3, 3,
+                    "Kill", AnimationRenderer::STOP_AND_FIRST
+            });
+            renderer->Play();
+            auto *behaviour = new T();
+            behaviour->Create(this, bullet);
+            auto *box_collider = new BoxCollider();
+            box_collider->Create(this, bullet, box * PIXELS_ZOOM,
+                    m_playerBulletsCollisionLayer, m_playerBulletsCollisionCheckLayer);
+            bullet->AddComponent(behaviour);
+            bullet->AddComponent(renderer);
+            bullet->AddComponent(box_collider);
+            bullet->AddReceiver(this);
 
-        bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
+            bullet->onRemoval = DO_NOT_DESTROY; // Do not destroy until the end of the game
+        }
     }
-    return pool;
+    return pools;
 }
 
 
@@ -243,17 +246,21 @@ int Level::GetLevelIndex() const {
 }
 
 Player *Level::GetClosestPlayer(const Vector2D &position) const {
-    return dynamic_cast<Player *>(GetClosestPlayerControl(position)->GetGameObject());
+    auto *control = GetClosestPlayerControl(position);
+    if (!control) return nullptr;
+    else return static_cast<Player *>(control->GetGameObject());
 }
 
 PlayerControl *Level::GetClosestPlayerControl(const Vector2D &position, bool prefer_before) const {
-    auto *closest = playerControls[0];
-    float closestDist = (players[0]->position - position).magnitudeSqr();
-    bool closestBefore = players[0]->position.x < position.x;
-    for (int i = 1; i < playerControls.size(); i++) {
+    PlayerControl *closest = nullptr;
+    float closestDist = 0;
+    bool closestBefore = false;
+    for (int i = 0; i < playerControls.size(); i++) {
         float dist = (players[i]->position - position).magnitudeSqr();
         bool is_before = players[i]->position.x < position.x;
-        if (dist < closestDist || (prefer_before && !closestBefore && is_before)) {
+        if (!playerControls[i]->IsAlive())
+            continue;
+        if (!closest || (dist < closestDist || (prefer_before && !closestBefore && is_before))) {
             closestDist = dist;
             closestBefore = is_before;
             closest = playerControls[i];

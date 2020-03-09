@@ -60,7 +60,7 @@ void PlayerControl::Hit() {
 void PlayerControl::Respawn() {
     if (!m_isDeath) return;
     m_gravity->SetFallThoughWater(false);
-    m_currentWeapon.reset(new DefaultWeapon(level));
+    m_currentWeapon.reset(new DefaultWeapon(level, m_index));
     m_facingRight = true;
     m_hasInertia = false;
     m_invincibleTime = 2.f;
@@ -99,19 +99,19 @@ void PlayerControl::PickUp(PickUpType type) {
     level->GetSound(SOUND_PICKUP)->Play(1);
     switch (type) {
         case PICKUP_MACHINE_GUN:
-            m_currentWeapon.reset(new MachineGun(level));
+            m_currentWeapon.reset(new MachineGun(level, m_index));
             break;
         case PICKUP_RAPID_FIRE:
             m_currentWeapon->SetBulletSpeedMultiplier(1.5f);
             break;
         case PICKUP_SPREAD:
-            m_currentWeapon.reset(new SpreadGun(level));
+            m_currentWeapon.reset(new SpreadGun(level, m_index));
             break;
         case PICKUP_FIRE_GUN:
-            m_currentWeapon.reset(new FireGun(level));
+            m_currentWeapon.reset(new FireGun(level, m_index));
             break;
         case PICKUP_LASER:
-            m_currentWeapon.reset(new LaserGun(level));
+            m_currentWeapon.reset(new LaserGun(level, m_index));
             break;
         case PICKUP_BARRIER:
             // TODO: Do barrier?
@@ -124,29 +124,29 @@ void PlayerControl::PickUp(PickUpType type) {
 void PlayerControl::Create(Level *level, GameObject *go, short index, const PlayerStats &stats) {
     LevelComponent::Create(level, go);
     m_remainingLives = stats.lives;
+    m_index = index;
     Weapon *weapon = nullptr;
     switch (stats.weapon) {
         case RIFLE:
-            weapon = new DefaultWeapon(level);
+            weapon = new DefaultWeapon(level, m_index);
             break;
         case MACHINE_GUN:
-            weapon = new MachineGun(level);
+            weapon = new MachineGun(level, m_index);
             break;
         case FIRE_GUN:
-            weapon = new FireGun(level);
+            weapon = new FireGun(level, m_index);
             break;
         case SPREAD_GUN:
-            weapon = new SpreadGun(level);
+            weapon = new SpreadGun(level, m_index);
             break;
         case LASER_GUN:
-            weapon = new LaserGun(level);
+            weapon = new LaserGun(level, m_index);
             break;
     }
     if (stats.hasRapid) {
         weapon->SetBulletSpeedMultiplier(1.5f);
     }
     m_currentWeapon.reset(weapon);
-    m_index = index;
     m_jumpBox = {
             -6 * PIXELS_ZOOM, -22 * PIXELS_ZOOM,
             6 * PIXELS_ZOOM, -10 * PIXELS_ZOOM

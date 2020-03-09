@@ -86,6 +86,7 @@ void LedderBehaviour::Update(float dt) {
                 if (m_coolDown > 0) m_coolDown -= dt;
                 if (m_coolDown <= 0 && (m_firedInBurst < m_burstLength || m_burstCoolDown <= 0)) {
                     auto* closestPlayer = level->GetClosestPlayer(go->position);
+                    if (!closestPlayer) break;
                     if (m_showStanding or (go->position.y < closestPlayer->position.y
                                            && go->position.y > closestPlayer->position.y - 33 * PIXELS_ZOOM)) {
                         if (m_burstCoolDown <= 0) {
@@ -150,7 +151,7 @@ void LedderBehaviour::Fire() {
     // Grab the bullet from the pool
     auto *bullet = level->GetEnemyBullets()->FirstAvailable();
     auto *player = level->GetClosestPlayer(go->position);
-    if (bullet != nullptr) {
+    if (bullet != nullptr && player) {
         Vector2D shift, direction;
         // All position changes occur when firing
         bool mirrored = go->position.x < player->position.x;

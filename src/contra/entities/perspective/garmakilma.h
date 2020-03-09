@@ -261,10 +261,13 @@ public:
     }
 
     void Fire() override {
-        auto bullets = m_bulletPool.FirstAvailable();
-        Vector2D dir = level->GetClosestPlayer(go->position)->position - go->position;
-        bullets->Init(go->position, dir, 0.65f * BULLET_SPEED * PIXELS_ZOOM);
-        level->AddGameObject(bullets, RENDERING_LAYER_BULLETS);
+        auto bullet = m_bulletPool.FirstAvailable();
+        auto *closest = level->GetClosestPlayer(go->position);
+        if (bullet && closest) {
+            Vector2D dir = closest->position - go->position;
+            bullet->Init(go->position, dir, 0.65f * BULLET_SPEED * PIXELS_ZOOM);
+            level->AddGameObject(bullet, RENDERING_LAYER_BULLETS);
+        }
     }
 
     void Destroy() override {
