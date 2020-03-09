@@ -114,7 +114,7 @@ void PlayerControl::PickUp(PickUpType type) {
             m_currentWeapon.reset(new LaserGun(level));
             break;
         case PICKUP_BARRIER:
-            // TODO: Do barrier
+            // TODO: Do barrier?
             break;
     }
     go->Send(SCORE1_1000);

@@ -13,23 +13,39 @@
 class GarmakilmaBulletListener : public LevelComponent, public CollideComponentListener {
 private:
     Hittable *m_behaviour;
+    AnimationRenderer *m_animator;
+    int m_animHit;
+    float m_stopAnimHit;
 public:
     void Init() override {
         Component::Init();
         if (!m_behaviour) {
             m_behaviour = GetComponent<Hittable *>();
         }
+        if (!m_animator) {
+            m_animator = GetComponent<AnimationRenderer *>();
+            m_animHit = m_animator->FindAnimation("GlowingRed");
+        }
     }
 
     void OnCollision(const CollideComponent &collider) override {
         auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
         if (bullet && !bullet->IsKilled() && m_behaviour) {
+            m_animator->PlayAnimation(m_animHit);
+            m_stopAnimHit = 2.f;
             m_behaviour->Hit();
             bullet->Kill();
         }
     }
 
-    void Update(float dt) override {}
+    void Update(float dt) override {
+        if (m_stopAnimHit > 0) {
+            m_stopAnimHit -= dt;
+            if (m_stopAnimHit <= 0) {
+                m_animator->PlayAnimation(0);
+            }
+        }
+    }
 };
 
 class GarmakilmaCore : public GameObject {
