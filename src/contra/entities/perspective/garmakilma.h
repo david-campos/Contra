@@ -10,6 +10,28 @@
 #include "../../level/perspective_level.h"
 #include "../../../components/collision/BoxCollider.h"
 
+class GarmakilmaBulletListener : public LevelComponent, public CollideComponentListener {
+private:
+    Hittable *m_behaviour;
+public:
+    void Init() override {
+        Component::Init();
+        if (!m_behaviour) {
+            m_behaviour = GetComponent<Hittable *>();
+        }
+    }
+
+    void OnCollision(const CollideComponent &collider) override {
+        auto *bullet = collider.GetGameObject()->GetComponent<BulletBehaviour *>();
+        if (bullet && !bullet->IsKilled() && m_behaviour) {
+            m_behaviour->Hit();
+            bullet->Kill();
+        }
+    }
+
+    void Update(float dt) override {}
+};
+
 class GarmakilmaCore : public GameObject {
 public:
     void Create(Level *level) {
@@ -18,11 +40,24 @@ public:
         renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation({
                 4, 745, 0.1, 3,
-                33, 30, 0, 0,
+                33, 30, 16, 15,
                 "Glowing", AnimationRenderer::BOUNCE
         });
         renderer->Play();
+        auto *behaviour = new HiddenDestroyableBehaviour();
+        behaviour->Create(level, this, 8, false, 4.f);
+        auto *collider = new BoxCollider();
+        collider->Create(level, this,
+                -16 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
+                32 * PIXELS_ZOOM, 30 * PIXELS_ZOOM,
+                -1, PERSP_PLAYER_BULLETS_COLLISION_LAYER);
+        auto *listener = new GarmakilmaBulletListener();
+        listener->Create(level, this);
+        collider->SetListener(listener);
 
+        AddComponent(behaviour);
+        AddComponent(listener);
+        AddComponent(collider);
         AddComponent(renderer);
     }
 };
@@ -35,26 +70,62 @@ public:
         renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
         renderer->AddAnimation({
                 4, 714, 0.1, 3,
-                33, 30, 0, 0,
+                33, 30, 16, 15,
                 "Glowing", AnimationRenderer::BOUNCE
         });
         renderer->AddAnimation({
                 4, 682, 0.1, 3,
-                33, 30, 0, 0,
+                33, 30, 16, 15,
                 "Open", AnimationRenderer::STOP_AND_LAST
         });
         renderer->AddAnimation({
                 4, 651, 0.1, 3,
-                33, 30, 0, 0,
+                33, 30, 16, 15,
                 "GlowingClosed", AnimationRenderer::BOUNCE
         });
         auto *behaviour = new HiddenDestroyableBehaviour();
-        behaviour->Create(level, this, 8, true, 4.f);
+        behaviour->Create(level, this, 8, false, 4.f);
         auto *collider = new BoxCollider();
-        collider->Create(level, this, 0, 0, 32, 30,
-                NPCS_COLLISION_LAYER, -1);
-        AddComponent(collider);
+        collider->Create(level, this,
+                -16 * PIXELS_ZOOM, -15 * PIXELS_ZOOM,
+                32 * PIXELS_ZOOM, 30 * PIXELS_ZOOM,
+                -1, PERSP_PLAYER_BULLETS_COLLISION_LAYER);
+        auto *listener = new GarmakilmaBulletListener();
+        listener->Create(level, this);
+        collider->SetListener(listener);
+
         AddComponent(behaviour);
+        AddComponent(listener);
+        AddComponent(collider);
+        AddComponent(renderer);
+    }
+};
+
+class GarmakilmaEye : public GameObject {
+public:
+    void Create(Level *level) {
+        GameObject::Create();
+        auto *renderer = new AnimationRenderer();
+        renderer->Create(level, this, level->GetSpritesheet(SPRITESHEET_ENEMIES));
+        renderer->AddAnimation({
+                103, 651, 0.1, 3,
+                25, 25, 12, 12,
+                "Glowing", AnimationRenderer::BOUNCE
+        });
+        auto *behaviour = new HiddenDestroyableBehaviour();
+        behaviour->Create(level, this, 8, true, 2.f);
+        auto *collider = new BoxCollider();
+        collider->Create(level, this,
+                -12 * PIXELS_ZOOM, -12 * PIXELS_ZOOM,
+                25 * PIXELS_ZOOM, 25 * PIXELS_ZOOM,
+                -1, PERSP_PLAYER_BULLETS_COLLISION_LAYER);
+        auto *listener = new GarmakilmaBulletListener();
+        listener->Create(level, this);
+        collider->SetListener(listener);
+
+        AddComponent(behaviour);
+        AddComponent(listener);
+        AddComponent(collider);
         AddComponent(renderer);
     }
 };
@@ -63,17 +134,17 @@ class Garmakilma : public GameObject {
 private:
     std::vector<GameObject *> m_cores;
     std::vector<GameObject *> m_canons;
-    GameObject *m_garmakilma;
+    GarmakilmaEye *m_eye;
 public:
     void Create(PerspectiveLevel *level, Vector2D position) {
         GameObject::Create();
         this->position = position;
-        Vector2D core_positions[] = {{48, 40},
-                                     {0,  88},
-                                     {48, 88},
-                                     {96, 88}};
-        Vector2D canon_positions[] = {{0,  40},
-                                      {96, 40}};
+        Vector2D core_positions[] = {{64,  55},
+                                     {16,  103},
+                                     {64,  103},
+                                     {112, 103}};
+        Vector2D canon_positions[] = {{16,  55},
+                                      {112, 55}};
 
         for (auto &pos: core_positions) {
             auto *core = new GarmakilmaCore();
@@ -89,6 +160,10 @@ public:
             canon->AddReceiver(this);
             m_canons.push_back(canon);
         }
+        m_eye = new GarmakilmaEye();
+        m_eye->Create(level);
+        m_eye->position = position + Vector2D(65, 24) * PIXELS_ZOOM;
+        m_eye->AddReceiver(this);
     }
 
     void Init() override {
@@ -113,13 +188,22 @@ public:
 
     void Update(float dt) override {
         GameObject::Update(dt);
+        short alive_cores = 0;
         for (auto *core: m_cores) {
-            if (core->IsEnabled())
+            if (core->IsEnabled()) {
                 core->Update(dt);
+                alive_cores++;
+            }
         }
         for (auto *canon: m_canons) {
             if (canon->IsEnabled())
                 canon->Update(dt);
+        }
+        if (alive_cores == 0) {
+            if (!m_eye->IsEnabled())
+                m_eye->Init();
+            else
+                m_eye->Update(dt);
         }
     }
 };

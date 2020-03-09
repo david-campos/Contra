@@ -145,12 +145,17 @@ public:
 
         bool esc; // escape button
         bool pause; // pause button
+        bool mute; // mute audio
         bool start; // enter
         bool debug; // godmode (0)
     };
 
     // Returns the keyboard status. If a flag is set, the corresponding key is being held down.
     void getKeyStatus(KeyStatus &keys);
+
+    void ToggleSounds();
+
+    void ToggleMusic();
 
 private:
     SDL_Window *window;

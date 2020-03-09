@@ -90,6 +90,7 @@ void PerspectiveLevel::Create(const std::string &folder,
 void PerspectiveLevel::Init() {
     Level::Init();
     m_laserOn = true;
+    m_currentScreen = 5;
 }
 
 Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {

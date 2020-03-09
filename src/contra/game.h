@@ -18,9 +18,9 @@ private:
     AvancezLib *engine;
     LevelFactory *levelFactory;
     std::unordered_map<int, std::shared_ptr<Sprite>> spritesheets;
+    AvancezLib::KeyStatus previousKeys;
 
     bool paused;
-    bool pause_pressed_before;
     bool can_continue;
     int current_level;
     PlayerStats stats[2];
@@ -30,7 +30,6 @@ public:
     virtual void Create(AvancezLib *avancezLib);
 
     void Reset() {
-        pause_pressed_before = false;
         paused = false;
         can_continue = true;
         memset(lastSavedStats, 0, 2 * sizeof(PlayerStats));
@@ -76,10 +75,14 @@ public:
             engine->quit();
         }
 
-        if (keyStatus.pause && !pause_pressed_before) {
+        if (keyStatus.pause && !previousKeys.pause) {
             paused = !paused;
         }
-        pause_pressed_before = keyStatus.pause;
+        if (keyStatus.mute && !previousKeys.mute) {
+            engine->ToggleSounds();
+            engine->ToggleMusic();
+        }
+        previousKeys = keyStatus;
 
         if (paused)
             dt = 0.f;

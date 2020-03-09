@@ -23,12 +23,13 @@ std::function<void()> SoundEffect::Play(short times) {
             int channels = Mix_AllocateChannels(-1);
             if (channels < 100) {
                 Mix_AllocateChannels(channels + 1);
+                Mix_Volume(channels, Mix_Volume(channels - 1, -1));
                 Mix_PlayChannel(channels, effect, times - 1); // 0-based
                 SDL_Log("Audio Mixer: channels increased to %d", channels + 1);
             }
         }
     }
-    return [](){};
+    return []() {};
 }
 
 // Creates the main window. Returns true on success.
@@ -172,6 +173,9 @@ void AvancezLib::processInput() {
                 case SDLK_p:
                     key.pause = true;
                     break;
+                case SDLK_m:
+                    key.mute = true;
+                    break;
                 case SDLK_RETURN:
                     key.start = true;
                     break;
@@ -227,6 +231,9 @@ void AvancezLib::processInput() {
                     break;
                 case SDLK_p:
                     key.pause = false;
+                    break;
+                case SDLK_m:
+                    key.mute = false;
                     break;
                 case SDLK_RETURN:
                     key.start = false;
@@ -359,6 +366,20 @@ Music *AvancezLib::createMusic(const char *path) {
 
 void AvancezLib::FadeOutMusic(int ms) {
     Mix_FadeOutMusic(ms);
+}
+
+void AvancezLib::ToggleSounds() {
+    if (Mix_Volume(-1, -1) > 0)
+        Mix_Volume(-1, 0);
+    else
+        Mix_Volume(-1, MIX_MAX_VOLUME);
+}
+
+void AvancezLib::ToggleMusic() {
+    if (Mix_VolumeMusic(-1) > 0)
+        Mix_VolumeMusic(0);
+    else
+        Mix_VolumeMusic(MIX_MAX_VOLUME);
 }
 
 

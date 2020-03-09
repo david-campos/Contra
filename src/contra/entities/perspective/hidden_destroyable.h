@@ -56,13 +56,14 @@ public:
             m_collider->Disable();
             m_state = DEST_STATE_CLOSED;
             if (m_animGlowingClosed >= 0) {
-                m_animator->Play(m_animGlowingClosed);
+                m_animator->PlayAnimation(m_animGlowingClosed);
             } else {
                 m_animator->CurrentAndPause(m_animOpen);
             }
         } else {
             m_collider->Enable();
             m_state = DEST_STATE_OPEN;
+            m_animator->PlayAnimation(m_animGlowing);
         }
     }
 
@@ -130,7 +131,7 @@ public:
                 explosion->SendOnDestroy(SCREEN_CLEARED);
             }
             level->AddGameObject(explosion, RENDERING_LAYER_BULLETS);
-            if (m_animDead) {
+            if (m_animDead >= 0) {
                 m_animator->PlayAnimation(m_animDead);
             } else {
                 go->Disable();
