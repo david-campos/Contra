@@ -284,9 +284,9 @@ public:
         listener->Create(level, this);
         collider->SetListener(listener);
         auto *movement = new BackAndForthMovement();
-        movement->Create(level, this, start, end, 1.f, 0.5f);
+        movement->Create(level, this, start, end, 1.5f, 0.5f);
         auto *shooting = new GarmakilmaEyeShooting();
-        shooting->Create(level, this, 3.f);
+        shooting->Create(level, this, 2.f);
 
         AddComponent(behaviour);
         AddComponent(movement);

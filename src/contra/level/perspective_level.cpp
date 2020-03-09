@@ -90,7 +90,6 @@ void PerspectiveLevel::Create(const std::string &folder,
 void PerspectiveLevel::Init() {
     Level::Init();
     m_laserOn = true;
-    m_currentScreen = 5;
 }
 
 Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
@@ -113,20 +112,25 @@ Player *PerspectiveLevel::CreatePlayer(int index, PlayerStats *stats) {
 
 void PerspectiveLevel::Receive(Message m) {
     if (m == SCREEN_CLEARED) {
-        m_laserOn = false;
-        ClearScreen();
-        m_currentScreen++;
-        m_onTransition = 0;
-        for (auto pos: {
-                Vector2D(104, 71),
-                Vector2D(151, 71),
-                Vector2D(104, 102),
-                Vector2D(151, 102)
-        }) {
-            auto *explosion = new Explosion();
-            explosion->Create(this, m_camera + pos * PIXELS_ZOOM);
-            explosion->Init();
-            AddGameObject(explosion, RENDERING_LAYER_ENEMIES);
+        if (IsInBossBattle()) {
+            ClearScreen();
+            Receive(LEVEL_END);
+        } else {
+            m_laserOn = false;
+            ClearScreen();
+            m_currentScreen++;
+            m_onTransition = 0;
+            for (auto pos: {
+                    Vector2D(104, 71),
+                    Vector2D(151, 71),
+                    Vector2D(104, 102),
+                    Vector2D(151, 102)
+            }) {
+                auto *explosion = new Explosion();
+                explosion->Create(this, m_camera + pos * PIXELS_ZOOM);
+                explosion->Init();
+                AddGameObject(explosion, RENDERING_LAYER_ENEMIES);
+            }
         }
     } else {
         Level::Receive(m);
@@ -134,6 +138,14 @@ void PerspectiveLevel::Receive(Message m) {
 }
 
 void PerspectiveLevel::SubUpdate(float dt) {
+    if (complete) {
+        float players_max_y = PlayersTopY();
+        if (players_max_y <= 0 && !m_engine->isMusicPlaying()) {
+            Send(NEXT_LEVEL);
+            return;
+        }
+    }
+
     float new_x = (m_onTransition < 0 ? m_currentScreen + 4 : m_onTransition) *
                   WINDOW_WIDTH;  // The first 4 are the transitions
     if (abs(new_x - m_camera.x) > 0.001) {
@@ -149,8 +161,8 @@ void PerspectiveLevel::SubUpdate(float dt) {
 
     if (m_onTransition >= 0) {
         bool some_alive;
-        float min_y = PlayersMinY(&some_alive);
-        if (some_alive && min_y < PIXELS_ZOOM * (PERSP_PLAYER_Y - 35) && AllPlayersOnFloor()) {
+        float max_y = PlayersTopY(&some_alive);
+        if (some_alive && max_y < PIXELS_ZOOM * (PERSP_PLAYER_Y - 35) && AllPlayersOnFloor()) {
             m_onTransition++;
             for (int i = 0; i < players.size(); i++) {
                 players[i]->position.y = PIXELS_ZOOM * PERSP_PLAYER_Y;

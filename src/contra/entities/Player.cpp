@@ -184,13 +184,7 @@ void PlayerControl::Update(float dt) {
     if (dt == 0) return;
     AvancezLib::KeyStatus keyStatus{};
     if (level->IsComplete()) {
-        bool moving = level->GetTimeSinceComplete() > 1.0;
-        bool jumping = moving && (m_previousKeyStatus.jump || m_gravity->IsOnFloor())
-                       && go->position.x >= level->GetLevelWidth() - 125.f * PIXELS_ZOOM;
-        keyStatus = {
-                false, jumping, false, moving, false, false, false,
-                false, false
-        };
+        keyStatus = GetKeyStatusWhenComplete();
     } else {
         level->GetEngine()->getKeyStatus(keyStatus);
         NormaliseKeyStatus(keyStatus);
@@ -257,17 +251,19 @@ void PlayerControl::Update(float dt) {
 
         if ((keyStatus.right && !keyStatus.left) || (m_gravity->IsOnAir() && m_hasInertia && m_facingRight)) {
             Vector2D new_position = go->position + Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
-            if (new_position.x < bounds.max_x) {
-                go->position = new_position;
+            if (new_position.x > bounds.max_x) {
+                new_position.x = bounds.max_x;
             }
+            go->position = new_position;
             m_hasInertia = true;
             m_facingRight = true;
         }
         if ((keyStatus.left && !keyStatus.right) || (m_gravity->IsOnAir() && m_hasInertia && !m_facingRight)) {
             Vector2D new_position = go->position - Vector2D(PLAYER_SPEED * PIXELS_ZOOM * dt, 0) * (m_godMode ? 2 : 1);
-            if (go->position.x > bounds.min_x) {
-                go->position = new_position;
+            if (go->position.x < bounds.min_x) {
+                new_position.x = bounds.min_x;
             }
+            go->position = new_position;
             m_hasInertia = true;
             m_facingRight = false;
         }
@@ -429,6 +425,16 @@ void PlayerControlScrolling::OnSpawn() {
     m_gravity->SetVelocity(0);
 }
 
+AvancezLib::KeyStatus PlayerControlScrolling::GetKeyStatusWhenComplete() {
+    bool moving = level->GetTimeSinceComplete() > 1.0;
+    bool jumping = moving && (m_previousKeyStatus.jump || m_gravity->IsOnFloor())
+                   && go->position.x >= level->GetLevelWidth() - 125.f * PIXELS_ZOOM;
+    AvancezLib::KeyStatus status{};
+    status.jump = jumping;
+    status.right = moving;
+    return status;
+}
+
 void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **box,
                                                float dt) {
     m_fryingFor -= dt;
@@ -438,13 +444,33 @@ void PlayerControlPerspective::AnimationUpdate(bool shooting, const AvancezLib::
         return;
     }
 
+    if (level->IsComplete()) {
+        if (m_gravity->IsOnFloor()) {
+            if (keyStatus.right != keyStatus.left) {
+                m_animator->PlayAnimation(m_runAnim);
+            } else {
+                m_animator->CurrentAndPause(m_idleAnim);
+            }
+        } else {
+            if (!m_animator->IsCurrent(m_jumpAnim)) {
+                m_animator->PlayAnimation(m_jumpAnim);
+            }
+        }
+        if (m_index % 2 == 0) {
+            m_facingRight = go->position.x - GetPlayerMovementBoundaries().min_x < 0.1;
+        } else {
+            m_facingRight = GetPlayerMovementBoundaries().max_x - go->position.x > 0.1;
+        }
+        return;
+    }
+
     if (m_gravity->IsOnFloor()) {
         if (keyStatus.up && !keyStatus.down && !m_perspectiveLevel->IsLaserOn()) {
             m_animator->PlayAnimation(m_persForward);
         } else if (keyStatus.right != keyStatus.left) {
             m_animator->PlayAnimation(m_persRunAnim);
         } else {
-            if (keyStatus.down && !keyStatus.up) {
+            if (keyStatus.down && !keyStatus.up && !m_perspectiveLevel->IsInBossBattle()) {
                 m_animator->CurrentAndPause(m_persCrawlAnim);
             } else {
                 m_animator->CurrentAndPause(m_persIdleAnim);
@@ -479,35 +505,43 @@ PlayerControl::PlayerBoundaries PlayerControlPerspective::GetPlayerMovementBound
 
 bool PlayerControlPerspective::Fire(const AvancezLib::KeyStatus &keyStatus) {
     bool lying_down = keyStatus.down && !keyStatus.up && !keyStatus.right && !keyStatus.left;
-    Vector2D displacement(0, -43);
+    float displacement = -43;
     if (m_animator->IsCurrent(m_jumpAnim)) {
-        displacement.y = -16;
+        displacement = -16;
     }
     displacement = displacement * PIXELS_ZOOM;
-    Vector2D shooting_point = go->position + (lying_down ? displacement * 0.5 : displacement);
+    Vector2D shooting_point = go->position + Vector2D(0, lying_down ? displacement * 0.7 : displacement);
     Vector2D target = m_perspectiveLevel->ProjectFromFrontToBack(shooting_point);
-    Vector2D direction = target - go->position - displacement;
-    return m_currentWeapon->Fire(go->position + displacement, direction,
+    Vector2D direction = target - shooting_point;
+    return m_currentWeapon->Fire(shooting_point, direction,
             m_perspectiveLevel->IsInBossBattle() ? -9999 : target.y);
 }
 
 void PlayerControlPerspective::VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {
-    if (m_perspectiveLevel->IsInBossBattle()) return;
-
-    if (m_gravity->IsOnFloor()) {
-        if (keyStatus.up && !keyStatus.down) {
-            if (m_perspectiveLevel->IsLaserOn()) {
-                if (!m_previousKeyStatus.up) {
-                    m_fryingFor = 0.5f;
-                }
-            } else {
+    if (m_perspectiveLevel->IsInBossBattle()) {
+        if (level->IsComplete()) {
+            if ((m_index % 2 == 0 && go->position.x - GetPlayerMovementBoundaries().min_x < 0.1)
+                or (m_index % 2 == 1 && GetPlayerMovementBoundaries().max_x - go->position.x < 0.1)) {
                 go->position = go->position - Vector2D(0, PLAYER_SPEED * PIXELS_ZOOM) * dt;
+                m_gravity->SetBaseFloor(go->position.y);
             }
         }
-        if (!m_perspectiveLevel->IsLaserOn()) {
-            m_gravity->SetBaseFloor(go->position.y);
-            auto bounds = GetPlayerMovementBoundaries();
-            go->position.x = std::max(std::min(float(go->position.x), bounds.max_x), bounds.min_x);
+        return;
+    }
+
+    if (m_gravity->IsOnFloor() && keyStatus.up && !keyStatus.down) {
+        if (m_perspectiveLevel->IsLaserOn()) {
+            if (!m_previousKeyStatus.up) {
+                m_fryingFor = 0.5f;
+            }
+        } else {
+            if (go->position.y >= PIXELS_ZOOM * (PERSP_PLAYER_Y - 35))
+                go->position = go->position - Vector2D(0, PLAYER_SPEED * PIXELS_ZOOM) * dt;
+            if (!m_perspectiveLevel->IsLaserOn()) {
+                m_gravity->SetBaseFloor(go->position.y);
+                auto bounds = GetPlayerMovementBoundaries();
+                go->position.x = std::max(std::min(float(go->position.x), bounds.max_x), bounds.min_x);
+            }
         }
     }
 }
@@ -519,6 +553,19 @@ bool PlayerControlPerspective::IsBlocked() {
 void PlayerControlPerspective::OnSpawn() {
     go->position = Vector2D(level->GetCameraX() + WINDOW_WIDTH / 2, m_gravity->GetBaseFloor());
     m_gravity->SetVelocity(-PLAYER_JUMP * PIXELS_ZOOM);
+}
+
+AvancezLib::KeyStatus PlayerControlPerspective::GetKeyStatusWhenComplete() {
+    AvancezLib::KeyStatus status{}; // all false
+    if (level->GetTimeSinceComplete() < 1.0)
+        return status;
+
+    if (m_index % 2 == 0) {
+        status.left = go->position.x - GetPlayerMovementBoundaries().min_x > 0.1;
+    } else {
+        status.right = GetPlayerMovementBoundaries().max_x - go->position.x > 0.1;
+    }
+    return status;
 }
 
 void

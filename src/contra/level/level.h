@@ -102,7 +102,7 @@ public:
 
     float PlayersMinX() const;
 
-    float PlayersTopY() const;
+    float PlayersTopY(bool *alive_players = nullptr) const;
 
     float PlayersMinY(bool *alive_players = nullptr) const;
 

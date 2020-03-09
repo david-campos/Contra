@@ -99,6 +99,7 @@ protected:
 
     virtual void OnSpawn() = 0;
     virtual void VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) {}
+    virtual AvancezLib::KeyStatus GetKeyStatusWhenComplete() = 0;
 
     [[nodiscard]] virtual int PickDieAnimation() const { return m_dieAnim; }
 };
@@ -111,6 +112,8 @@ protected:
 
     void
     AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out, float dt) override;
+
+    AvancezLib::KeyStatus GetKeyStatusWhenComplete() override;
 
     bool Fire(const AvancezLib::KeyStatus &keyStatus) override;
 };
@@ -139,6 +142,8 @@ protected:
 
     void
     AnimationUpdate(bool shooting, const AvancezLib::KeyStatus &keyStatus, Box **collider_box_out, float dt) override;
+
+    AvancezLib::KeyStatus GetKeyStatusWhenComplete() override;
 
     void VerticalMovementUpdate(const AvancezLib::KeyStatus &keyStatus, float dt) override;
 

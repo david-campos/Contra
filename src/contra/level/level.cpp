@@ -314,7 +314,7 @@ float Level::PlayersTopX() const {
     return top_x;
 }
 
-float Level::PlayersTopY() const {
+float Level::PlayersTopY(bool *alive_players) const {
     float top_y = 0;
     bool found_alive = false;
     for (auto *player = &playerControls[0]; player < &playerControls[0] + playerControls.size(); player++) {
@@ -325,6 +325,7 @@ float Level::PlayersTopY() const {
             found_alive = true;
         }
     }
+    if (alive_players) *alive_players = found_alive;
     return top_y;
 }
 
