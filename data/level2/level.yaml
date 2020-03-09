@@ -2,6 +2,7 @@ level_type: P
 number: 2
 name: Base 1
 music: music.wav
+boss_music: boss.wav
 background: background.png
 background_animation_shift: [0, 224]
 background_animation_shift_time: 0.05

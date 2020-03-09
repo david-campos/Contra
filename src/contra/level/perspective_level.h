@@ -121,6 +121,7 @@ protected:
     std::unordered_map<int, std::vector<PerspectiveLedderSpawn>> m_spawnPatterns;
     std::unordered_map<int, float> m_pretimes;
     std::unordered_map<int, DarrSpawn> m_darrs;
+    Music *m_bossMusic;
     int m_currentSpawn;
     float m_nextSpawn;
     int m_nextDarrsStart, m_nextDarrsEnd;

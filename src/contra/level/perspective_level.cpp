@@ -85,6 +85,8 @@ void PerspectiveLevel::Create(const std::string &folder,
         }
         m_spawnPatterns.insert({i, pattern});
     }
+    std::string boss_music_path = folder + scene_root["boss_music"].as<std::string>();
+    m_bossMusic = m_engine->createMusic(boss_music_path.data());
 }
 
 void PerspectiveLevel::Init() {
@@ -195,6 +197,7 @@ void PerspectiveLevel::InitScreen() {
             playerControls[i]->SetBaseFloor(PIXELS_ZOOM * PERSP_BOSS_PLAYER_Y);
         }
         m_animationShiftTime = 0.5f;
+        m_bossMusic->Play();
     }
 
     m_currentSpawn = -1;
@@ -238,6 +241,9 @@ void PerspectiveLevel::ClearScreen() {
         go->MarkToRemove();
     }
     m_onScreen.clear();
+    if (m_currentScreen > 4) {
+        m_engine->FadeOutMusic(1.f);
+    }
 }
 
 bool PerspectiveLevel::AllPlayersOnFloor() {
@@ -257,6 +263,9 @@ void PerspectiveLevel::Destroy() {
         }
     }
     m_screens.clear();
+    if (m_bossMusic) {
+        delete m_bossMusic;
+    }
     Level::Destroy();
 }
 
