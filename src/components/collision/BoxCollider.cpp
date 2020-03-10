@@ -34,6 +34,7 @@ bool BoxCollider::IsColliding(const CollideComponent *other) {
         return a_x_max >= b_x_min && b_x_max >= a_x_min
                && a_y_max >= b_y_min && b_y_max >= a_y_min;
     }
+    return false;
 }
 
 void BoxCollider::Update(float dt) {
