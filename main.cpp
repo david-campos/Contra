@@ -10,7 +10,7 @@
 
 float game_speed = 1.f;
 
-int main() {
+int main (int argc, char *argv[]) {
     AvancezLib engine{};
 
     engine.init(WINDOW_WIDTH, WINDOW_HEIGHT);
