@@ -93,8 +93,8 @@ public:
     }
 private:
     FloorPixel GetFloorPixel(int x, int y) {
-        x = std::max(std::min(x, m_floorWidth), 0);
-        y = std::max(std::min(y, m_floorHeight), 0);
+        x = std::max(std::min(x, m_floorWidth - 1), 0);
+        y = std::max(std::min(y, m_floorHeight - 1), 0);
         return m_map.get()[y * m_floorWidth + x];
     }
 };
