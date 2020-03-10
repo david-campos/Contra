@@ -62,8 +62,10 @@ void AnimationRenderer::Update(float dt) {
             m_currentAnimation->frame_w, m_currentAnimation->frame_h,
             mirrorHorizontal
     );
+#ifndef NDEBUG
     scene->GetEngine()->fillSquare(round(go->position.x - scene->GetCameraX()),
             round(go->position.y - scene->GetCameraY()), PIXELS_ZOOM, {255, 0, 0});
+#endif
 }
 
 int AnimationRenderer::AddAnimation(AnimationRenderer::Animation animation) {

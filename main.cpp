@@ -20,7 +20,9 @@ int main (int argc, char *argv[]) {
     game.Init();
 
     float lastTime = engine.getElapsedTime();
+#ifndef NDEBUG
     char fps[100];
+#endif
     float smoothedDt = 0.004;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -42,8 +44,10 @@ int main (int argc, char *argv[]) {
 
         engine.processInput();
         game.Update(dt);
+#ifndef NDEBUG
         sprintf(fps, "FPS: %d", (int) round(1 / smoothedDt));
         engine.drawText(0, 0, fps);
+#endif
         game.Draw();
     }
 #pragma clang diagnostic pop

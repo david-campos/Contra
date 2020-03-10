@@ -21,8 +21,10 @@ public:
                 (int) round(go->position.y - scene->GetCameraY()) - m_anchorY * PIXELS_ZOOM,
                 m_width * PIXELS_ZOOM, m_height * PIXELS_ZOOM,
                 m_srcX, m_srcY, m_width, m_height);
+#ifndef NDEBUG
         scene->GetEngine()->fillSquare(round(go->position.x - scene->GetCameraX()),
                 round(go->position.y - scene->GetCameraY()), PIXELS_ZOOM, {0, 255, 0});
+#endif
     }
 
     void Create(BaseScene *scene, GameObject *go,
