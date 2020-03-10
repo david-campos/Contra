@@ -99,7 +99,7 @@ public:
     }
 
     PlayerControl *GetClosestPlayer() override {
-        level->GetClosestPlayerControl(go->position, true);
+        return level->GetClosestPlayerControl(go->position, true);
     }
 
     void UpdateHidden(const PlayerControl* playerControl, const Vector2D &player_dir, float dt) override;
