@@ -8,6 +8,8 @@ in the University of Gothenburg. Time constraints limited the total number
 of levels that could be done, but I **may** continue working in the project
 on the future just to have it a bit more finished.
 
+The report elaborated for the course can be found in the folder course_docs.
+
 ## Windows release
 There is a release made with mingw for Windows, 32bits in release/windows32bits_release.rar.
 
