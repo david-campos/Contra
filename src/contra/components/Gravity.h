@@ -21,10 +21,18 @@ private:
 public:
     void Update(float dt) override;
 
+    /**
+     * Adds vertical velocity, please keep in mind that our coordinate system
+     * has inverted y (negative Y is up)
+     */
     void AddVelocity(float velocity) {
         m_velocity += velocity;
     }
 
+    /**
+     * Replaces the vertical velocity, please keep in mind that our coordinate system
+     * has inverted y (negative Y is up)
+     */
     void SetVelocity(float velocity) {
         m_velocity = velocity;
     }
@@ -33,8 +41,16 @@ public:
         return m_velocity;
     }
 
+    /**
+     * Sets whether the gravity component should let the object fall through the water or stay on it
+     */
     void SetFallThoughWater(const bool value) { m_fallThroughWater = value; }
 
+    /**
+     * Sets whether the gravity component should let the object automatically fall through floors the
+     * player would be able to let herself fall through.
+     * @param value
+     */
     void SetFallThroughCanFall(const bool value) { m_fallThroughCanFall = value; }
 
     // Let's the game object fall until it leaves the current floor
@@ -44,8 +60,16 @@ public:
 
     [[nodiscard]] float GetAcceleration() const;
 
+    /**
+     * Sets the acceleration applied by the component to the game object when it is falling.
+     * @param acceleration
+     */
     void SetAcceleration(float acceleration);
 
+    /**
+     * Sets a maximum Y value that is always going to be considered floor (so the object
+     * will not fall through it)
+     */
     void SetBaseFloor(float mBaseFloor);
 
     [[nodiscard]] float GetBaseFloor() const { return m_baseFloor; }

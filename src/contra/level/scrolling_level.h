@@ -28,6 +28,10 @@ public:
 
     void Destroy() override;
 
+    /**
+     * Adds a game object to the queue of not found enemies for the given rendering layer,
+     * the objects will be sorted in the queue based on their position.
+     */
     void AddNotFoundEnemy(GameObject *const game_object, const short layer) {
         not_found_enemies.push(std::pair<GameObject *, short>(game_object, layer));
     }

@@ -25,13 +25,16 @@ public:
         }
     }
 
+    /** Delegates into GameObject::GetComponent of the associated game object */
     template<typename T>
     T GetComponent() {
         return go->GetComponent<T>();
     }
 
+    /** Hookup called when the associated game object has just been enabled */
     virtual void OnGameObjectEnabled() {}
 
+    /** Hookup called when the associated game object is disabled */
     virtual void OnGameObjectDisabled() {}
 
     [[nodiscard]] GameObject *GetGameObject() const { return go; }

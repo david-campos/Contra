@@ -32,6 +32,11 @@ public:
 
     static int s_nextId;
     Vector2D position;
+    /**
+     * Determines whether the object should be destroyed or not on removal from the game objects
+     * sets in the scenes. If set to DO_NOT_DESTROY, make sure the object is properly destroyed
+     * eventually.
+     */
     OnOutOfScreen onRemoval = DESTROY;
 
     GameObject() {
@@ -55,8 +60,9 @@ public:
 
     virtual void Receive(Message m) {}
 
+    /** Hookup called when the GameObject is enabled */
     void OnEnabled();
-
+    /** Hoookup called when the GameObject is disabled */
     void OnDisabled();
 
     /**

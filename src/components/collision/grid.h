@@ -68,11 +68,8 @@ public:
     }
 
     /**
-     * Returns 1 if the collision of a to b was cached as true, 0 if it was false,
+     * @return 1 if the collision of a to b was cached as true, 0 if it was false,
      * or -1 if it was not cached.
-     * @param a
-     * @param b
-     * @return
      */
     short GetCollisionCached(CollideComponent *a, CollideComponent *b) const {
         if (collision_cache.count(a) > 0) {
@@ -84,6 +81,7 @@ public:
         return -1;
     }
 
+    /** Notifies the result of a collision check to be added to the cache of collisions of the frame */
     void NotifyCacheCollision(CollideComponent *a, CollideComponent *b, bool colliding) {
         if (collision_cache.count(a) == 0) {
             std::pair<CollideComponent*, std::unordered_map<CollideComponent*, bool>> new_cache(a, {});

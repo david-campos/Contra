@@ -109,6 +109,9 @@ public:
         }
     }
 
+    /**
+     * Implement to extend the position update of the bullet when it should be moving
+     */
     virtual void UpdatePosition(float dt) = 0;
 
     [[nodiscard]] int GetDamage() const { return m_damage; }

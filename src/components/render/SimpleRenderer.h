@@ -59,6 +59,7 @@ public:
         return m_width;
     }
 
+    /** Height of the renderer in art scale (without zoom) */
     [[nodiscard]] int GetHeight() const {
         return m_height;
     }

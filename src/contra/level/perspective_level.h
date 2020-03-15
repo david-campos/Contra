@@ -49,10 +49,11 @@ public:
 
     void Init() override;
 
+    /** Inits the current screen */
     void InitScreen();
-
+    /** Kills all the remaining killables in the current scene */
     void KillScreen();
-
+    /** Marks for removal all the killables in the current screen */
     void ClearScreen();
 
     void SubUpdate(float dt) override;
@@ -69,6 +70,10 @@ public:
 
     void Destroy() override;
 
+    /**
+     * Given a point on the front plain (the player plain) projects it into the back plane (the enemies plain)
+     * @see PerspectiveLevel::ProjectFromBackToFront
+     */
     Vector2D ProjectFromFrontToBack(const Vector2D &point) {
         if (IsInBossBattle()) {
             return Vector2D(point.x, PERSP_BACK_Y_START * PIXELS_ZOOM + point.y - PERSP_FRONT_Y_START * PIXELS_ZOOM);
@@ -82,6 +87,10 @@ public:
         }
     }
 
+    /**
+     * Given a point in the back plain (the enemies plain), projects it into the front plain (the player plain).
+     * @see PerspectiveLevel::ProjectFromFrontToBack
+     */
     Vector2D ProjectFromBackToFront(const Vector2D &point) {
         if (IsInBossBattle()) {
             return Vector2D(point.x, PERSP_FRONT_Y_START * PIXELS_ZOOM + point.y - PERSP_BACK_Y_START * PIXELS_ZOOM);
@@ -94,6 +103,7 @@ public:
         }
     }
 
+    /** Adds the given game object to its correspondent screen based on its game object position */
     void AddToScreens(GameObject *object) {
         int screen_idx = floor(object->position.x / WINDOW_WIDTH) - 4; // First 4 are the transition screens
 
@@ -127,6 +137,7 @@ protected:
     int m_nextDarrsStart, m_nextDarrsEnd;
     float m_nextDarrs;
 
+    /** Returns true if all players are on the floor instead of jumping */
     bool AllPlayersOnFloor();
 };
 

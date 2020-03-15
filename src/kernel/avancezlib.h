@@ -32,6 +32,10 @@ public:
     void draw(int x, int y, int tw, int th, int sx, int sy, int sw, int sh, bool mirrorHorizontal = false);
 };
 
+/**
+ * The Music class encapsulates the background music. Calling Play after music loading error does
+ * not cause any crashing or other errors.
+ */
 class Music final {
 public:
     Music(Mix_Music *mMusic) : mMusic(mMusic) {}
@@ -53,11 +57,20 @@ private:
     Mix_Music *mMusic = nullptr;
 };
 
+/**
+ * The SoundEffect class encapsulates short sound effects playing. Calling Play after sound loading error does
+ * not cause any crashing or other errors.
+ */
 class SoundEffect final {
 public:
     SoundEffect(Mix_Chunk *effect) : effect(effect) {}
 
     /**
+     * Plays the sound and returns a callback which will stop the sound in case it is
+     * still playing when the callback is called. Set to 0 times to loop forever.
+     * If the current number of channels is not enough to support one sound
+     * more playing, new channels will be allocated.
+     *
      * @return A callback to Stop the channel (if it is still playing)
      */
     std::function<void()> Play(short times = 1);

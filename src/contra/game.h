@@ -39,6 +39,10 @@ public:
 
     int GetCurrentLevel() const;
 
+    /**
+     * Sets the current level, indexes start in 0
+     * @param currentLevel
+     */
     void SetCurrentLevel(int currentLevel);
 
     void SetPlayers(unsigned short value) {

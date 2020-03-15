@@ -11,6 +11,9 @@
 #include "scrolling_level.h"
 #include "perspective_level.h"
 
+/**
+ * Loads levels
+ */
 class LevelFactory {
 private:
     const std::unordered_map<int, std::shared_ptr<Sprite>> *spritesheets;
